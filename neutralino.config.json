@@ -1,34 +1,44 @@
 {
   "$schema": "https://raw.githubusercontent.com/neutralinojs/neutralinojs/main/schemas/neutralino.config.schema.json",
-  "applicationId": "your.application.id",
+  "applicationId": "com.github.passgui",
   "version": "1.0.0",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/dist/",
   "url": "/",
   "enableServer": true,
-  "enableNativeAPI": true,
-  "tokenSecurity": "one-time",
   "logging": {
     "enabled": true,
     "writeToLogFile": true
   },
+  "enableNativeAPI": true,
+  "tokenSecurity": "one-time",
   "nativeAllowList": [
-    "app.*", 
-    "os.*", 
-    "filesystem.*"
+    "app.*",
+    "os.*",
+    "filesystem.*",
+    "debug.*",
+    "window.*",
+    "events.*",
+    "clipboard.*"
   ],
   "modes": {
     "window": {
-      "title": "neutralinojs-vite-ts-vue",
-      "icon": "/dist/icon.png",
-      "width": 800,
-      "height": 500,
-      "minWidth": 400,
-      "minHeight": 200,
-      "center": true,
+      "title": "Password Store GUI",
+      "width": 1400,
+      "height": 800,
+      "minWidth": 800,
+      "minHeight": 600,
+      "fullScreen": false,
+      "alwaysOnTop": false,
       "enableInspector": true,
-      "useSavedState": false
+      "icon": "/dist/icon.png",
+      "borderless": false,
+      "maximize": false,
+      "hidden": false,
+      "resizable": true,
+      "useSavedState": false,
+      "exitProcessOnClose": true
     }
   },
   "cli": {
@@ -36,14 +46,14 @@
     "distributionPath": "/build",
     "resourcesPath": "/dist/",
     "extensionsPath": "/extensions/",
-    "binaryVersion": "6.3.0",
+    "binaryVersion": "6.4.0",
     "frontendLibrary": {
       "patchFile": "/index.html",
       "devUrl": "http://localhost:5173",
       "projectPath": "/",
-      "initCommand": "npm install",
-      "devCommand": "npm run vite:dev",
-      "buildCommand": "npm run vite:build"
+      "initCommand": "pnpm install",
+      "devCommand": "pnpm vite:dev",
+      "buildCommand": "pnpm vite:build"
     }
   }
 }
