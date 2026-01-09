@@ -1,0 +1,26 @@
+{
+  "name": "neutralinojs-vite-ts-vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "neu run",
+    "build": "neu build --release",
+    "build:embed": "neu build --release --embed-resources",
+    "vite:dev": "vite",
+    "vite:build": "vue-tsc -b && vite build",
+    "vite:preview": "vite preview"
+  },
+  "dependencies": {
+    "@neutralinojs/lib": "^6.3.0",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-neutralino": "^1.0.3",
+    "vue-tsc": "^3.1.2"
+  }
+}
