@@ -1,7 +1,7 @@
 {
-  "name": "neutralinojs-vite-ts-vue",
+  "name": "pass-gui",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "neu run",
@@ -11,16 +11,17 @@
     "vite:build": "vue-tsc -b && vite build",
     "vite:preview": "vite preview"
   },
+  "packageManager": "pnpm@10.25.0",
   "dependencies": {
-    "@neutralinojs/lib": "^6.3.0",
-    "vue": "^3.5.22"
+    "@neutralinojs/lib": "^6.4.0",
+    "vue": "^3.5.26"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.3",
     "@vue/tsconfig": "^0.8.1",
-    "typescript": "~5.9.3",
-    "vite": "^7.1.12",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
     "vite-plugin-neutralino": "^1.0.3",
-    "vue-tsc": "^3.1.2"
+    "vue-tsc": "^3.2.2"
   }
 }
