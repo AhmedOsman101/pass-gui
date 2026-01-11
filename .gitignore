@@ -1,3 +1,23 @@
+# Developer tools' files
+.lite_workspace.lua
+
+# Neutralinojs binaries and builds
+bin
+dist
+.tmp
+node_modules
+build
+bin
+dist
+dist-ssr
+*.local
+
+# Neutralinojs client (minified)
+neutralino.js
+
+# Neutralinojs related files
+.storage
+
 # Logs
 logs
 *.log
@@ -7,16 +27,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-.tmp
-node_modules
-build
-bin
-dist
-dist-ssr
-*.local
-
 # Editor directories and files
-.vscode/*
 .idea
 .DS_Store
 *.suo

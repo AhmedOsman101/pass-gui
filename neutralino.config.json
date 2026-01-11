@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "defaultMode": "window",
   "port": 0,
-  "documentRoot": "/dist/",
+  "documentRoot": "/client/dist/",
   "url": "/",
   "enableServer": true,
   "logging": {
@@ -32,7 +32,7 @@
       "fullScreen": false,
       "alwaysOnTop": false,
       "enableInspector": true,
-      "icon": "/dist/icon.png",
+      "icon": "/client/dist/icon.png",
       "borderless": false,
       "maximize": false,
       "hidden": false,
@@ -42,18 +42,18 @@
     }
   },
   "cli": {
-    "binaryName": "neutralinojs-vite-ts-vue",
+    "binaryName": "pass-gui",
     "distributionPath": "/build",
-    "resourcesPath": "/dist/",
+    "resourcesPath": "/client/dist/",
     "extensionsPath": "/extensions/",
     "binaryVersion": "6.4.0",
     "frontendLibrary": {
-      "patchFile": "/index.html",
-      "devUrl": "http://localhost:5173",
-      "projectPath": "/",
+      "patchFile": "/client/index.html",
+      "devUrl": "http://localhost:3000",
+      "projectPath": "/client/",
       "initCommand": "pnpm install",
-      "devCommand": "pnpm vite:dev",
-      "buildCommand": "pnpm vite:build"
+      "devCommand": "BROWSER=none pnpm --filter=client dev",
+      "buildCommand": "pnpm --filter=client build"
     }
   }
 }

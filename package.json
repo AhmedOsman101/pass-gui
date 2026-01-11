@@ -1,27 +1,34 @@
 {
   "name": "pass-gui",
-  "private": true,
+  "author": "Ahmad Othman",
   "version": "0.0.1",
+  "description": "GUI wrapper for GNU Pass (passowrd-store)",
+  "license": "MIT",
+  "private": true,
   "type": "module",
   "scripts": {
-    "dev": "neu run",
-    "build": "neu build --release",
+    "prepare": "husky",
+    "lint": "biome lint .",
+    "format": "biome check --fix .",
+    "format:unsafe": "biome check --fix --unsafe .",
+    "typecheck": "tsc --noUnusedLocals false --noUnusedParameters false --noEmit",
+    "dev:frontend": "pnpm --filter=client dev",
+    "dev:neutralino": "neu run dev",
+    "dev": "concurrently -n \"FRONTEND,NEUTRALINO\" -c \"blue,magenta\" \"pnpm dev:frontend\" \"pnpm dev:neutralino\"",
+    "build:frontend": "pnpm --filter=client build",
+    "build": "pnpm build:frontend && neu build",
+    "dist": "pnpm build:frontend && neu build --release",
     "build:embed": "neu build --release --embed-resources",
-    "vite:dev": "vite",
-    "vite:build": "vue-tsc -b && vite build",
-    "vite:preview": "vite preview"
+    "clean": "rm -rf client/dist dist/*",
+    "update:neu": "neu update"
   },
-  "packageManager": "pnpm@10.25.0",
-  "dependencies": {
-    "@neutralinojs/lib": "^6.4.0",
-    "vue": "^3.5.26"
-  },
+  "packageManager": "pnpm@10.27.0",
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.3",
-    "@vue/tsconfig": "^0.8.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-plugin-neutralino": "^1.0.3",
-    "vue-tsc": "^3.2.2"
+    "@biomejs/biome": "2.3.11",
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7"
+  },
+  "dependencies": {
+    "lib-result": "^3.2.2"
   }
 }
