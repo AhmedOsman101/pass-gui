@@ -1,0 +1,19 @@
+# ---- Typescript ---- #
+[[language]]
+name = "typescript"
+roots = ["package.json"]
+auto-format = true
+formatter = { command = "biome", args = [
+  "check",
+  "--fix",
+  "--config-path",
+  "/home/othman/.config/biome/biome.json",
+  "--stdin-file-path=file.ts",
+] }
+language-servers = [
+  { name = "typescript-language-server", except-features = [
+    "format",
+  ] },
+  "biome",
+  "scls",
+]
