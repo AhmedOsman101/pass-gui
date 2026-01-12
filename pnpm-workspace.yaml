@@ -5,3 +5,4 @@ linkWorkspacePackages: true
 
 onlyBuiltDependencies:
   - esbuild
+  - vue-demi
