@@ -1,5 +1,12 @@
 {
   "prettier.useEditorConfig": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "never",
+    "source.organizeImports.biome": "explicit",
+    "source.sortImports": "never",
+    "source.biome": "explicit",
+    "source.fixAll.biome": "explicit"
+  },
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
@@ -19,14 +26,14 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[vue]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "never",
-    "source.organizeImports.biome": "explicit",
-    "source.sortImports": "never",
-    "source.biome": "explicit",
-    "source.fixAll.biome": "explicit"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.organizeImports.biome": "never",
+      "source.sortImports": "never",
+      "source.biome": "never",
+      "source.fixAll.biome": "never"
+    }
   },
   "auto-close-tag.disableOnLanguage": ["typescript"],
   "better-comments.tags": [

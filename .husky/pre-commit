@@ -18,6 +18,6 @@ git add "${files[@]}"
 
 # --- Do type checking before any commit --- #
 printf "\e[34mDoing type checks...\e[0m\n"
-# pnpm --filter=client typecheck || exit 1
+pnpm --filter=client typecheck || exit 1
 
 exit 0
