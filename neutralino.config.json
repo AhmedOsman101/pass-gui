@@ -34,7 +34,7 @@
       "enableInspector": true,
       "icon": "/client/dist/icon.png",
       "borderless": false,
-      "maximize": false,
+      "maximize": true,
       "hidden": false,
       "resizable": true,
       "useSavedState": false,
