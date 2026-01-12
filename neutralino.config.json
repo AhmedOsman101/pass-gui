@@ -52,7 +52,7 @@
       "devUrl": "http://localhost:3000",
       "projectPath": "/client/",
       "initCommand": "pnpm install",
-      "devCommand": "BROWSER=none pnpm --filter=client dev",
+      "devCommand": "true",
       "buildCommand": "pnpm --filter=client build"
     }
   }
