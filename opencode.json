@@ -4,12 +4,7 @@
     "shadcnVue": {
       "type": "local",
       "enabled": true,
-      "command": [
-        "pnpm",
-        "exec",
-        "shadcn-vue",
-        "mcp"
-      ]
+      "command": ["pnpm", "exec", "shadcn-vue", "mcp"]
     }
   }
 }
