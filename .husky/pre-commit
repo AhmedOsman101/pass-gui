@@ -11,7 +11,7 @@ mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR)
 # --- Formats only the staged files --- #
 unset BIOME_BINARY &>/dev/null || true
 unset BIOME_CONFIG_PATH &>/dev/null || true
-# pnpm exec biome check --fix --no-errors-on-unmatched "${files[@]}" || true
+pnpm exec biome check --fix --no-errors-on-unmatched "${files[@]}" || true
 
 # --- Adds staged files again (to include the new formatter changes) --- #
 git add "${files[@]}"
