@@ -2,16 +2,12 @@
 
 Guidelines for agentic coding assistants on GNU Pass GUI project.
 
----
-
 ## Project Overview
 
 **Type**: Desktop GUI for GNU Pass password manager
 **Stack**: Vue 3 + Pinia + NeutralinoJS + TypeScript + TailwindCSS + shadcn-vue + lib-result
 **Structure**: pnpm workspace (root + client/)
 **Status**: Phase 1 (Foundation) - 70% complete
-
----
 
 ## Commands
 
@@ -52,8 +48,6 @@ fd -t d -L dirname                                                        # Dir 
 eza -T --all --ignore-glob="node_modules|.tmp|dist|build|.husky|.git|bin" # Tree display of the cwd
 ```
 
----
-
 ## Code Style
 
 ### TypeScript
@@ -81,8 +75,6 @@ eza -T --all --ignore-glob="node_modules|.tmp|dist|build|.husky|.git|bin" # Tree
 
 - 2 spaces indentation, 80 char width, LF only, double quotes for JSX/HTML
 - ES5 trailing commas, shorthand where possible
-
----
 
 ## Error Handling
 
@@ -112,8 +104,6 @@ async function listPasswords(): Promise<Result<PasswordEntry[], PassError>> {
 Error variants: `CommandFailed`, `ParsingError`, `GPGError`, `NotFound`, `ValidationError`
 Never throw: Use `ErrFromObject()` or `Err()` instead of throw for expected failures
 
----
-
 ## Architecture
 
 ### Services Layer
@@ -133,8 +123,6 @@ Lazy loading for pages: `component: () => import('@/views/HomeView.vue')`
 Already initialized in `main.ts` (do NOT re-initialize)
 Allowed APIs: `os.execCommand`, `clipboard.*`, `storage.*`, `filesystem.*`
 
----
-
 ## Password Stores
 
 **Valid only**:
@@ -144,8 +132,6 @@ Allowed APIs: `os.execCommand`, `clipboard.*`, `storage.*`, `filesystem.*`
 3. Prompt the user to create a store if none of them were found.
 
 **DO NOT**: Search arbitrary paths, validate by checking for `.gpg-id` file
-
----
 
 ## Testing
 
@@ -167,15 +153,11 @@ describe("PassService", () => {
 
 Mock services, not UI components. Aim for >80% coverage on services and stores.
 
----
-
 ## Security
 
 **NEVER**: Log plaintext passwords, store passwords in plain text in state, send passwords through console.log, include passwords in error messages
 
 **ALWAYS**: Mask passwords with `•••••`, clear clipboard after timeout, use GPG agent for passphrase, validate all user inputs
-
----
 
 ## Before Changes
 
@@ -184,8 +166,6 @@ Mock services, not UI components. Aim for >80% coverage on services and stores.
 3. Run `pnpm test:unit` - should all pass
 4. Check existing patterns for style consistency
 5. Review `roadmap/phased-development-roadmap.md` for phase status
-
----
 
 ## Summary Checklist
 
