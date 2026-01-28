@@ -30,6 +30,7 @@
     "shadcn-vue": "^2.4.3"
   },
   "dependencies": {
+    "@vueuse/core": "^14.1.0",
     "lib-result": "^3.2.2"
   }
 }
