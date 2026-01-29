@@ -17,12 +17,12 @@
     "dev": "concurrently -n \"FRONTEND,NEUTRALINO\" -c \"blue,magenta\" \"pnpm dev:frontend\" \"pnpm dev:neutralino\"",
     "build:frontend": "./pnpm-client build",
     "build": "pnpm build:frontend && neu build",
-    "dist": "pnpm build:frontend && neu build --release",
+    "dist": "pnpm build:frontend && neu build --release --embed-resources",
     "build:embed": "neu build --release --embed-resources",
     "clean": "rm -rf client/dist dist/*",
     "update:neu": "neu update"
   },
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "concurrently": "^9.2.1",
