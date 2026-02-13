@@ -1,26 +1,29 @@
 import { filesystem } from "@neutralinojs/lib";
-import { ErrFromObject, ErrFromUnknown } from "lib-result";
+import { Err, ErrFromUnknown } from "lib-result";
 import { NEU_ERROR_CODES, type NeuErrorCode } from "@/lib/constants";
+import { DirectoryCreationError } from "@/lib/errors";
 
-async function createDir(path: string) {
+async function mkdir(path: string) {
   try {
     await filesystem.createDirectory(path);
   } catch (e) {
     // biome-ignore lint/suspicious/noExplicitAny: Error types are unknown
     const error: any = e;
     if (error?.code === NEU_ERROR_CODES.NE_FS_DIRCRER) {
-      return ErrFromObject({
-        message: error?.message,
-        type: NEU_ERROR_CODES[error.code as NeuErrorCode],
-        code: error?.code,
-        path,
-      });
+      return Err(
+        new DirectoryCreationError(
+          NEU_ERROR_CODES[error.code as NeuErrorCode],
+          error?.code,
+          path,
+          error?.message
+        )
+      );
     }
 
     return ErrFromUnknown(e);
   }
 }
 
-const fs = { createDir };
+const fs = { mkdir };
 
 export { fs };
