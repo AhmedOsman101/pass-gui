@@ -1,3 +1,5 @@
+import { neu } from "@/services/neutralino";
+
 const NEU_ERROR_CODES = Object.freeze({
   NE_CL_NSEROFF: "NeuServerNotReachable",
   NE_EX_EXTNOTC: "ExtensionNotConnected",
@@ -45,9 +47,12 @@ const NEU_ERROR_CODES_MAP = Object.freeze(
   ) as { [K in NeuErrorCode as (typeof NEU_ERROR_CODES)[K]]: K }
 );
 
+const HOME_DIR = await neu.getHomeDir();
+
 export {
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
   type NeuErrorCode,
   type NeuErrorMap,
+  HOME_DIR,
 };

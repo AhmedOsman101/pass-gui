@@ -5,4 +5,8 @@ type NeuError = {
   message: string;
 };
 
-export type { NeuError };
+type EnvVar = string | number | boolean | bigint;
+
+type OsType = "Linux" | "Darwin" | "Windows NT" | "Unknown";
+
+export type { NeuError, EnvVar, OsType };

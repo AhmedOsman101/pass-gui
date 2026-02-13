@@ -1,6 +1,7 @@
-import { type ExecCommandOptions, os } from "@neutralinojs/lib";
+import { computer, type ExecCommandOptions, os } from "@neutralinojs/lib";
 import { wrapAsyncThrowable } from "lib-result";
 import stripAnsi from "strip-ansi";
+import type { EnvVar, OsType } from "@/types";
 
 const execCommand = wrapAsyncThrowable(
   async (
@@ -18,7 +19,7 @@ const execCommand = wrapAsyncThrowable(
 
     if (result.exitCode !== 0) {
       throw new Error(
-        result.stdErr || `Command failed with exit code ${result.exitCode}`
+        `Command failed with exit code ${result.exitCode}\n${result.stdErr}`
       );
     }
 
@@ -26,4 +27,25 @@ const execCommand = wrapAsyncThrowable(
   }
 );
 
-export { execCommand };
+async function getEnv(key: string, defaultValue: EnvVar = "") {
+  return (await os.getEnv(key)) ?? String(defaultValue);
+}
+
+async function getHomeDir(): Promise<string> {
+  const osType = (await computer.getKernelInfo()).variant as OsType;
+
+  switch (osType) {
+    case "Linux":
+    case "Darwin":
+      return getEnv("HOME", "~");
+    case "Windows NT":
+      return getEnv("USERPROFILE", "~");
+    default:
+      throw new Error(
+        "Unable to locate home directory. Please set the HOME (Unix) or USERPROFILE (Windows) environment variable."
+      );
+  }
+}
+
+const neu = { execCommand, getEnv, getHomeDir };
+export { neu };
