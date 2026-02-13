@@ -15,8 +15,3 @@ app.mount("#app");
 
 // Initialize Neutralino
 Neutralino.init();
-
-// Handle the window close event to kill the process
-Neutralino.events.on("windowClose", () => {
-  Neutralino.app.exit();
-});

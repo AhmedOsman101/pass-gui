@@ -25,7 +25,8 @@
     "debug.*",
     "window.*",
     "events.*",
-    "clipboard.*"
+    "clipboard.*",
+    "computer.*"
   ],
   "modes": {
     "window": {
