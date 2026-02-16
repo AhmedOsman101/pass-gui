@@ -3,7 +3,7 @@ import { PASS_MIN_VERSION } from "@/lib/constants";
 import { compareVersions } from "@/lib/utils";
 import type { Version } from "@/types";
 import { fs } from "./filesystem";
-import { NeutralinoService } from "./neutralino";
+import { neu } from "./neutralino";
 
 class PassService {
   public storeDirectory = "";
@@ -11,9 +11,6 @@ class PassService {
   public version: Version = { major: 0, minor: 0, patch: 0 };
 
   async init(): Promise<Result<boolean>> {
-    const neu = new NeutralinoService();
-    await neu.init();
-
     this.storeDirectory = await neu.getEnv(
       "PASSWORD_STORE_DIR",
       `${neu.HOME_DIR}/.password-store`
@@ -30,7 +27,7 @@ class PassService {
     return Ok(true);
   }
 
-  private async checkInitialized(storePath: string) {
+  private async checkInitialized(storePath: string): Promise<Result<boolean>> {
     const gpgIdPath = `${storePath}/.gpg-id`;
     return await fs.exists(gpgIdPath);
   }
@@ -39,15 +36,12 @@ class PassService {
     return compareVersions(version, PASS_MIN_VERSION) >= 0;
   }
 
-  async passExists(): Promise<boolean> {
-    const neu = new NeutralinoService();
-    await neu.init();
-
+  async passExists(): Promise<Result<boolean>> {
     const existsResult = await neu.commandExists("pass");
-    if (existsResult.isError() || !existsResult.ok) return false;
+    if (existsResult.isError() || !existsResult.ok) return Ok(false);
 
     const cmdResult = await neu.execCommand("pass", ["--version"]);
-    if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return false;
+    if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return Ok(false);
 
     const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
     if (versionMatch) {
@@ -56,7 +50,7 @@ class PassService {
       this.version.patch = Number.parseInt(versionMatch[3] as string, 10);
     }
 
-    return this.checkVersion(this.version);
+    return Ok(this.checkVersion(this.version));
   }
 }
 

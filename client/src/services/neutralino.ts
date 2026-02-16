@@ -96,4 +96,5 @@ class NeutralinoService {
   }
 }
 
-export { NeutralinoService };
+const neu = new NeutralinoService();
+export { neu, NeutralinoService };
