@@ -15,4 +15,9 @@ type Version = {
   patch: number;
 };
 
-export type { NeuErrorObj, Stringifiable, OsType, Version };
+type PassBinaryInfo = {
+  path: string;
+  isSystemBinary: boolean;
+};
+
+export type { NeuErrorObj, Stringifiable, OsType, Version, PassBinaryInfo };

@@ -1,7 +1,12 @@
-import { Ok, type Result } from "lib-result";
-import { PASS_MIN_VERSION } from "@/lib/constants";
+import {
+  debug,
+  type ExecCommandOptions,
+  type ExecCommandResult,
+} from "@neutralinojs/lib";
+import { ErrFromText, Ok, type Result } from "lib-result";
+import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
 import { compareVersions } from "@/lib/utils";
-import type { Version } from "@/types";
+import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
 
@@ -36,9 +41,34 @@ class PassService {
     return compareVersions(version, PASS_MIN_VERSION) >= 0;
   }
 
+  async validatePassBinary(): Promise<Result<PassBinaryInfo>> {
+    const resolveResult = await neu.resolveBinaryPath("pass");
+    if (resolveResult.isError()) {
+      return ErrFromText(
+        `Could not resolve pass binary: ${resolveResult.error.message}`
+      );
+    }
+
+    const resolvedPath = resolveResult.ok.trim();
+    const isSystemBinary = SYSTEM_PASS_PATHS.some(p =>
+      resolvedPath.startsWith(p)
+    );
+
+    if (!isSystemBinary) {
+      debug.log(`Pass is a custom script/wrapper. Path: ${resolvedPath}`);
+    }
+
+    return Ok({ path: resolvedPath, isSystemBinary });
+  }
+
   async passExists(): Promise<Result<boolean>> {
     const existsResult = await neu.commandExists("pass");
     if (existsResult.isError() || !existsResult.ok) return Ok(false);
+
+    const validateResult = await this.validatePassBinary();
+    if (validateResult.isError()) {
+      debug.log(`Warning: ${validateResult.error.message}`);
+    }
 
     const cmdResult = await neu.execCommand("pass", ["--version"]);
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return Ok(false);
@@ -51,6 +81,17 @@ class PassService {
     }
 
     return Ok(this.checkVersion(this.version));
+  }
+
+  async exec(
+    args?: Stringifiable[],
+    options?: ExecCommandOptions
+  ): Promise<Result<ExecCommandResult>> {
+    return await neu.execCommand(
+      `PASSWORD_STORE_DIR="${this.storeDirectory}" pass`,
+      args,
+      options
+    );
   }
 }
 
