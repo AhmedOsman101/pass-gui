@@ -17,20 +17,16 @@
     "dev": "concurrently -n \"FRONTEND,NEUTRALINO\" -c \"blue,magenta\" \"pnpm dev:frontend\" \"pnpm dev:neutralino\"",
     "build:frontend": "./pnpm-client build",
     "build": "pnpm build:frontend && neu build",
-    "dist": "pnpm build:frontend && neu build --release --embed-resources",
-    "build:embed": "neu build --release --embed-resources",
+    "build:clean": "pnpm clean && pnpm build",
+    "release": "pnpm clean && pnpm build:frontend && neu build --release --clean",
     "clean": "rm -rf client/dist dist/*",
     "update:neu": "neu update"
   },
-  "packageManager": "pnpm@10.28.2",
+  "packageManager": "pnpm@10.29.3",
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "concurrently": "^9.2.1",
-    "husky": "^9.1.7",
-    "shadcn-vue": "^2.4.3"
+    "husky": "^9.1.7"
   },
-  "dependencies": {
-    "@vueuse/core": "^14.1.0",
-    "lib-result": "^3.2.2"
-  }
+  "dependencies": {}
 }

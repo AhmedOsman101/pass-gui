@@ -1,3 +1,4 @@
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
@@ -11,7 +12,7 @@ export default defineConfig({
     tailwindcss(),
     neutralino({
       // Point to the project root
-      rootPath: new URL("..", import.meta.url).pathname,
+      rootPath: path.resolve(__dirname, ".."),
     }),
   ],
   server: {
@@ -19,8 +20,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Point to client/src directory
-      "@": new URL("./src", import.meta.url).pathname,
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });

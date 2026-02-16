@@ -52,7 +52,7 @@
     "distributionPath": "/build",
     "resourcesPath": "/client/dist/",
     "extensionsPath": "/extensions/",
-    "binaryVersion": "6.4.0",
+    "binaryVersion": "6.5.0",
     "frontendLibrary": {
       "patchFile": "/client/index.html",
       "devUrl": "http://localhost:3000",
