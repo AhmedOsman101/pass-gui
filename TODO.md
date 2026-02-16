@@ -7,7 +7,7 @@
 - [x] Resolve binary path (`which` / `where`)
 - [x] Run `pass --version`
 - [x] Enforce minimum supported version
-- [ ] Detect if binary is alias/wrapper and log real path
+- [x] Detect if binary is alias/wrapper and log real path
 
 ### 1.2 Validate GPG Backend
 
