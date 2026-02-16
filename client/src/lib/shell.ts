@@ -54,7 +54,9 @@ function buildShellCommand(
 
 function validateArgument(arg: string): Result<string> {
   if (arg.includes("\0") || arg.includes("\n") || arg.includes("\r")) {
-    return ErrFromText("Argument contains one or more invalid characters (\\0, \\n, \\r)");
+    return ErrFromText(
+      "Argument contains one or more invalid characters (\\0, \\n, \\r)"
+    );
   }
 
   return Ok(arg);
@@ -80,7 +82,9 @@ function validatePath(path: Stringifiable): Result<string> {
   }
 
   if (checkSneakyPath(strPath)) {
-    return ErrFromText("You've attempted to pass a sneaky path to pass. Go home.");
+    return ErrFromText(
+      "You've attempted to pass a sneaky path to pass. Go home."
+    );
   }
 
   return Ok(strPath);
