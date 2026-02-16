@@ -19,27 +19,23 @@
 - [ ] Handle Windows-specific GPG installations
 - [ ] Provide onboarding flow if no keys exist
 
----
-
 ## 2. Store Resolution
 
-- [ ] Determine store path resolution order:
+- [x] Determine store path resolution order:
   - `$PASSWORD_STORE_DIR`
   - `$HOME/.password-store`
 
-- [ ] Normalize path (cross-platform)
+- [x] Normalize path (cross-platform)
 - [ ] Support per-session override
 - [ ] Persist last selected store (app-level, not OS-level)
-
----
 
 ## 3. Store Validation
 
 ### 3.1 Structural Validation
 
-- [ ] Check path exists
-- [ ] Check path is a directory
-- [ ] Check `.gpg-id` exists at root
+- [x] Check path exists
+- [x] Check path is a directory
+- [x] Check `.gpg-id` exists at root
 - [ ] Ensure `.gpg-id` is not empty
 
 ### 3.2 Cryptographic Validation
@@ -53,11 +49,9 @@
 - [ ] Attempt a safe read operation (`pass ls`)
 - [ ] Fail if `pass` exits non-zero
 
----
-
 ## 4. App State Machine (Core Architecture)
 
-Replace vague “states” with deterministic ones:
+Replace vague "states" with deterministic ones:
 
 - [ ] `DEPENDENCIES_MISSING`
 - [ ] `GPG_NOT_INITIALIZED`
@@ -71,8 +65,6 @@ Also:
 - [ ] UI reacts strictly to state changes
 - [ ] No UI logic outside state transitions
 
----
-
 ## 5. Listing Passwords
 
 - [ ] Use `pass ls` as canonical source
@@ -82,8 +74,6 @@ Also:
 - [ ] Implement refresh mechanism
 - [ ] Watch filesystem for changes
 - [ ] Avoid manual filesystem traversal
-
----
 
 ## 6. Multiple Store Support
 
@@ -107,21 +97,17 @@ Also:
 - [ ] Allow per-store custom `GNUPGHOME`
 - [ ] Allow store rename / removal (safe)
 
----
-
 ## 7. Command Execution Abstraction
 
-You need this even if it’s not obvious yet.
+You need this even if it's not obvious yet.
 
-- [ ] Central wrapper for executing `pass`
+- [x] Central wrapper for executing `pass`
 - [ ] Central wrapper for executing `gpg`
-- [ ] Scoped environment injection
+- [x] Scoped environment injection
 - [ ] Timeout handling
-- [ ] Structured error parsing
-- [ ] Log stdout/stderr safely
-- [ ] Prevent shell injection vulnerabilities
-
----
+- [x] Structured error parsing
+- [x] Log stdout/stderr safely
+- [x] Prevent shell injection vulnerabilities
 
 ## 8. Entry Operations (Core Features)
 
@@ -133,8 +119,6 @@ You need this even if it’s not obvious yet.
 - [ ] Rename entry (`pass mv`)
 - [ ] Copy password to clipboard (securely, timed clear)
 
----
-
 ## 9. Security Hardening
 
 This is missing entirely from your list and it matters.
@@ -142,13 +126,11 @@ This is missing entirely from your list and it matters.
 - [ ] Clear sensitive data from memory after use
 - [ ] Avoid logging passwords accidentally
 - [ ] Secure clipboard handling
-- [ ] Prevent command injection
-- [ ] Disable shell interpolation
-- [ ] Validate user input paths
+- [x] Prevent command injection
+- [x] Disable shell interpolation
+- [x] Validate user input paths
 - [ ] Handle GPG agent correctly
 - [ ] Support passphrase prompts via agent
-
----
 
 ## 10. Extensions & Compatibility
 
@@ -157,8 +139,6 @@ This is missing entirely from your list and it matters.
 - [ ] Detect `.extensions` directory
 - [ ] Allow extension execution
 - [ ] Support common extensions (e.g., OTP)
-
----
 
 ## 11. Error Handling & Diagnostics
 
