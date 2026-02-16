@@ -1,12 +1,18 @@
-import type { NeuErrorCode } from "@/lib/constants";
+import type { NeuErrorCode } from "@/lib/errors";
 
-type NeuError = {
+type Stringifiable = string | number | boolean | bigint;
+
+type NeuErrorObj = {
   code: NeuErrorCode;
   message: string;
 };
 
-type EnvVar = string | number | boolean | bigint;
-
 type OsType = "Linux" | "Darwin" | "Windows NT" | "Unknown";
 
-export type { NeuError, EnvVar, OsType };
+type Version = {
+  major: number;
+  minor: number;
+  patch: number;
+};
+
+export type { NeuErrorObj, Stringifiable, OsType, Version };
