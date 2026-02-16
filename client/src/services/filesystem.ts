@@ -35,13 +35,19 @@ class fs {
 
   static async exists(path: string): Promise<Result<boolean>> {
     const res = await wrapAsync(async () => await filesystem.getStats(path));
+    if (res.isOk()) return Ok(res.ok.isFile || res.ok.isDirectory);
+    return Err(res.error);
+  }
+
+  static async isFile(path: string): Promise<Result<boolean>> {
+    const res = await wrapAsync(async () => await filesystem.getStats(path));
     if (res.isOk()) return Ok(res.ok.isFile);
     return Err(res.error);
   }
 
   static async isDirectory(path: string) {
     const res = await wrapAsync(async () => await filesystem.getStats(path));
-    if (res.isOk()) return res.ok.isDirectory;
+    if (res.isOk()) return Ok(res.ok.isDirectory);
     return Err(res.error);
   }
 }
