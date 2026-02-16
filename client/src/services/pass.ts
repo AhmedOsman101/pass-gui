@@ -5,6 +5,7 @@ import {
 } from "@neutralinojs/lib";
 import { ErrFromText, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
+import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import { fs } from "./filesystem";
@@ -70,7 +71,7 @@ class PassService {
       debug.log(`Warning: ${validateResult.error.message}`);
     }
 
-    const cmdResult = await neu.execCommand("pass", ["--version"]);
+    const cmdResult = await neu.safeExec("pass", ["--version"]);
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return Ok(false);
 
     const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
@@ -84,12 +85,28 @@ class PassService {
   }
 
   async exec(
-    args?: Stringifiable[],
+    args: Stringifiable[] = [],
     options?: ExecCommandOptions
   ): Promise<Result<ExecCommandResult>> {
-    return await neu.execCommand(
+    const storeDirValidation = validatePath(this.storeDirectory);
+    if (storeDirValidation.isError()) {
+      return ErrFromText(
+        `Invalid store directory: ${storeDirValidation.error.message}`
+      );
+    }
+
+    const validatedArgs: Stringifiable[] = [];
+    for (const arg of args) {
+      const argValidation = validatePath(arg);
+      if (argValidation.isError()) {
+        return ErrFromText(`Invalid argument: ${argValidation.error.message}`);
+      }
+      validatedArgs.push(argValidation.ok);
+    }
+
+    return await neu.execCmd(
       `PASSWORD_STORE_DIR="${this.storeDirectory}" pass`,
-      args,
+      validatedArgs,
       options
     );
   }

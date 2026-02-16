@@ -7,9 +7,20 @@ import {
 } from "@neutralinojs/lib";
 import { ErrFromText, Ok, type Result, wrapAsyncThrowable } from "lib-result";
 import stripAnsi from "strip-ansi";
-import { escapeShellArg } from "@/lib/utils";
-import type { Stringifiable } from "@/types";
+import { buildShellCommand, type OsType as ShellOsType } from "@/lib/shell";
+import type { AllowedCommand, Stringifiable } from "@/types";
 import { fs } from "./filesystem";
+
+const ALLOWED_COMMANDS: AllowedCommand[] = [
+  "pass",
+  "gpg",
+  "type",
+  "ls",
+  "where.exe",
+  "which",
+  "readlink",
+  "file",
+];
 
 class NeutralinoService {
   public OS: OperatingSystem = window.NL_OS;
@@ -24,7 +35,11 @@ class NeutralinoService {
     this.initialized = true;
   }
 
-  async execCommand(
+  private getShellOsType(): ShellOsType {
+    return this.OS === "Windows" ? "windows" : "posix";
+  }
+
+  async execCmd(
     command: string,
     args?: Stringifiable[],
     options?: ExecCommandOptions
@@ -35,8 +50,8 @@ class NeutralinoService {
         cmdArgs?: Stringifiable[],
         cmdOptions?: ExecCommandOptions
       ) => {
-        const argString = cmdArgs?.map(escapeShellArg).join(" ") ?? "";
-        const fullCmd = argString ? `${cmd} ${argString}` : cmd;
+        const shellType = this.getShellOsType();
+        const fullCmd = buildShellCommand(cmd, cmdArgs ?? [], shellType);
 
         const result = await os.execCommand(fullCmd, cmdOptions);
         result.stdOut = stripAnsi(result.stdOut);
@@ -53,6 +68,14 @@ class NeutralinoService {
     );
 
     return await wrappedExec(command, args, options);
+  }
+
+  async safeExec(
+    command: AllowedCommand,
+    args: Stringifiable[],
+    options?: ExecCommandOptions
+  ): Promise<Result<ExecCommandResult>> {
+    return await this.execCmd(command, args, options);
   }
 
   async getEnv(key: string, defaultValue: Stringifiable = ""): Promise<string> {
@@ -78,12 +101,12 @@ class NeutralinoService {
 
   async commandExists(program: string): Promise<Result<boolean>> {
     if (this.OS === "Windows") {
-      const whereResult = await this.execCommand("where.exe", [program]);
+      const whereResult = await this.execCmd("where.exe", [program]);
       if (!whereResult.isError() && whereResult.ok.exitCode === 0) {
         return Ok(true);
       }
     } else {
-      const typeResult = await this.execCommand("type", [program]);
+      const typeResult = await this.execCmd("type", [program]);
       if (!typeResult.isError() && typeResult.ok.exitCode === 0) {
         return Ok(true);
       }
@@ -102,7 +125,7 @@ class NeutralinoService {
       case "Linux":
       case "Darwin":
       case "FreeBSD": {
-        const typeResult = await this.execCommand("type", ["-p", program]);
+        const typeResult = await this.execCmd("type", ["-p", program]);
         let binPath: string;
         if (!typeResult.isError() && typeResult.ok.exitCode === 0) {
           binPath = typeResult.ok.stdOut.trim();
@@ -110,7 +133,7 @@ class NeutralinoService {
           return ErrFromText(`Failed to resolve path for: ${program}`);
         }
 
-        const lsResult = await this.execCommand("ls", ["-l", binPath]);
+        const lsResult = await this.execCmd("ls", ["-l", binPath]);
         let resolvedPath = binPath;
         let isSymlink = false;
 
@@ -143,7 +166,7 @@ class NeutralinoService {
         return Ok(resolvedPath);
       }
       case "Windows": {
-        const whereResult = await this.execCommand("where.exe", [program]);
+        const whereResult = await this.execCmd("where.exe", [program]);
         if (whereResult.isError()) {
           return ErrFromText(`Failed to resolve path for: ${program}`);
         }
@@ -190,4 +213,4 @@ class NeutralinoService {
 }
 
 const neu = new NeutralinoService();
-export { neu, NeutralinoService };
+export { neu, NeutralinoService, ALLOWED_COMMANDS };

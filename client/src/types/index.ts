@@ -20,4 +20,21 @@ type PassBinaryInfo = {
   isSystemBinary: boolean;
 };
 
-export type { NeuErrorObj, Stringifiable, OsType, Version, PassBinaryInfo };
+type AllowedCommand =
+  | "pass"
+  | "gpg"
+  | "type"
+  | "ls"
+  | "where.exe"
+  | "which"
+  | "readlink"
+  | "file";
+
+export type {
+  NeuErrorObj,
+  Stringifiable,
+  OsType,
+  Version,
+  PassBinaryInfo,
+  AllowedCommand,
+};
