@@ -1,4 +1,8 @@
-import { type FileReaderOptions, filesystem } from "@neutralinojs/lib";
+import {
+  type FileReaderOptions,
+  filesystem,
+  type Stats,
+} from "@neutralinojs/lib";
 import { Err, ErrFromUnknown, Ok, type Result, wrapAsync } from "lib-result";
 import {
   DirectoryCreationError,
@@ -51,13 +55,22 @@ class fs {
     return Err(res.error);
   }
 
-  static async getStats(path: string) {
+  static async getStats(path: string): Promise<Result<Stats>> {
     return await wrapAsync(async () => await filesystem.getStats(path));
   }
 
-  static async readFile(path: string, options: FileReaderOptions) {
+  static async readFile(
+    path: string,
+    options: FileReaderOptions
+  ): Promise<Result<string>> {
     return await wrapAsync(
       async () => await filesystem.readFile(path, options)
+    );
+  }
+
+  static async getNormalizedPath(path: string): Promise<Result<string>> {
+    return await wrapAsync(
+      async () => await filesystem.getNormalizedPath(path)
     );
   }
 }

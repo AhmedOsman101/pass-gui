@@ -1,4 +1,5 @@
 import { ErrFromText, Ok, type Result } from "lib-result";
+import { fs } from "@/services/filesystem";
 import type { Stringifiable } from "@/types";
 
 type OsType = "posix" | "windows";
@@ -62,8 +63,15 @@ function validateArgument(arg: string): Result<string> {
   return Ok(arg);
 }
 
-function checkSneakyPath(path: string): boolean {
-  const normalized = path.replace(/\/+/g, "/").replace(/\/+$/, "");
+async function checkSneakyPath(path: string): Promise<boolean> {
+  const normalizedResult = await fs.getNormalizedPath(path);
+  if (normalizedResult.isError()) {
+    return false;
+  }
+
+  const normalized = normalizedResult.ok
+    .replace(/\/+/g, "/")
+    .replace(/\/+$/, "");
 
   return (
     normalized.includes("/..") ||
@@ -73,7 +81,7 @@ function checkSneakyPath(path: string): boolean {
   );
 }
 
-function validatePath(path: Stringifiable): Result<string> {
+async function validatePath(path: Stringifiable): Promise<Result<string>> {
   const strPath = String(path);
 
   const invalidChars = validateArgument(strPath);
@@ -81,7 +89,8 @@ function validatePath(path: Stringifiable): Result<string> {
     return invalidChars;
   }
 
-  if (checkSneakyPath(strPath)) {
+  const isSneaky = await checkSneakyPath(strPath);
+  if (isSneaky) {
     return ErrFromText(
       "You've attempted to pass a sneaky path to pass. Go home."
     );

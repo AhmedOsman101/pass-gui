@@ -88,7 +88,7 @@ class PassService {
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
   ): Promise<Result<ExecCommandResult>> {
-    const storeDirValidation = validatePath(this.storeDirectory);
+    const storeDirValidation = await validatePath(this.storeDirectory);
     if (storeDirValidation.isError()) {
       return ErrFromText(
         `Invalid store directory: ${storeDirValidation.error.message}`
@@ -97,7 +97,7 @@ class PassService {
 
     const validatedArgs: Stringifiable[] = [];
     for (const arg of args) {
-      const argValidation = validatePath(arg);
+      const argValidation = await validatePath(arg);
       if (argValidation.isError()) {
         return ErrFromText(`Invalid argument: ${argValidation.error.message}`);
       }
