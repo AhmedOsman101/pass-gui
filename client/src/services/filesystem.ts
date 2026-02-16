@@ -1,29 +1,49 @@
 import { filesystem } from "@neutralinojs/lib";
-import { Err, ErrFromUnknown } from "lib-result";
-import { NEU_ERROR_CODES, type NeuErrorCode } from "@/lib/constants";
-import { DirectoryCreationError } from "@/lib/errors";
+import { Err, ErrFromUnknown, Ok, type Result, wrapAsync } from "lib-result";
+import {
+  DirectoryCreationError,
+  NEU_ERROR_CODES,
+  NEU_ERROR_CODES_MAP,
+  type NeuErrorCode,
+} from "@/lib/errors";
+import type { NeuErrorObj } from "@/types";
 
-async function mkdir(path: string) {
-  try {
-    await filesystem.createDirectory(path);
-  } catch (e) {
-    // biome-ignore lint/suspicious/noExplicitAny: Error types are unknown
-    const error: any = e;
-    if (error?.code === NEU_ERROR_CODES.NE_FS_DIRCRER) {
-      return Err(
-        new DirectoryCreationError(
-          NEU_ERROR_CODES[error.code as NeuErrorCode],
-          error?.code,
-          path,
-          error?.message
-        )
-      );
+class fs {
+  static async mkdir(
+    path: string
+  ): Promise<Result<boolean, DirectoryCreationError | Error>> {
+    try {
+      await filesystem.createDirectory(path);
+      return Ok(true);
+    } catch (e) {
+      const err = e as NeuErrorObj;
+      if (err?.code === NEU_ERROR_CODES_MAP.DirectoryCreationFailed) {
+        const errorCode = err.code as NeuErrorCode;
+        return Err(
+          new DirectoryCreationError(
+            NEU_ERROR_CODES[errorCode],
+            errorCode,
+            path,
+            err.message
+          )
+        );
+      }
+
+      return ErrFromUnknown(e);
     }
+  }
 
-    return ErrFromUnknown(e);
+  static async exists(path: string): Promise<Result<boolean>> {
+    const res = await wrapAsync(async () => await filesystem.getStats(path));
+    if (res.isOk()) return Ok(res.ok.isFile);
+    return Err(res.error);
+  }
+
+  static async isDirectory(path: string) {
+    const res = await wrapAsync(async () => await filesystem.getStats(path));
+    if (res.isOk()) return res.ok.isDirectory;
+    return Err(res.error);
   }
 }
-
-const fs = { mkdir };
 
 export { fs };
