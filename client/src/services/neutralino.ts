@@ -14,6 +14,7 @@ import { fs } from "./filesystem";
 const ALLOWED_COMMANDS: AllowedCommand[] = [
   "pass",
   "gpg",
+  "gpg2",
   "type",
   "ls",
   "where.exe",
@@ -213,4 +214,6 @@ class NeutralinoService {
 }
 
 const neu = new NeutralinoService();
-export { neu, NeutralinoService, ALLOWED_COMMANDS };
+const neuInitialized = neu.init();
+
+export { neu, neuInitialized, NeutralinoService, ALLOWED_COMMANDS };

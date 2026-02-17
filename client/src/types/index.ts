@@ -25,6 +25,7 @@ type PassBinaryInfo = {
 type AllowedCommand =
   | "pass"
   | "gpg"
+  | "gpg2"
   | "type"
   | "ls"
   | "where.exe"

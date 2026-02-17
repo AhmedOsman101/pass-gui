@@ -116,7 +116,7 @@
         "useForOf": "info",
         "useFragmentSyntax": "warn",
         "useNamingConvention": {
-          "level": "info",
+          "level": "off",
           "options": {
             "strictCase": false,
             "requireAscii": true,
