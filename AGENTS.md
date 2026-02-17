@@ -32,10 +32,15 @@ pnpm dist               # Release build
 
 ```bash
 pnpm lint              # Biome check
-pnpm format            # Biome auto-fix
-pnpm format:unsafe     # Unsafe auto-fix
-pnpm test:unit         # Run Vitest
-pnpm test:unit path/to/file.test.ts  # Single test
+pnpm format            # Biome auto-fix (safe only)
+pnpm format:unsafe     # Biome auto-fix (including unsafe)
+```
+
+### Typecheck
+
+```bash
+pnpm typecheck           # Root + client type checking
+./pnpm-client typecheck  # Client only
 ```
 
 ### File Operations (for you, the agent to use not for the developer)
@@ -74,7 +79,18 @@ eza -T --all --ignore-glob="node_modules|.tmp|dist|build|.husky|.git|bin" # Tree
 ### Formatting (Biome)
 
 - 2 spaces indentation, 80 char width, LF only, double quotes for JSX/HTML
-- ES5 trailing commas, shorthand where possible
+- ES5 trailing commas, semicolons always, arrow parentheses as needed, shorthand where possible
+
+### Key Lint Rules
+
+- `noVar`: on (use `let`/`const` only, never `var`)
+- `useImportType`: error (explicit type imports required)
+- `useTemplate`: warn (use template literals)
+- `noExplicitAny`: info (avoid `any`, use `unknown` if needed)
+- `noImportCycles`: error (no cyclic imports)
+- `useThrowOnlyError`: on (only throw Error objects)
+- `noUnusedVariables`: warn
+- `noUnusedImports`: warn (auto-fixable)
 
 ## Error Handling
 
@@ -82,17 +98,19 @@ eza -T --all --ignore-glob="node_modules|.tmp|dist|build|.husky|.git|bin" # Tree
 
 ```typescript
 import { Ok, ErrFromObject, ErrFromUnknown } from "lib-result";
-import type { PassError } from "@/types/error";
+import { PassError } from "@/lib/errors";
 async function listPasswords(): Promise<Result<PasswordEntry[], PassError>> {
   try {
     const output = await neutralino.execCommand("pass", ["ls"]);
     if (output.exitCode !== 0) {
-      return ErrFromObject({
-        message: "Command failed",
-        type: "CommandFailed",
-        command: "pass ls",
-        exitCode: output.exitCode,
-      });
+      return Err(
+        new PassError({
+          message: "Command failed",
+          type: "CommandFailed",
+          command: "pass ls",
+          exitCode: output.exitCode,
+        })
+      );
     }
     return Ok(parsePasswordList(output.stdout));
   } catch (error) {
@@ -101,8 +119,8 @@ async function listPasswords(): Promise<Result<PasswordEntry[], PassError>> {
 }
 ```
 
-Error variants: `CommandFailed`, `ParsingError`, `GPGError`, `NotFound`, `ValidationError`
-Never throw: Use `ErrFromObject()` or `Err()` instead of throw for expected failures
+Error variants: Defined at `@/lib/errors.ts`
+Never throw: Use `lib-result` wrapper methods like `wrap`, `wrapAsync`, `wrapThrowable` and `wrapAsyncThrowable` instead of throw for expected failures.
 
 ## Architecture
 
@@ -121,7 +139,6 @@ Lazy loading for pages: `component: () => import('@/views/HomeView.vue')`
 ### NeutralinoJS
 
 Already initialized in `main.ts` (do NOT re-initialize)
-Allowed APIs: `os.execCommand`, `clipboard.*`, `storage.*`, `filesystem.*`
 
 ## Password Stores
 
@@ -131,27 +148,7 @@ Allowed APIs: `os.execCommand`, `clipboard.*`, `storage.*`, `filesystem.*`
 2. `$HOME/.password-store` (default fallback)
 3. Prompt the user to create a store if none of them were found.
 
-**DO NOT**: Search arbitrary paths, validate by checking for `.gpg-id` file
-
-## Testing
-
-**Unit tests**: `client/src/**/*.test.ts` or `*.spec.ts`
-
-```typescript
-import { describe, it, expect, beforeEach } from "vitest";
-import { setActivePinia, createPinia } from "pinia";
-
-describe("PassService", () => {
-  beforeEach(() => setActivePinia(createPinia()));
-  it("should list passwords", async () => {
-    const service = new PassService();
-    const result = await service.listPasswords();
-    expect(result.isOk()).toBe(true);
-  });
-});
-```
-
-Mock services, not UI components. Aim for >80% coverage on services and stores.
+**DO NOT** Search arbitrary paths, validate by checking for `.gpg-id` file
 
 ## Security
 
@@ -162,19 +159,14 @@ Mock services, not UI components. Aim for >80% coverage on services and stores.
 ## Before Changes
 
 1. Run `pnpm typecheck` - must pass
-2. Run `pnpm lint` - should have no errors
-3. Run `pnpm test:unit` - should all pass
-4. Check existing patterns for style consistency
-5. Review `roadmap/phased-development-roadmap.md` for phase status
+2. Run `pnpm lint` - should have no errors or warnings
+3. Check existing patterns for style consistency
+4. Review `roadmap/phased-development-roadmap.md` for phase status
 
 ## Summary Checklist
 
 - [ ] Use `pnpm typecheck` before committing
 - [ ] Use `pnpm lint` to ensure code quality
-- [ ] Use `pnpm test:unit` to verify tests
-- [ ] Use `fd` instead of `ls` for file checks
-- [ ] Use `-L` flag on `fd` when following symlinks
-- [ ] Use `eza -T --all --ignore-glob="..."` for directory listings
 - [ ] Return `Result<T, E>` from all operations that may error
 - [ ] Use TypeScript types, avoid `any`
 - [ ] Follow Biome formatting (80 char width, 2 space indent)
@@ -186,4 +178,4 @@ Mock services, not UI components. Aim for >80% coverage on services and stores.
 
 ---
 
-**Last Updated**: January 12, 2026
+**Last Updated**: February 17, 2026

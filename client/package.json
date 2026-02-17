@@ -10,12 +10,8 @@
     "dev": "vite",
     "build": "run-p typecheck \"build-only {@}\" --",
     "preview": "vite preview",
-    "test:unit": "vitest",
     "build-only": "vite build",
     "typecheck": "vue-tsc --build"
   },
-  "dependencies": {
-    "@vueuse/core": "^14.2.1",
-    "reka-ui": "^2.8.0"
-  }
+  "dependencies": {}
 }
