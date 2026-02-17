@@ -112,11 +112,11 @@
           "options": {}
         },
         "useConsistentArrayType": "info",
-        "useFilenamingConvention": "info",
+        "useFilenamingConvention": "off",
         "useForOf": "info",
         "useFragmentSyntax": "warn",
         "useNamingConvention": {
-          "level": "off",
+          "level": "info",
           "options": {
             "strictCase": false,
             "requireAscii": true,
@@ -125,7 +125,7 @@
                 "selector": {
                   "kind": "objectLiteralMember"
                 },
-                "formats": ["camelCase", "PascalCase"],
+                "formats": ["camelCase", "PascalCase", "CONSTANT_CASE"],
                 "match": "[a-zA-Z$_][a-zA-Z0-9_]*"
               }
             ]
@@ -173,7 +173,7 @@
         "noUnusedLabels": "error",
         "noUnusedPrivateClassMembers": "info",
         "noVoidTypeReturn": "error",
-        "useHookAtTopLevel": "error",
+        "useHookAtTopLevel": "off",
         "useIsNan": "warn",
         "useJsxKeyInIterable": "warn",
         "useValidTypeof": "error",

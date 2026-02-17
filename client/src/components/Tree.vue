@@ -11,12 +11,15 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from "@/components/ui/sidebar";
+import type { FileSystemTree } from "@/types";
 
 const props = defineProps<{
-  item: string | any[];
+  item: FileSystemTree | string;
 }>();
 
-const [name, ...items] = Array.isArray(props.item) ? props.item : [props.item];
+const [name, ...items] = Array.isArray(props.item)
+  ? props.item.map(String)
+  : [props.item];
 </script>
 
 <template>

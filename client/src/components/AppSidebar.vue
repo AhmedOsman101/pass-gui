@@ -14,11 +14,15 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import type { FileSystemTree } from "@/types";
 
 const props = defineProps<SidebarProps>();
 
 // This is sample data.
-const data = {
+const data: {
+  changes: { file: string; state: string }[];
+  tree: FileSystemTree;
+} = {
   changes: [
     {
       file: "README.md",

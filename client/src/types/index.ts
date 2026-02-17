@@ -2,6 +2,8 @@ import type { NeuErrorCode } from "@/lib/errors";
 
 type Stringifiable = string | number | boolean | bigint;
 
+type FileSystemTree = Array<string | FileSystemTree>;
+
 type NeuErrorObj = {
   code: NeuErrorCode;
   message: string;
@@ -37,4 +39,5 @@ export type {
   Version,
   PassBinaryInfo,
   AllowedCommand,
+  FileSystemTree,
 };
