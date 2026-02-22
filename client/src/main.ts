@@ -6,6 +6,7 @@ import { neuInitialized } from "@/services/neutralino";
 import { passInitialized } from "@/services/pass";
 import App from "./App.vue";
 import router from "./router";
+import { gpgInitialized } from "./services/gpg";
 
 const app = createApp(App);
 
@@ -18,3 +19,4 @@ app.mount("#app");
 Neutralino.init();
 await neuInitialized;
 await passInitialized;
+await gpgInitialized;

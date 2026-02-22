@@ -22,6 +22,21 @@ type PassBinaryInfo = {
   isSystemBinary: boolean;
 };
 
+type GpgBinaryInfo = {
+  path: string;
+  command: string;
+};
+
+type SecretKey = {
+  keyId: string;
+  fingerprint?: string;
+  userId: string;
+  userIds: string[];
+  algorithm: string;
+  creationDate: string | null;
+  expirationDate: string | null;
+};
+
 type AllowedCommand =
   | "pass"
   | "gpg"
@@ -41,4 +56,6 @@ export type {
   PassBinaryInfo,
   AllowedCommand,
   FileSystemTree,
+  GpgBinaryInfo,
+  SecretKey,
 };
