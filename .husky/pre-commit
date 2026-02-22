@@ -2,7 +2,8 @@
 
 yesNo() {
   local answer prompt="$1"
-  read -rp "${prompt} [Y/n] " answer
+  printf '%b' "${prompt} [Y/n] "
+  read -r answer </dev/tty
 
   [[ ! "${answer}" =~ ^[nN]$ ]]
 }
@@ -25,24 +26,25 @@ mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR)
 tmpDir="$(mktemp -d)"
 trap 'rm -rf $tmpDir' EXIT
 
-# Save staged content as patches for each file
+# Save staged diffs (working tree vs HEAD) for each file
 for file in "${files[@]}"; do
   if [[ -f "${file}" ]]; then
-    git show ":0:${file}" >"${tmpDir}/${file}.staged" 2>/dev/null
+    git diff -- "${file}" >"${tmpDir}/${file//\//_}.diff"
   fi
 done
 
 # --- Formats only the staged files --- #
 unset BIOME_BINARY &>/dev/null
 unset BIOME_CONFIG_PATH &>/dev/null
-pnpm exec biome check --fix --no-errors-on-unmatched --staged "${gitRoot}"
+pnpm exec biome check --fix --no-errors-on-unmatched --staged --reporter=summary "${gitRoot}"
 
-# Compare staged content with formatted content to find changed files
+# Compare old diffs with new diffs to find changed files
 formatted_files=()
 for file in "${files[@]}"; do
-  stagedFile="${tmpDir}/${file}.staged"
-  if [[ -f "${stagedFile}" && -f "${file}" ]]; then
-    if ! diff -q "${stagedFile}" "${file}" &>/dev/null; then
+  diffFile="${tmpDir}/${file//\//_}.diff"
+  if [[ -f "${diffFile}" ]]; then
+    git diff -- "${file}" > "${diffFile}.new"
+    if ! diff "${diffFile}" "${diffFile}.new" &>/dev/null; then
       formatted_files+=("${file}")
     fi
   fi
@@ -63,5 +65,3 @@ printf "\e[34mDoing type checks...\e[0m\n"
 if ! pnpm --filter=client typecheck; then
   yesNo "Typechecking failed.\nDo you want to proceed with the commit?" || abort
 fi
-
-exit 0
