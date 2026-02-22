@@ -7,10 +7,10 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-function compareVersions(a: Version, b: Version): number {
-  if (a.major !== b.major) return a.major - b.major;
-  if (a.minor !== b.minor) return a.minor - b.minor;
-  return a.patch - b.patch;
+function compareVersions(current: Version, target: Version): number {
+  if (current.major !== target.major) return current.major - target.major;
+  if (current.minor !== target.minor) return current.minor - target.minor;
+  return current.patch - target.patch;
 }
 
 export { cn, compareVersions };
