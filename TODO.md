@@ -8,12 +8,13 @@
 - [x] Run `pass --version`
 - [x] Enforce minimum supported version
 - [x] Detect if binary is alias/wrapper and log real path
+- [ ] Provide onboarding flow if `pass` doesn't exist
 
 ### 1.2 Validate GPG Backend
 
-- [ ] Resolve `gpg` binary
-- [ ] Run `gpg --version`
-- [ ] Run `gpg --list-secret-keys`
+- [x] Resolve `gpg` binary
+- [x] Run `gpg --version`
+- [x] Run `gpg --list-secret-keys`
 - [ ] Ensure at least one secret key exists
 - [ ] Detect and support custom `GNUPGHOME`
 - [ ] Handle Windows-specific GPG installations
@@ -146,3 +147,11 @@ This is missing entirely from your list and it matters.
 - [ ] User-friendly error mapping
 - [ ] Developer debug mode
 - [ ] Logging system (without leaking secrets)
+
+## 12. Configuration
+
+- [ ] Design configuration file format (JSON/TOML/YAML)
+- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
+- [ ] Implement config file read/write
+- [ ] Migrate runtime preferences to config file
+- [ ] Store custom GNUPGHOME per password store
