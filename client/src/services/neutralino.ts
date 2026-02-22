@@ -23,12 +23,21 @@ const ALLOWED_COMMANDS: AllowedCommand[] = [
   "file",
 ];
 
+/**
+ * Service providing NeutralinoJS platform abstraction.
+ * Handles command execution, environment variables, binary resolution,
+ * and cross-platform compatibility (Linux, macOS, Windows).
+ */
 class NeutralinoService {
   public OS: OperatingSystem = window.NL_OS;
   public HOME_DIR = "";
 
   private initialized = false;
 
+  /**
+   * Initializes the service by resolving the home directory.
+   * Safe to call multiple times.
+   */
   async init(): Promise<void> {
     if (this.initialized) return;
 
@@ -36,10 +45,18 @@ class NeutralinoService {
     this.initialized = true;
   }
 
+  /**
+   * Returns the shell type for the current OS ("posix" or "windows").
+   */
   private getShellOsType(): ShellOsType {
     return this.OS === "Windows" ? "windows" : "posix";
   }
 
+  /**
+   * Executes a shell command with properly quoted arguments.
+   * ANSI escape codes are stripped from output.
+   * Throws on non-zero exit codes (wrapped in Result).
+   */
   async execCmd(
     command: string,
     args?: Stringifiable[],
@@ -71,6 +88,10 @@ class NeutralinoService {
     return await wrappedExec(command, args, options);
   }
 
+  /**
+   * Executes an allowed command with argument validation.
+   * Use this for known-safe commands like pass, gpg, etc.
+   */
   async safeExec(
     command: AllowedCommand,
     args: Stringifiable[],
@@ -79,12 +100,18 @@ class NeutralinoService {
     return await this.execCmd(command, args, options);
   }
 
+  /**
+   * Gets an environment variable value, returning a default if not set or empty.
+   */
   async getEnv(key: string, defaultValue: Stringifiable = ""): Promise<string> {
     const value = await os.getEnv(key);
-    // If the value is empty, use the default
     return value === "" ? String(defaultValue) : value;
   }
 
+  /**
+   * Resolves the user's home directory based on the current OS.
+   * Uses $HOME on Unix and $USERPROFILE on Windows.
+   */
   async getHomeDir(): Promise<string> {
     switch (this.OS) {
       case "Linux":
@@ -100,6 +127,10 @@ class NeutralinoService {
     }
   }
 
+  /**
+   * Checks if a command/program exists in the system PATH.
+   * Uses `type` on Unix and `where.exe` on Windows.
+   */
   async commandExists(program: string): Promise<Result<boolean>> {
     if (this.OS === "Windows") {
       const whereResult = await this.execCmd("where.exe", [program]);
@@ -116,6 +147,10 @@ class NeutralinoService {
     return Ok(false);
   }
 
+  /**
+   * Resolves the full path to a binary, following symlinks.
+   * Also detects if the binary is a script (has shebang).
+   */
   async resolveBinaryPath(program: string): Promise<Result<string>> {
     const existsResult = await this.commandExists(program);
     if (existsResult.isError() || !existsResult.ok) {
@@ -194,6 +229,9 @@ class NeutralinoService {
     }
   }
 
+  /**
+   * Detects if a file is a script by checking for shebang (#!) prefix.
+   */
   private async detectShebang(path: string): Promise<Result<string | null>> {
     const readFileResult = await fs.readFile(path, { pos: 0, size: 2 });
 

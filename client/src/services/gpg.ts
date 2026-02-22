@@ -14,15 +14,26 @@ import type {
 } from "@/types";
 import { neu } from "./neutralino";
 
+/**
+ * Service for interacting with GPG (GNU Privacy Guard) for cryptographic operations.
+ * Handles binary detection, version parsing, secret key listing, and command execution.
+ */
 class GpgService {
   public command: AllowedCommand | "" = "";
   public version: Version = { major: 0, minor: 0, patch: 0 };
   public homeDir = "";
 
+  /**
+   * Returns the resolved GPG command, defaulting to "gpg" if not yet resolved.
+   */
   private getCommand(): AllowedCommand {
     return this.command || "gpg";
   }
 
+  /**
+   * Initializes the GPG service by detecting the binary and parsing version info.
+   * Respects GNUPGHOME environment variable if set.
+   */
   async init(): Promise<Result<boolean>> {
     const existsResult = await this.gpgExists();
 
@@ -35,6 +46,11 @@ class GpgService {
     return Ok(true);
   }
 
+  /**
+   * Checks if GPG is available on the system.
+   * Tries gpg2 first (for compatibility), then falls back to gpg.
+   * Parses version info on success.
+   */
   async gpgExists(): Promise<Result<boolean>> {
     const gpg2Exists = await neu.commandExists("gpg2");
     if (!gpg2Exists.isError() && gpg2Exists.ok) {
@@ -53,6 +69,9 @@ class GpgService {
     return Ok(false);
   }
 
+  /**
+   * Parses GPG version and home directory from `gpg --version` output.
+   */
   private async parseVersion(): Promise<Result<boolean>> {
     const cmdResult = await neu.safeExec(this.getCommand(), ["--version"]);
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
@@ -79,10 +98,18 @@ class GpgService {
     return Ok(true);
   }
 
+  /**
+   * Checks if a version meets the minimum requirement.
+   * Currently no minimum version is enforced (GPG has no minimum requirement from pass).
+   */
   checkVersion(version: Version): boolean {
     return compareVersions(version, { major: 0, minor: 0, patch: 0 }) >= 0;
   }
 
+  /**
+   * Validates the GPG binary by resolving its full path.
+   * Returns binary info including path and command name.
+   */
   async validateGpgBinary(): Promise<Result<GpgBinaryInfo>> {
     if (!this.getCommand()) return ErrFromText("GPG binary not resolved");
 
@@ -101,6 +128,10 @@ class GpgService {
     } as GpgBinaryInfo);
   }
 
+  /**
+   * Lists all secret keys available in the GPG keyring.
+   * Uses --with-colons and --fixed-list-mode for machine-readable output.
+   */
   async listSecretKeys(): Promise<Result<SecretKey[]>> {
     if (!this.getCommand()) {
       return ErrFromText("GPG binary not resolved");
@@ -122,6 +153,10 @@ class GpgService {
     return Ok(keys);
   }
 
+  /**
+   * Parses the colon-delimited output from `gpg --list-secret-keys`.
+   * Extracts key ID, fingerprint, user IDs, algorithm, and dates.
+   */
   private parseSecretKeys(output: string): SecretKey[] {
     const keys: SecretKey[] = [];
     const lines = output.split("\n");
@@ -164,6 +199,10 @@ class GpgService {
     return keys;
   }
 
+  /**
+   * Converts a Unix timestamp string to ISO date format (YYYY-MM-DD).
+   * Returns null for invalid or zero timestamps.
+   */
   private parseTimestamp(timestamp: string): string | null {
     const ts = Number.parseInt(timestamp, 10);
     if (Number.isNaN(ts) || ts === 0) return null;
@@ -171,6 +210,10 @@ class GpgService {
     return new Date(ts * 1000).toISOString().split("T")[0] ?? null;
   }
 
+  /**
+   * Executes a GPG command with the configured GNUPGHOME environment.
+   * Use this for custom GPG operations not covered by other methods.
+   */
   async exec(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions

@@ -92,6 +92,10 @@ eza -T --all --ignore-glob="node_modules|.tmp|dist|build|.husky|.git|bin" # Tree
 - `noUnusedVariables`: warn
 - `noUnusedImports`: warn (auto-fixable)
 
+### LSP Notes
+
+- Biome LSP may panic on sudden file changes. If it emits false-positive errors, restart the LSP.
+
 ## Error Handling
 
 **Mandatory**: All operations that can fail must return `Result<T, E>`

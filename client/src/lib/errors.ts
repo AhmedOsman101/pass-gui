@@ -1,3 +1,7 @@
+/**
+ * Mapping of NeutralinoJS error codes to human-readable error types.
+ * Used for structured error handling across the application.
+ */
 const NEU_ERROR_CODES = Object.freeze({
   NE_CL_NSEROFF: "NeuServerNotReachable",
   NE_EX_EXTNOTC: "ExtensionNotConnected",
@@ -39,12 +43,19 @@ const NEU_ERROR_CODES = Object.freeze({
 type NeuErrorCode = keyof typeof NEU_ERROR_CODES;
 type NeuErrorMap = (typeof NEU_ERROR_CODES)[NeuErrorCode];
 
+/**
+ * Reverse mapping from error type strings to error codes.
+ */
 const NEU_ERROR_CODES_MAP = Object.freeze(
   Object.fromEntries(
     Object.entries(NEU_ERROR_CODES).map(([k, v]) => [v, k])
   ) as { [K in NeuErrorCode as (typeof NEU_ERROR_CODES)[K]]: K }
 );
 
+/**
+ * Base error class for NeutralinoJS-related errors.
+ * Extends the native Error with type and code information.
+ */
 class NeuError extends Error {
   public type: NeuErrorMap;
   public code: NeuErrorCode;
@@ -61,6 +72,10 @@ class NeuError extends Error {
   }
 }
 
+/**
+ * Specialized error for directory creation failures.
+ * Includes the path that failed to be created.
+ */
 class DirectoryCreationError extends NeuError {
   public path: string;
 

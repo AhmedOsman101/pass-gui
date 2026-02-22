@@ -11,11 +11,20 @@ import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
 
+/**
+ * Service for interacting with the `pass` password manager.
+ * Handles binary detection, version validation, and command execution
+ * with proper environment scoping for the password store.
+ */
 class PassService {
   public storeDirectory = "";
   public isInitialized = false;
   public version: Version = { major: 0, minor: 0, patch: 0 };
 
+  /**
+   * Initializes the pass service by resolving the store directory
+   * and checking if it's properly initialized with a .gpg-id file.
+   */
   async init(): Promise<Result<boolean>> {
     this.storeDirectory = await neu.getEnv(
       "PASSWORD_STORE_DIR",
@@ -33,15 +42,25 @@ class PassService {
     return Ok(true);
   }
 
+  /**
+   * Checks if a password store is properly initialized by looking for .gpg-id.
+   */
   private async checkInitialized(storePath: string): Promise<Result<boolean>> {
     const gpgIdPath = `${storePath}/.gpg-id`;
     return await fs.exists(gpgIdPath);
   }
 
+  /**
+   * Checks if a version meets the minimum supported version requirement.
+   */
   checkVersion(version: Version): boolean {
     return compareVersions(version, PASS_MIN_VERSION) >= 0;
   }
 
+  /**
+   * Validates the pass binary by resolving its path and checking
+   * if it's a system binary or a custom wrapper/script.
+   */
   async validatePassBinary(): Promise<Result<PassBinaryInfo>> {
     const resolveResult = await neu.resolveBinaryPath("pass");
     if (resolveResult.isError()) {
@@ -62,6 +81,10 @@ class PassService {
     return Ok({ path: resolvedPath, isSystemBinary });
   }
 
+  /**
+   * Checks if pass is available on the system and meets version requirements.
+   * Parses version from `pass --version` output.
+   */
   async passExists(): Promise<Result<boolean>> {
     const existsResult = await neu.commandExists("pass");
     if (existsResult.isError() || !existsResult.ok) return Ok(false);
@@ -84,6 +107,10 @@ class PassService {
     return Ok(this.checkVersion(this.version));
   }
 
+  /**
+   * Executes a pass command with PASSWORD_STORE_DIR environment variable set.
+   * All arguments are validated against path traversal attacks before execution.
+   */
   async exec(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions

@@ -12,7 +12,15 @@ import {
 } from "@/lib/errors";
 import type { NeuErrorObj } from "@/types";
 
+/**
+ * Filesystem abstraction layer wrapping NeutralinoJS filesystem operations.
+ * All methods return Result types for safe error handling.
+ */
 class fs {
+  /**
+   * Creates a directory at the specified path.
+   * Returns a DirectoryCreationError on failure for detailed error context.
+   */
   static async mkdir(
     path: string
   ): Promise<Result<boolean, DirectoryCreationError | Error>> {
@@ -37,28 +45,44 @@ class fs {
     }
   }
 
+  /**
+   * Checks if a file or directory exists at the given path.
+   */
   static async exists(path: string): Promise<Result<boolean>> {
     const res = await fs.getStats(path);
     if (res.isOk()) return Ok(res.ok.isFile || res.ok.isDirectory);
     return Err(res.error);
   }
 
+  /**
+   * Checks if the path points to a regular file.
+   */
   static async isFile(path: string): Promise<Result<boolean>> {
     const res = await fs.getStats(path);
     if (res.isOk()) return Ok(res.ok.isFile);
     return Err(res.error);
   }
 
+  /**
+   * Checks if the path points to a directory.
+   */
   static async isDirectory(path: string): Promise<Result<boolean>> {
     const res = await fs.getStats(path);
     if (res.isOk()) return Ok(res.ok.isDirectory);
     return Err(res.error);
   }
 
+  /**
+   * Gets file/directory statistics (size, dates, type, etc.).
+   */
   static async getStats(path: string): Promise<Result<Stats>> {
     return await wrapAsync(async () => await filesystem.getStats(path));
   }
 
+  /**
+   * Reads file contents with optional position and size parameters.
+   * Returns string content (text mode).
+   */
   static async readFile(
     path: string,
     options: FileReaderOptions
@@ -68,6 +92,9 @@ class fs {
     );
   }
 
+  /**
+   * Normalizes a path, resolving . and .. segments and symlinks.
+   */
   static async getNormalizedPath(path: string): Promise<Result<string>> {
     return await wrapAsync(
       async () => await filesystem.getNormalizedPath(path)

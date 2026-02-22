@@ -4,6 +4,10 @@ import type { Stringifiable } from "@/types";
 
 type OsType = "posix" | "windows";
 
+/**
+ * Quotes a string for safe use in POSIX shell commands.
+ * Uses single quotes with proper escaping for embedded single quotes.
+ */
 function quoteForPosix(arg: string): string {
   if (arg.includes("'")) {
     return `'${arg.replace(/'/g, "'\\''")}'`;
@@ -11,6 +15,11 @@ function quoteForPosix(arg: string): string {
   return `'${arg}'`;
 }
 
+/**
+ * Quotes a string for safe use in Windows CMD/PowerShell.
+ * Handles backslashes, double quotes, and rejects newlines.
+ * Returns empty string for arguments containing carriage returns or newlines.
+ */
 function quoteForWindows(arg: string): string {
   let result = "";
   let prevChar = "";
@@ -40,6 +49,10 @@ function quoteForWindows(arg: string): string {
   return `"${result}"`;
 }
 
+/**
+ * Builds a shell command string with properly quoted arguments.
+ * Uses POSIX quoting for Linux/macOS and Windows quoting for Windows.
+ */
 function buildShellCommand(
   cmd: string,
   args: Stringifiable[],
@@ -53,6 +66,10 @@ function buildShellCommand(
   return quotedArgs.length > 0 ? `${cmd} ${quotedArgs.join(" ")}` : cmd;
 }
 
+/**
+ * Validates that an argument doesn't contain dangerous characters.
+ * Rejects null bytes, carriage returns, and newlines.
+ */
 function validateArgument(arg: string): Result<string> {
   if (arg.includes("\0") || arg.includes("\n") || arg.includes("\r")) {
     return ErrFromText(
@@ -63,6 +80,10 @@ function validateArgument(arg: string): Result<string> {
   return Ok(arg);
 }
 
+/**
+ * Checks if a path contains directory traversal patterns (../).
+ * These could be used to escape the password store directory.
+ */
 async function checkSneakyPath(path: string): Promise<boolean> {
   const normalizedResult = await fs.getNormalizedPath(path);
   if (normalizedResult.isError()) {
@@ -81,6 +102,10 @@ async function checkSneakyPath(path: string): Promise<boolean> {
   );
 }
 
+/**
+ * Validates a path for security before use in commands.
+ * Checks for invalid characters and directory traversal attacks.
+ */
 async function validatePath(path: Stringifiable): Promise<Result<string>> {
   const strPath = String(path);
 
