@@ -152,7 +152,7 @@ This is missing entirely from your list and it matters.
 ## 12. Configuration
 
 - [x] Design configuration file format (TOML)
-- [ ] Implement config file read/write
+- [x] Implement config file read/write
 - [ ] Migrate runtime preferences to config file
-- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
-- [ ] Store custom GNUPGHOME per password store
+- [x] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
+- [x] Store custom GNUPGHOME per password store

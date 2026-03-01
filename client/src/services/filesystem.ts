@@ -1,6 +1,7 @@
 import {
   type FileReaderOptions,
   filesystem,
+  type PathParts,
   type Stats,
 } from "@neutralinojs/lib";
 import { Err, ErrFromUnknown, Ok, type Result, wrapAsync } from "lib-result";
@@ -109,6 +110,14 @@ class fs {
     return await wrapAsync(
       async () => await filesystem.getJoinedPath(...paths)
     );
+  }
+
+  /**
+   * Parses a given path and returns its parts.
+   * Includes root, relative path, filename, extension, etc.
+   */
+  static async getPathParts(path: string): Promise<Result<PathParts>> {
+    return await wrapAsync(async () => await filesystem.getPathParts(path));
   }
 
   /**

@@ -1,5 +1,5 @@
 import * as TOML from "@ltd/j-toml";
-import { Err, type Result, wrapAsync } from "lib-result";
+import { Err, Ok, type Result, wrapAsync } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants";
 import {
   ConfigParseError,
@@ -9,11 +9,7 @@ import {
 import { expandTilde } from "@/lib/utils";
 import type {
   AppConfig,
-  ClipboardConfig,
-  ConfigKey,
   ConfigSection,
-  CoreConfig,
-  GenerateConfig,
   PreferencesConfig,
   StoreConfig,
 } from "@/types";
@@ -113,8 +109,10 @@ class ConfigService {
     const configPath = await ConfigService.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
-    // Ensure the directory exists
-    const dirPath = configPath.ok.substring(0, configPath.ok.lastIndexOf("/"));
+    // Ensure the directory exists using getPathParts
+    const parts = await fs.getPathParts(configPath.ok);
+    if (parts.isError()) return Err(parts.error);
+    const dirPath = parts.ok.parentPath;
     const dirExists = await fs.exists(dirPath);
     if (dirExists.isError()) return Err(dirExists.error);
 
@@ -179,6 +177,57 @@ class ConfigService {
   }
 
   /**
+   * Generic typed getter for configuration values.
+   * Provides type-safe access to config sections and keys.
+   *
+   * @param section - The config section to query (core, preferences, generate, clipboard)
+   * @param key - The specific key within the section
+   * @returns Result containing the config value or an error
+   */
+  static async getValue<S extends ConfigSection, K extends keyof AppConfig[S]>(
+    section: S,
+    key: K
+  ): Promise<Result<AppConfig[S][K]>> {
+    const configResult = await ConfigService.getConfig();
+    if (configResult.isError()) return Err(configResult.error);
+
+    const config = configResult.ok;
+    const value = config[section]?.[key];
+    const defaultValue = DEFAULT_CONFIG[section]?.[key];
+
+    return Ok((value !== undefined ? value : defaultValue) as AppConfig[S][K]);
+  }
+
+  /**
+   * Generic typed setter for configuration values.
+   * Provides type-safe updates to config sections and keys.
+   *
+   * @param section - The config section to update (core, preferences, generate, clipboard)
+   * @param key - The specific key within the section
+   * @param value - The value to set
+   * @returns Result containing void or an error
+   */
+  static async setValue<S extends ConfigSection, K extends keyof AppConfig[S]>(
+    section: S,
+    key: K,
+    value: AppConfig[S][K]
+  ): Promise<Result<void>> {
+    const configResult = await ConfigService.getConfig();
+    if (configResult.isError()) return Err(configResult.error);
+
+    const config = configResult.ok;
+    const updatedConfig: AppConfig = {
+      ...config,
+      [section]: {
+        ...config[section],
+        [key]: value,
+      },
+    };
+
+    return await ConfigService.save(updatedConfig);
+  }
+
+  /**
    * Gets the name of the active store.
    * Returns the default store name if not set.
    *
@@ -191,6 +240,35 @@ class ConfigService {
     const activeStore = config.ok.core?.default_store ?? "default";
     return Ok(activeStore);
   }
+
+  /**
+   * Sets the active store by name.
+   *
+   * @param name - The name of the store to set as active
+   * @returns Result containing void or an error
+   */
+  static async setActiveStore(name: string): Promise<Result<void>> {
+    const config = await ConfigService.getConfig();
+    if (config.isError()) return Err(config.error);
+
+    // Verify the store exists
+    if (!config.ok.stores?.[name]) {
+      return Err(
+        new ConfigValidationError("store", `Store '${name}' does not exist`)
+      );
+    }
+
+    const updatedConfig: AppConfig = {
+      ...config.ok,
+      core: {
+        ...config.ok.core,
+        default_store: name,
+      },
+    };
+
+    return await ConfigService.save(updatedConfig);
+  }
+
   /**
    * Gets configuration for a specific store.
    *
@@ -224,8 +302,96 @@ class ConfigService {
       );
     }
 
-    return Ok(expandTilde(store.ok.path, neu.HOME_DIR));
+    const homeDir = await neu.getHomeDir();
+    return Ok(expandTilde(store.ok.path, homeDir));
   }
+
+  /**
+   * Gets the GNUPGHOME path for a specific store.
+   * Expands the tilde (~) to the user's home directory if set.
+   *
+   * @param name - The name of the store
+   * @returns Result containing the expanded GNUPGHOME path or undefined if not set
+   */
+  static async getStoreGnupgHome(
+    name: string
+  ): Promise<Result<string | undefined>> {
+    const store = await ConfigService.getStore(name);
+    if (store.isError()) return Err(store.error);
+
+    if (!store.ok) {
+      return Err(
+        new ConfigValidationError("store", `Store '${name}' not found`)
+      );
+    }
+
+    if (!store.ok.gnupg_home) {
+      return Ok(undefined);
+    }
+
+    const homeDir = await neu.getHomeDir();
+    const expandedPath = expandTilde(store.ok.gnupg_home, homeDir);
+    return Ok(expandedPath);
+  }
+
+  /**
+   * Adds or updates a store configuration.
+   *
+   * @param name - The name of the store
+   * @param storeConfig - The store configuration to set
+   * @returns Result containing void or an error
+   */
+  static async setStore(
+    name: string,
+    storeConfig: StoreConfig
+  ): Promise<Result<void>> {
+    const config = await ConfigService.getConfig();
+    if (config.isError()) return Err(config.error);
+
+    const updatedConfig: AppConfig = {
+      ...config.ok,
+      stores: {
+        ...config.ok.stores,
+        [name]: storeConfig,
+      },
+    };
+
+    return await ConfigService.save(updatedConfig);
+  }
+
+  /**
+   * Removes a store configuration.
+   * Cannot remove the active store.
+   *
+   * @param name - The name of the store to remove
+   * @returns Result containing void or an error
+   */
+  static async removeStore(name: string): Promise<Result<void>> {
+    const config = await ConfigService.getConfig();
+    if (config.isError()) return Err(config.error);
+
+    const activeStore = config.ok.core?.default_store ?? "default";
+    if (name === activeStore) {
+      return Err(
+        new ConfigValidationError("store", "Cannot remove the active store")
+      );
+    }
+
+    if (!config.ok.stores?.[name]) {
+      return Ok(undefined); // Already doesn't exist
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { [name]: _, ...remainingStores } = config.ok.stores ?? {};
+
+    const updatedConfig: AppConfig = {
+      ...config.ok,
+      stores: remainingStores,
+    };
+
+    return await ConfigService.save(updatedConfig);
+  }
+
   /**
    * Gets all store names.
    *
@@ -238,6 +404,53 @@ class ConfigService {
     const storeNames = Object.keys(config.ok.stores ?? {});
     return Ok(storeNames);
   }
+
+  /**
+   * Gets user preferences.
+   *
+   * @returns Result containing PreferencesConfig or an error
+   */
+  static async getPreferences(): Promise<Result<PreferencesConfig>> {
+    const config = await ConfigService.getConfig();
+    if (config.isError()) return Err(config.error);
+
+    const preferences = config.ok.preferences;
+    return Ok(preferences ?? DEFAULT_CONFIG.preferences);
+  }
+
+  /**
+   * Updates user preferences.
+   *
+   * @param preferences - Partial preferences to update
+   * @returns Result containing void or an error
+   */
+  static async setPreferences(
+    preferences: Partial<PreferencesConfig>
+  ): Promise<Result<void>> {
+    const config = await ConfigService.getConfig();
+    if (config.isError()) return Err(config.error);
+
+    const defaultPrefs = DEFAULT_CONFIG.preferences;
+    const currentPrefs = config.ok.preferences ?? defaultPrefs;
+    const mergedPrefs: PreferencesConfig = {
+      clipboard_timeout_seconds:
+        preferences.clipboard_timeout_seconds ??
+        currentPrefs.clipboard_timeout_seconds ??
+        defaultPrefs.clipboard_timeout_seconds,
+      auto_refresh_interval_ms:
+        preferences.auto_refresh_interval_ms ??
+        currentPrefs.auto_refresh_interval_ms ??
+        defaultPrefs.auto_refresh_interval_ms,
+    };
+
+    const updatedConfig: AppConfig = {
+      ...config.ok,
+      preferences: mergedPrefs,
+    };
+
+    return await ConfigService.save(updatedConfig);
+  }
+
   /**
    * Clears the cached configuration.
    * Useful for forcing a reload from disk.
