@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@ltd/j-toml':
+        specifier: ^1.38.0
+        version: 1.38.0
       '@neutralinojs/lib':
         specifier: ^6.4.0
         version: 6.4.0
@@ -626,6 +629,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@ltd/j-toml@1.38.0':
+    resolution: {integrity: sha512-lYtBcmvHustHQtg4X7TXUu1Xa/tbLC3p2wLvgQI+fWVySguVZJF60Snxijw5EiohumxZbR10kWYFFebh1zotiw==}
 
   '@modelcontextprotocol/sdk@1.26.0':
     resolution: {integrity: sha512-Y5RmPncpiDtTXDbLKswIJzTqu2hyBKxTNsgKqKclDbhIgg1wgtf1fRuvxgTnRfcnxtvvgbIEcqUOzZrJ6iSReg==}
@@ -3332,6 +3338,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@ltd/j-toml@1.38.0': {}
 
   '@modelcontextprotocol/sdk@1.26.0(zod@3.25.76)':
     dependencies:

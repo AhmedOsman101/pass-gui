@@ -85,7 +85,7 @@ class fs {
    */
   static async readFile(
     path: string,
-    options: FileReaderOptions
+    options?: FileReaderOptions
   ): Promise<Result<string>> {
     return await wrapAsync(
       async () => await filesystem.readFile(path, options)
