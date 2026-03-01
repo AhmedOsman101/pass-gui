@@ -111,19 +111,83 @@ class NeutralinoService {
   /**
    * Resolves the user's home directory based on the current OS.
    * Uses $HOME on Unix and $USERPROFILE on Windows.
+   * Throws if the directory cannot be resolved (critical failure).
    */
   async getHomeDir(): Promise<string> {
     switch (this.OS) {
       case "Linux":
       case "Darwin":
-      case "FreeBSD":
-        return await this.getEnv("HOME");
-      case "Windows":
-        return await this.getEnv("USERPROFILE");
+      case "FreeBSD": {
+        const home = await this.getEnv("HOME");
+        if (!home) {
+          throw new Error(
+            "Unable to locate home directory. Please set the HOME environment variable."
+          );
+        }
+        return home;
+      }
+      case "Windows": {
+        const home = await this.getEnv("USERPROFILE");
+        if (!home) {
+          throw new Error(
+            "Unable to locate home directory. Please set the USERPROFILE environment variable."
+          );
+        }
+        return home;
+      }
       default:
         throw new Error(
           "Unable to locate home directory. Please set the HOME (Unix) or USERPROFILE (Windows) environment variable."
         );
+    }
+  }
+
+  /**
+   * Resolves the platform-specific configuration directory.
+   * Uses XDG_CONFIG_HOME on Linux/macOS (falling back to ~/.config),
+   * ~/Library/Application Support on macOS, and %APPDATA% on Windows.
+   * Throws if the directory cannot be resolved (critical failure).
+   */
+  async getConfigDir(): Promise<string> {
+    switch (this.OS) {
+      case "Linux":
+      case "FreeBSD": {
+        const xdg = await this.getEnv("XDG_CONFIG_HOME");
+        if (xdg !== "") return xdg;
+
+        const configPath = await fs.join(this.HOME_DIR, ".config");
+        if (configPath.isError()) {
+          throw new Error(
+            `Failed to resolve config directory: ${configPath.error.message}`
+          );
+        }
+        return configPath.ok;
+      }
+      case "Darwin": {
+        const xdg = await this.getEnv("XDG_CONFIG_HOME");
+        if (xdg !== "") return xdg;
+
+        const configPath = await fs.join(
+          this.HOME_DIR,
+          "Library",
+          "Application Support"
+        );
+        if (configPath.isError()) {
+          throw new Error(
+            `Failed to resolve config directory: ${configPath.error.message}`
+          );
+        }
+        return configPath.ok;
+      }
+      case "Windows": {
+        const appdata = await this.getEnv("APPDATA");
+        if (!appdata) {
+          throw new Error("APPDATA environment variable is not set.");
+        }
+        return appdata;
+      }
+      default:
+        throw new Error("Unable to locate config directory.");
     }
   }
 

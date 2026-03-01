@@ -100,6 +100,16 @@ class fs {
       async () => await filesystem.getNormalizedPath(path)
     );
   }
+
+  /**
+   * Joins multiple path segments into a single normalized path.
+   * Uses the OS-specific path separator.
+   */
+  static async join(...paths: string[]): Promise<Result<string>> {
+    return await wrapAsync(
+      async () => await filesystem.getJoinedPath(...paths)
+    );
+  }
 }
 
 export { fs };
