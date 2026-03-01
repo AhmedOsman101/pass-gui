@@ -150,8 +150,8 @@ This is missing entirely from your list and it matters.
 
 ## 12. Configuration
 
-- [ ] Design configuration file format (JSON/TOML/YAML)
-- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
+- [x] Design configuration file format (TOML)
 - [ ] Implement config file read/write
 - [ ] Migrate runtime preferences to config file
+- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
 - [ ] Store custom GNUPGHOME per password store
