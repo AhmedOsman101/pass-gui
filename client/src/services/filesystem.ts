@@ -110,6 +110,35 @@ class fs {
       async () => await filesystem.getJoinedPath(...paths)
     );
   }
+
+  /**
+   * Writes content to a file at the specified path.
+   * Creates the file if it doesn't exist, overwrites if it does.
+   * Returns a FileWriteError on failure.
+   */
+  static async writeFile(
+    path: string,
+    data: string
+  ): Promise<Result<boolean, Error>> {
+    try {
+      await filesystem.writeFile(path, data);
+      return Ok(true);
+    } catch (e) {
+      const err = e as NeuErrorObj;
+      if (err?.code === "NE_FS_FILWRER") {
+        const errorCode = err.code as NeuErrorCode;
+        return Err(
+          new DirectoryCreationError(
+            NEU_ERROR_CODES[errorCode],
+            errorCode,
+            path,
+            err.message
+          )
+        );
+      }
+      return ErrFromUnknown(e);
+    }
+  }
 }
 
 export { fs };
