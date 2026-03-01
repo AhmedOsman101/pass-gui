@@ -119,6 +119,7 @@ You need this even if it's not obvious yet.
 - [ ] Remove entry (`pass rm`)
 - [ ] Rename entry (`pass mv`)
 - [ ] Copy password to clipboard (securely, timed clear)
+- [ ] Generate QR code image for password (future feature - display as image in UI)
 
 ## 9. Security Hardening
 

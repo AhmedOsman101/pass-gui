@@ -22,4 +22,21 @@ function compareVersions(current: Version, target: Version): number {
   return current.patch - target.patch;
 }
 
-export { cn, compareVersions };
+/**
+ * Expands the tilde (~) character at the start of a path to the user's home directory.
+ *
+ * @param path - The file path that may start with a tilde character
+ * @param homeDir - The absolute path to the user's home directory
+ * @returns The expanded path with the tilde replaced by the home directory path,
+ *          or the original path if it doesn't start with a tilde
+ *
+ * @example
+ * expandTilde("~/documents/file.txt", "/home/user") // Returns "/home/user/documents/file.txt"
+ * expandTilde("~/", "/home/user") // Returns "/home/user/"
+ * expandTilde("/absolute/path", "/home/user") // Returns "/absolute/path"
+ */
+function expandTilde(path: string, homeDir: string): string {
+  return path.replace(/^~(?=[/\\]|$)/, homeDir);
+}
+
+export { cn, compareVersions, expandTilde };

@@ -144,51 +144,14 @@ class NeutralinoService {
 
   /**
    * Resolves the platform-specific configuration directory.
-   * Uses XDG_CONFIG_HOME on Linux/macOS (falling back to ~/.config),
-   * ~/Library/Application Support on macOS, and %APPDATA% on Windows.
-   * Throws if the directory cannot be resolved (critical failure).
+   * Uses os.getPath("config") from NeutralinoJS which handles:
+   * - Linux: XDG_CONFIG_HOME or ~/.config
+   * - macOS: ~/Library/Application Support
+   * - Windows: %APPDATA%
+   * @throws Error if the directory cannot be resolved
    */
   async getConfigDir(): Promise<string> {
-    switch (this.OS) {
-      case "Linux":
-      case "FreeBSD": {
-        const xdg = await this.getEnv("XDG_CONFIG_HOME");
-        if (xdg !== "") return xdg;
-
-        const configPath = await fs.join(this.HOME_DIR, ".config");
-        if (configPath.isError()) {
-          throw new Error(
-            `Failed to resolve config directory: ${configPath.error.message}`
-          );
-        }
-        return configPath.ok;
-      }
-      case "Darwin": {
-        const xdg = await this.getEnv("XDG_CONFIG_HOME");
-        if (xdg !== "") return xdg;
-
-        const configPath = await fs.join(
-          this.HOME_DIR,
-          "Library",
-          "Application Support"
-        );
-        if (configPath.isError()) {
-          throw new Error(
-            `Failed to resolve config directory: ${configPath.error.message}`
-          );
-        }
-        return configPath.ok;
-      }
-      case "Windows": {
-        const appdata = await this.getEnv("APPDATA");
-        if (!appdata) {
-          throw new Error("APPDATA environment variable is not set.");
-        }
-        return appdata;
-      }
-      default:
-        throw new Error("Unable to locate config directory.");
-    }
+    return await os.getPath("config");
   }
 
   /**
