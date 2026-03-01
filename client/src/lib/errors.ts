@@ -91,6 +91,85 @@ class DirectoryCreationError extends NeuError {
   }
 }
 
+/**
+ * Error types for configuration-related failures.
+ */
+const CONFIG_ERROR_CODES = Object.freeze({
+  CONFIG_NOT_FOUND: "ConfigNotFound",
+  CONFIG_PARSE_ERROR: "ConfigParseError",
+  CONFIG_WRITE_ERROR: "ConfigWriteError",
+  CONFIG_VALIDATION_ERROR: "ConfigValidationError",
+} as const);
+
+type ConfigErrorCode = keyof typeof CONFIG_ERROR_CODES;
+type ConfigErrorType = (typeof CONFIG_ERROR_CODES)[ConfigErrorCode];
+
+/**
+ * Error thrown when the configuration file cannot be found.
+ */
+class ConfigNotFoundError extends Error {
+  public code: ConfigErrorCode;
+  public type: ConfigErrorType;
+  public path: string;
+
+  constructor(path: string, message?: string) {
+    super(message ?? `Configuration file not found at: ${path}`);
+    this.code = "CONFIG_NOT_FOUND";
+    this.type = CONFIG_ERROR_CODES.CONFIG_NOT_FOUND;
+    this.path = path;
+  }
+}
+
+/**
+ * Error thrown when TOML parsing fails.
+ * Includes parse error details from @ltd/j-toml.
+ */
+class ConfigParseError extends Error {
+  public code: ConfigErrorCode;
+  public type: ConfigErrorType;
+  public parseError: Error | null;
+
+  constructor(parseError: Error, message?: string) {
+    super(message ?? `Failed to parse configuration: ${parseError.message}`);
+    this.code = "CONFIG_PARSE_ERROR";
+    this.type = CONFIG_ERROR_CODES.CONFIG_PARSE_ERROR;
+    this.parseError = parseError;
+  }
+}
+
+/**
+ * Error thrown when writing the configuration file fails.
+ */
+class ConfigWriteError extends Error {
+  public code: ConfigErrorCode;
+  public type: ConfigErrorType;
+  public path: string;
+
+  constructor(path: string, message?: string) {
+    super(message ?? `Failed to write configuration to: ${path}`);
+    this.code = "CONFIG_WRITE_ERROR";
+    this.type = CONFIG_ERROR_CODES.CONFIG_WRITE_ERROR;
+    this.path = path;
+  }
+}
+
+/**
+ * Error thrown when configuration validation fails.
+ * Used for missing required fields or invalid values.
+ */
+class ConfigValidationError extends Error {
+  public code: ConfigErrorCode;
+  public type: ConfigErrorType;
+  public field: string | null;
+
+  constructor(field: string | null, message: string) {
+    super(message);
+    this.code = "CONFIG_VALIDATION_ERROR";
+    this.type = CONFIG_ERROR_CODES.CONFIG_VALIDATION_ERROR;
+    this.field = field;
+  }
+}
+
 export {
   type NeuErrorCode,
   type NeuErrorMap,
@@ -98,4 +177,11 @@ export {
   DirectoryCreationError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
+  CONFIG_ERROR_CODES,
+  type ConfigErrorCode,
+  type ConfigErrorType,
+  ConfigNotFoundError,
+  ConfigParseError,
+  ConfigWriteError,
+  ConfigValidationError,
 };
