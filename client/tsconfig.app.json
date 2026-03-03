@@ -5,6 +5,7 @@
     "types": ["vite/client"],
     "lib": ["esnext", "DOM", "DOM.Iterable"],
 
+    "moduleResolution": "Bundler",
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -14,5 +15,16 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "vueCompilerOptions": {
+    "plugins": [
+      "vue-router/volar/sfc-route-blocks",
+      "vue-router/volar/sfc-typed-router"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "./typed-router.d.ts"
+  ]
 }
