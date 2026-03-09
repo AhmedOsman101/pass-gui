@@ -28,7 +28,7 @@
 
 - [x] Normalize path (cross-platform)
 - [ ] Support per-session override
-- [ ] Persist last selected store (app-level, not OS-level)
+- [ ] Persist last selected store (config-level, not OS-level)
 
 ## 3. Store Validation
 
@@ -104,7 +104,7 @@ You need this even if it's not obvious yet.
 
 - [x] Central wrapper for executing `pass`
 - [ ] Central wrapper for executing `gpg`
-- [x] Scoped environment injection
+- [ ] Scoped environment injection
 - [ ] Timeout handling
 - [x] Structured error parsing
 - [x] Log stdout/stderr safely
@@ -151,8 +151,8 @@ This is missing entirely from your list and it matters.
 
 ## 12. Configuration
 
-- [x] Design configuration file format (TOML)
+- [x] Design configuration file format
 - [x] Implement config file read/write
 - [ ] Migrate runtime preferences to config file
-- [x] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
+- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
 - [x] Store custom GNUPGHOME per password store
