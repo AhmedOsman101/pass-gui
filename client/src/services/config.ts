@@ -25,9 +25,6 @@ import { neu } from "./neutralino";
  * for common operations.
  */
 class ConfigService {
-  /** Cached configuration loaded from file or defaults. */
-  private static cachedConfig: AppConfig | null = null;
-
   /**
    * Resolves the path to the configuration file.
    * Uses platform-specific config directory:
@@ -38,17 +35,10 @@ class ConfigService {
    * @returns Result containing the config file path or an error
    */
   static async getPath(): Promise<Result<string>> {
-    const configDirResult = await wrapAsync(neu.getConfigDir);
-    if (configDirResult.isError()) return Err(configDirResult.error);
+    const configDir = await wrapAsync(neu.getConfigDir);
+    if (configDir.isError()) return Err(configDir.error);
 
-    const configDir = configDirResult.ok;
-    const passGuiDirResult = await fs.join(configDir, "pass-gui");
-    if (passGuiDirResult.isError()) return Err(passGuiDirResult.error);
-
-    const configPathResult = await fs.join(passGuiDirResult.ok, "config.toml");
-    if (configPathResult.isError()) return Err(configPathResult.error);
-
-    return Ok(configPathResult.ok);
+    return Ok(await fs.join(configDir.ok, "pass-gui", "config.toml"));
   }
 
   /**
@@ -75,7 +65,6 @@ class ConfigService {
 
     // Return default config if file doesn't exist
     if (!existsResult.ok) {
-      ConfigService.cachedConfig = DEFAULT_CONFIG;
       return Ok(DEFAULT_CONFIG);
     }
 
@@ -87,9 +76,7 @@ class ConfigService {
     if (readResult.isError()) return Err(readResult.error);
 
     try {
-      const parsed = TOML.parse(readResult.ok) as AppConfig;
-      ConfigService.cachedConfig = parsed;
-      return Ok(parsed);
+      return Ok(TOML.parse(readResult.ok) as AppConfig);
     } catch (e) {
       const err = e as Error;
       return Err(
@@ -138,8 +125,6 @@ class ConfigService {
       );
     }
 
-    // Update cached config
-    ConfigService.cachedConfig = appConfig;
     return Ok(undefined);
   }
 
@@ -164,19 +149,6 @@ class ConfigService {
   }
 
   /**
-   * Gets the currently cached configuration.
-   * Loads from file if not cached.
-   *
-   * @returns Result containing the AppConfig or an error
-   */
-  static async getConfig(): Promise<Result<AppConfig>> {
-    if (ConfigService.cachedConfig) {
-      return Ok(ConfigService.cachedConfig);
-    }
-    return await ConfigService.load();
-  }
-
-  /**
    * Generic typed getter for configuration values.
    * Provides type-safe access to config sections and keys.
    *
@@ -188,7 +160,7 @@ class ConfigService {
     section: S,
     key: K
   ): Promise<Result<AppConfig[S][K]>> {
-    const configResult = await ConfigService.getConfig();
+    const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
     const config = configResult.ok;
@@ -212,7 +184,7 @@ class ConfigService {
     key: K,
     value: AppConfig[S][K]
   ): Promise<Result<void>> {
-    const configResult = await ConfigService.getConfig();
+    const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
     const config = configResult.ok;
@@ -234,7 +206,7 @@ class ConfigService {
    * @returns Result containing the active store name or an error
    */
   static async getActiveStore(): Promise<Result<string>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const activeStore = config.ok.core?.default_store ?? "default";
@@ -248,7 +220,7 @@ class ConfigService {
    * @returns Result containing void or an error
    */
   static async setActiveStore(name: string): Promise<Result<void>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     // Verify the store exists
@@ -278,7 +250,7 @@ class ConfigService {
   static async getStore(
     name: string
   ): Promise<Result<StoreConfig | undefined>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const store = config.ok.stores?.[name];
@@ -345,7 +317,7 @@ class ConfigService {
     name: string,
     storeConfig: StoreConfig
   ): Promise<Result<void>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const updatedConfig: AppConfig = {
@@ -367,7 +339,7 @@ class ConfigService {
    * @returns Result containing void or an error
    */
   static async removeStore(name: string): Promise<Result<void>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const activeStore = config.ok.core?.default_store ?? "default";
@@ -398,7 +370,7 @@ class ConfigService {
    * @returns Result containing array of store names or an error
    */
   static async getStores(): Promise<Result<string[]>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const storeNames = Object.keys(config.ok.stores ?? {});
@@ -411,7 +383,7 @@ class ConfigService {
    * @returns Result containing PreferencesConfig or an error
    */
   static async getPreferences(): Promise<Result<PreferencesConfig>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const preferences = config.ok.preferences;
@@ -427,7 +399,7 @@ class ConfigService {
   static async setPreferences(
     preferences: Partial<PreferencesConfig>
   ): Promise<Result<void>> {
-    const config = await ConfigService.getConfig();
+    const config = await ConfigService.load();
     if (config.isError()) return Err(config.error);
 
     const defaultPrefs = DEFAULT_CONFIG.preferences;
@@ -449,14 +421,6 @@ class ConfigService {
     };
 
     return await ConfigService.save(updatedConfig);
-  }
-
-  /**
-   * Clears the cached configuration.
-   * Useful for forcing a reload from disk.
-   */
-  static clearCache(): void {
-    ConfigService.cachedConfig = null;
   }
 }
 

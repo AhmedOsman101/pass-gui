@@ -106,10 +106,8 @@ class fs {
    * Joins multiple path segments into a single normalized path.
    * Uses the OS-specific path separator.
    */
-  static async join(...paths: string[]): Promise<Result<string>> {
-    return await wrapAsync(
-      async () => await filesystem.getJoinedPath(...paths)
-    );
+  static async join(...paths: string[]): Promise<string> {
+    return await filesystem.getJoinedPath(...paths);
   }
 
   /**
