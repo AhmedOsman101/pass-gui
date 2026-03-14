@@ -23,7 +23,7 @@
       "**/*.gql",
       "**/*.graphqls",
       "**/*.gqls",
-      "**/*.vue",
+      "!**/*.vue",
       "!**/node_modules",
       "!**/prisma",
       "!**/public",

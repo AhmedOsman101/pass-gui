@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* prettier-ignore */
+// biome-ignore-all lint: Statically generated file
 // oxfmt-ignore
 // @ts-nocheck
 // noinspection ES6UnusedImports
@@ -40,6 +41,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/test': RouteRecordInfo<
+      '/test',
+      '/test',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -62,6 +70,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/about.vue': {
       routes:
         | '/about'
+      views:
+        | never
+    }
+    'src/pages/test.vue': {
+      routes:
+        | '/test'
       views:
         | never
     }
