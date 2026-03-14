@@ -24,8 +24,6 @@ const {
     <div v-else-if="error">Error: {{ error }}</div>
 
     <template v-else>
-      <pre>Total: {{ tests.length }}</pre>
-
       <pre v-for="(test, index) in tests" :key="index">
 Test {{ index + 1 }}: {{ test?.ok ?? test?.error }}
       </pre>
