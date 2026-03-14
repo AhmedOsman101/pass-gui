@@ -1,9 +1,19 @@
 import type { NeuErrorCode } from "@/lib/errors";
 
+declare const __brand: unique symbol;
+/**
+ * A branded type constructor that adds a unique brand to a type.
+ * Used to create distinct types from primitive types for type safety.
+ * @example
+ * type UserId = Brand<string, "userId">;
+ * const userId = "abc" as UserId; // Type-safe string
+ */
+type Brand<T, B> = T & { [__brand]: B };
+
 /**
  * Types that can be safely converted to string.
  */
-type Stringifiable = string | number | boolean | bigint;
+type Stringifiable = string | number | boolean | bigint | null;
 
 /**
  * Recursive type representing a file system tree structure.
@@ -172,4 +182,5 @@ export type {
   ConfigSection,
   ConfigKey,
   ConfigValue,
+  Brand,
 };
