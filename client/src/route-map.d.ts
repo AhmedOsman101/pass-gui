@@ -1,6 +1,5 @@
 /* eslint-disable */
 /* prettier-ignore */
-// biome-ignore-all lint: Statically generated file
 // oxfmt-ignore
 // @ts-nocheck
 // noinspection ES6UnusedImports

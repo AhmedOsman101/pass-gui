@@ -6,6 +6,7 @@ import {
   ConfigValidationError,
   ConfigWriteError,
 } from "@/lib/errors";
+import toml from "@/lib/toml";
 import { expandTilde } from "@/lib/utils";
 import type {
   AppConfig,
@@ -13,6 +14,7 @@ import type {
   PreferencesConfig,
   StoreConfig,
 } from "@/types";
+import type { ParsedToml } from "@/types/toml";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
 
@@ -59,14 +61,9 @@ class ConfigService {
    *
    * @returns Result containing the AppConfig or an error
    */
-  static async load(): Promise<Result<AppConfig>> {
-    const existsResult = await ConfigService.exists();
-    if (existsResult.isError()) return Err(existsResult.error);
-
-    // Return default config if file doesn't exist
-    if (!existsResult.ok) {
-      return Ok(DEFAULT_CONFIG);
-    }
+  static async load(): Promise<Result<ParsedToml<AppConfig>>> {
+    const ensureResult = await ConfigService.ensure();
+    if (ensureResult.isError()) return Err(ensureResult.error);
 
     const configPath = await ConfigService.getPath();
     if (configPath.isError()) return Err(configPath.error);
@@ -75,14 +72,16 @@ class ConfigService {
     const readResult = await fs.readFile(configPath.ok);
     if (readResult.isError()) return Err(readResult.error);
 
-    try {
-      return Ok(TOML.parse(readResult.ok) as AppConfig);
-    } catch (e) {
-      const err = e as Error;
+    const configResult = toml.parse<AppConfig>(readResult.ok);
+    if (configResult.isError()) {
       return Err(
-        new ConfigParseError(err, `Failed to parse config: ${err.message}`)
+        new ConfigParseError(
+          configResult.error,
+          `Failed to parse config: ${configResult.error.message}`
+        )
       );
     }
+    return Ok(configResult.ok);
   }
 
   /**
@@ -109,13 +108,11 @@ class ConfigService {
     }
 
     // Serialize to TOML
-    const tomlContent = TOML.stringify(appConfig, {
-      newline: "\n",
-      indent: 2,
-    });
+    const tomlContent = toml.stringify(appConfig);
+    if (tomlContent.isError()) return Err(tomlContent.error);
 
     // Write to file
-    const writeResult = await fs.writeFile(configPath.ok, tomlContent);
+    const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
     if (writeResult.isError()) {
       return Err(
         new ConfigWriteError(
@@ -130,11 +127,8 @@ class ConfigService {
 
   /**
    * Ensures configuration exists, creating default if needed.
-   * Returns the current configuration.
-   *
-   * @returns Result containing the AppConfig or an error
    */
-  static async ensure(): Promise<Result<AppConfig>> {
+  static async ensure(): Promise<Result<void>> {
     const existsResult = await ConfigService.exists();
     if (existsResult.isError()) return Err(existsResult.error);
 
@@ -144,8 +138,7 @@ class ConfigService {
       if (saveResult.isError()) return Err(saveResult.error);
     }
 
-    // Load and return the config
-    return await ConfigService.load();
+    return Ok(undefined);
   }
 
   /**
