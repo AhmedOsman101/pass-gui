@@ -6,7 +6,6 @@ import { neuInitialized } from "@/services/neutralino";
 import { passInitialized } from "@/services/pass";
 import App from "./App.vue";
 import router from "./router";
-import { configInitialized } from "./services/config";
 import { gpgInitialized } from "./services/gpg";
 
 const app = createApp(App);
@@ -19,7 +18,5 @@ app.mount("#app");
 // Initialize Neutralino and app services
 Neutralino.init();
 await neuInitialized;
-// Wait for config to initialize
-await configInitialized;
 await gpgInitialized;
 await passInitialized;
