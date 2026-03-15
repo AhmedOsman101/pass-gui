@@ -156,3 +156,11 @@ This is missing entirely from your list and it matters.
 - [ ] Migrate runtime preferences to config file
 - [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
 - [x] Store custom GNUPGHOME per password store
+
+## 13. Documentation
+
+- [ ] Document configuration file format
+- [ ] Document TOML comment preservation limitations:
+  - [ ] Full-line comments (lines entirely as comments) may be lost when file is modified via the app
+  - [ ] Commented-out configuration keys are not preserved
+  - [ ] Inline comments (only comments written directly after key/value pairs or table headers) are preserved

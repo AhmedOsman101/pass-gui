@@ -23,10 +23,14 @@ const {
 const _parsed = computedAsync(async () => {
   const content = await fs.readFile("./references/config.example.toml");
   if (content.isOk()) {
+    // Parse the TOML
     const result = Toml.parse<AppConfig>(content.ok);
+    console.log("=== Parse Result ===");
     console.dir(result?.ok ?? result?.error, { depth: -1 });
     if (result.isOk()) {
+      // Stringify back to TOML
       const str = Toml.stringify(result.ok);
+      console.log("=== Stringified Result ===");
       console.log(str.ok ?? str.error);
     }
   }

@@ -70,7 +70,7 @@ function parse<T>(source: string | TomlStringified<T>): Result<ParsedToml<T>> {
   const result = safeParse(source, {
     bigint: true,
     joiner: "\n",
-    x: { comment: true, order: true },
+    x: { comment: true, order: true, string: true },
   });
 
   // Extract clean data from the Table, filtering out symbol keys (comments, order)
