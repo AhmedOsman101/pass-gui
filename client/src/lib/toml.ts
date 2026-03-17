@@ -13,6 +13,25 @@ const safeStringify = wrapThrowable(TOML.stringify);
 const safeParse = wrapThrowable(TOML.parse);
 
 /**
+ * Converts a config object to use section format for TOML output.
+ * Transforms { core: {...}, preferences: {...} } into a Table where
+ * each section becomes a proper TOML section (not dotted keys).
+ * @param config - The config object to transform
+ * @returns Table with sections in proper TOML section format
+ */
+function toSectionFormat<T extends object>(config: T): Table {
+  const result: Table = {};
+  for (const [section, values] of Object.entries(config)) {
+    if (values && typeof values === "object") {
+      result[section] = TOML.Section({ ...values });
+    } else {
+      result[section] = values;
+    }
+  }
+  return result;
+}
+
+/**
  * Converts a value to TOML string format.
  * Returns a branded TomlStringified<T> that guarantees valid TOML.
  * @example
@@ -42,7 +61,9 @@ function stringify<T>(value: T | ParsedToml<T>): Result<TomlStringified<T>> {
   // If value has _raw, treat as ParsedToml
   if (typeof value === "object" && value !== null && "_raw" in value) {
     table = value._raw as ReadonlyTable;
-  } else table = value as ReadonlyTable;
+  } else {
+    table = toSectionFormat(value as object) as ReadonlyTable;
+  }
 
   const result = safeStringify(table, {
     newline: "\n",

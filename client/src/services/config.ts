@@ -1,19 +1,8 @@
-import * as TOML from "@ltd/j-toml";
-import { Err, Ok, type Result, wrapAsync } from "lib-result";
+import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants";
-import {
-  ConfigParseError,
-  ConfigValidationError,
-  ConfigWriteError,
-} from "@/lib/errors";
+import { ConfigParseError, ConfigWriteError } from "@/lib/errors";
 import toml from "@/lib/toml";
-import { expandTilde } from "@/lib/utils";
-import type {
-  AppConfig,
-  ConfigSection,
-  PreferencesConfig,
-  StoreConfig,
-} from "@/types";
+import type { AppConfig, ConfigSection } from "@/types";
 import type { ParsedToml } from "@/types/toml";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
@@ -88,27 +77,23 @@ class ConfigService {
    * Saves the configuration to the config file.
    * Creates the directory if it doesn't exist.
    *
-   * @param appConfig - The configuration object to save
+   * IMPORTANT: For comment preservation, pass ParsedToml from load().
+   * - Modify values via parsed._raw directly, not via parsed.data
+   * - Then pass the full parsed object to save()
+   *
+   * @param content - ParsedToml from load()
    * @returns Result containing void or an error
    */
-  static async save(appConfig: AppConfig): Promise<Result<void>> {
+  static async save(content: ParsedToml<AppConfig>): Promise<Result<void>> {
     const configPath = await ConfigService.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
-    // Ensure the directory exists using getPathParts
-    const parts = await fs.getPathParts(configPath.ok);
-    if (parts.isError()) return Err(parts.error);
-    const dirPath = parts.ok.parentPath;
-    const dirExists = await fs.exists(dirPath);
-    if (dirExists.isError()) return Err(dirExists.error);
-
-    if (!dirExists.ok) {
-      const mkdirResult = await fs.mkdir(dirPath);
-      if (mkdirResult.isError()) return Err(mkdirResult.error);
-    }
+    // Ensure the config exists
+    const ensureResult = await ConfigService.ensure();
+    if (ensureResult.isError()) return Err(ensureResult.error);
 
     // Serialize to TOML
-    const tomlContent = toml.stringify(appConfig);
+    const tomlContent = toml.stringify(content);
     if (tomlContent.isError()) return Err(tomlContent.error);
 
     // Write to file
@@ -127,15 +112,40 @@ class ConfigService {
 
   /**
    * Ensures configuration exists, creating default if needed.
+   * For initial creation, uses DEFAULT_CONFIG.
    */
   static async ensure(): Promise<Result<void>> {
     const existsResult = await ConfigService.exists();
-    if (existsResult.isError()) return Err(existsResult.error);
 
     // Create default config if it doesn't exist
-    if (!existsResult.ok) {
-      const saveResult = await ConfigService.save(DEFAULT_CONFIG);
-      if (saveResult.isError()) return Err(saveResult.error);
+    if (existsResult.isError() || !existsResult.ok) {
+      // For initial creation, use toml.stringify with the DEFAULT_CONFIG
+      const tomlContent = toml.stringify(DEFAULT_CONFIG);
+      if (tomlContent.isError()) return Err(tomlContent.error);
+
+      const configPath = await ConfigService.getPath();
+      if (configPath.isError()) return Err(configPath.error);
+
+      // Ensure directory exists
+      const parts = await fs.getPathParts(configPath.ok);
+      if (parts.isError()) return Err(parts.error);
+      const dirPath = parts.ok.parentPath;
+
+      const dirExists = await fs.isDirectory(dirPath);
+      if (!dirExists.ok || dirExists.isError()) {
+        const mkdirResult = await fs.mkdir(dirPath);
+        if (mkdirResult.isError()) return Err(mkdirResult.error);
+      }
+
+      const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
+      if (writeResult.isError()) {
+        return Err(
+          new ConfigWriteError(
+            configPath.ok,
+            `Failed to write default config: ${writeResult.error.message}`
+          )
+        );
+      }
     }
 
     return Ok(undefined);
@@ -156,7 +166,7 @@ class ConfigService {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
-    const config = configResult.ok;
+    const config = configResult.ok.data;
     const value = config[section]?.[key];
     const defaultValue = DEFAULT_CONFIG[section]?.[key];
 
@@ -180,244 +190,17 @@ class ConfigService {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
-    const config = configResult.ok;
-    const updatedConfig: AppConfig = {
-      ...config,
-      [section]: {
-        ...config[section],
-        [key]: value,
-      },
-    };
+    const parsed = configResult.ok;
+    if (!parsed) return ErrFromText("Config not loaded");
 
-    return await ConfigService.save(updatedConfig);
-  }
+    // Modify _raw directly via cast - preserves comments when saved
+    const raw = parsed._raw as AppConfig;
+    (raw[section] as Record<string, unknown>)[key as string] = value;
 
-  /**
-   * Gets the name of the active store.
-   * Returns the default store name if not set.
-   *
-   * @returns Result containing the active store name or an error
-   */
-  static async getActiveStore(): Promise<Result<string>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const activeStore = config.ok.core?.default_store ?? "default";
-    return Ok(activeStore);
-  }
-
-  /**
-   * Sets the active store by name.
-   *
-   * @param name - The name of the store to set as active
-   * @returns Result containing void or an error
-   */
-  static async setActiveStore(name: string): Promise<Result<void>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    // Verify the store exists
-    if (!config.ok.stores?.[name]) {
-      return Err(
-        new ConfigValidationError("store", `Store '${name}' does not exist`)
-      );
-    }
-
-    const updatedConfig: AppConfig = {
-      ...config.ok,
-      core: {
-        ...config.ok.core,
-        default_store: name,
-      },
-    };
-
-    return await ConfigService.save(updatedConfig);
-  }
-
-  /**
-   * Gets configuration for a specific store.
-   *
-   * @param name - The name of the store
-   * @returns Result containing the StoreConfig or undefined if not found
-   */
-  static async getStore(
-    name: string
-  ): Promise<Result<StoreConfig | undefined>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const store = config.ok.stores?.[name];
-    return Ok(store);
-  }
-
-  /**
-   * Gets the path for a specific store.
-   * Expands the tilde (~) to the user's home directory.
-   *
-   * @param name - The name of the store
-   * @returns Result containing the expanded store path or an error
-   */
-  static async getStorePath(name: string): Promise<Result<string>> {
-    const store = await ConfigService.getStore(name);
-    if (store.isError()) return Err(store.error);
-
-    if (!store.ok) {
-      return Err(
-        new ConfigValidationError("store", `Store '${name}' not found`)
-      );
-    }
-
-    const homeDir = await neu.getHomeDir();
-    return Ok(expandTilde(store.ok.path, homeDir));
-  }
-
-  /**
-   * Gets the GNUPGHOME path for a specific store.
-   * Expands the tilde (~) to the user's home directory if set.
-   *
-   * @param name - The name of the store
-   * @returns Result containing the expanded GNUPGHOME path or undefined if not set
-   */
-  static async getStoreGnupgHome(
-    name: string
-  ): Promise<Result<string | undefined>> {
-    const store = await ConfigService.getStore(name);
-    if (store.isError()) return Err(store.error);
-
-    if (!store.ok) {
-      return Err(
-        new ConfigValidationError("store", `Store '${name}' not found`)
-      );
-    }
-
-    if (!store.ok.gnupg_home) {
-      return Ok(undefined);
-    }
-
-    const homeDir = await neu.getHomeDir();
-    const expandedPath = expandTilde(store.ok.gnupg_home, homeDir);
-    return Ok(expandedPath);
-  }
-
-  /**
-   * Adds or updates a store configuration.
-   *
-   * @param name - The name of the store
-   * @param storeConfig - The store configuration to set
-   * @returns Result containing void or an error
-   */
-  static async setStore(
-    name: string,
-    storeConfig: StoreConfig
-  ): Promise<Result<void>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const updatedConfig: AppConfig = {
-      ...config.ok,
-      stores: {
-        ...config.ok.stores,
-        [name]: storeConfig,
-      },
-    };
-
-    return await ConfigService.save(updatedConfig);
-  }
-
-  /**
-   * Removes a store configuration.
-   * Cannot remove the active store.
-   *
-   * @param name - The name of the store to remove
-   * @returns Result containing void or an error
-   */
-  static async removeStore(name: string): Promise<Result<void>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const activeStore = config.ok.core?.default_store ?? "default";
-    if (name === activeStore) {
-      return Err(
-        new ConfigValidationError("store", "Cannot remove the active store")
-      );
-    }
-
-    if (!config.ok.stores?.[name]) {
-      return Ok(undefined); // Already doesn't exist
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { [name]: _, ...remainingStores } = config.ok.stores ?? {};
-
-    const updatedConfig: AppConfig = {
-      ...config.ok,
-      stores: remainingStores,
-    };
-
-    return await ConfigService.save(updatedConfig);
-  }
-
-  /**
-   * Gets all store names.
-   *
-   * @returns Result containing array of store names or an error
-   */
-  static async getStores(): Promise<Result<string[]>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const storeNames = Object.keys(config.ok.stores ?? {});
-    return Ok(storeNames);
-  }
-
-  /**
-   * Gets user preferences.
-   *
-   * @returns Result containing PreferencesConfig or an error
-   */
-  static async getPreferences(): Promise<Result<PreferencesConfig>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const preferences = config.ok.preferences;
-    return Ok(preferences ?? DEFAULT_CONFIG.preferences);
-  }
-
-  /**
-   * Updates user preferences.
-   *
-   * @param preferences - Partial preferences to update
-   * @returns Result containing void or an error
-   */
-  static async setPreferences(
-    preferences: Partial<PreferencesConfig>
-  ): Promise<Result<void>> {
-    const config = await ConfigService.load();
-    if (config.isError()) return Err(config.error);
-
-    const defaultPrefs = DEFAULT_CONFIG.preferences;
-    const currentPrefs = config.ok.preferences ?? defaultPrefs;
-    const mergedPrefs: PreferencesConfig = {
-      clipboard_timeout_seconds:
-        preferences.clipboard_timeout_seconds ??
-        currentPrefs.clipboard_timeout_seconds ??
-        defaultPrefs.clipboard_timeout_seconds,
-      auto_refresh_interval_ms:
-        preferences.auto_refresh_interval_ms ??
-        currentPrefs.auto_refresh_interval_ms ??
-        defaultPrefs.auto_refresh_interval_ms,
-    };
-
-    const updatedConfig: AppConfig = {
-      ...config.ok,
-      preferences: mergedPrefs,
-    };
-
-    return await ConfigService.save(updatedConfig);
+    return await ConfigService.save(parsed);
   }
 }
 
 const config = ConfigService;
-const configInitialized = ConfigService.ensure();
 
-export { config, configInitialized, ConfigService };
+export { config, ConfigService };
