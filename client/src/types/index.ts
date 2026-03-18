@@ -8,7 +8,7 @@ declare const __brand: unique symbol;
  * type UserId = Brand<string, "userId">;
  * const userId = "abc" as UserId; // Type-safe string
  */
-type Brand<T, Brand> = T & { [__brand]: Brand };
+type Brand<T, TBrand> = T & { [__brand]: TBrand };
 
 /**
  * Types that can be safely converted to string.
