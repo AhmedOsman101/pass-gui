@@ -18,7 +18,7 @@ const SYSTEM_PASS_PATHS = ["/usr/bin/pass", "/bin/pass"];
  */
 const DEFAULT_CONFIG: AppConfig = {
   core: {
-    default_store: "default",
+    active_store: "default",
   },
   preferences: {
     clipboard_timeout_seconds: 30,

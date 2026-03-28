@@ -2,7 +2,7 @@
  * Core global settings for the application.
  */
 type CoreConfig = {
-  default_store: string;
+  active_store: string;
 };
 
 /**
