@@ -40,37 +40,6 @@ function expandTilde(path: string, homeDir: string): string {
 }
 
 /**
- * Type cast helper that narrows the type of a value.
- * Use when TypeScript cannot infer the type correctly.
- *
- * @typeParam T - The target type to cast to
- * @param value - The value to cast
- * @returns The value cast to type T
- *
- * @example
- * const value: unknown = "hello";
- * const str = as<string>(value); // Type is string
- */
-function as<T>(value: unknown): T {
-  return value as T;
-}
-
-/**
- * Creates a phantom value of type T.
- * Returns undefined at runtime - use only for type placeholder purposes
- * where the value will be replaced before actual use.
- *
- * @typeParam T - The phantom type to create
- * @returns undefined (cast as T)
- *
- * @example
- * const placeholder = phantom<string>(); // Type is string, value is undefined
- */
-function phantom<T>(): T {
-  return undefined as unknown as T;
-}
-
-/**
  * Creates or preserves branded types for type-safe distinct types.
  *
  * This function has three overloads:
@@ -114,4 +83,4 @@ function brand(brandOrValue: unknown, value?: unknown): unknown {
   return value ?? brandOrValue;
 }
 
-export { cn, compareVersions, expandTilde, as, phantom, brand };
+export { cn, compareVersions, expandTilde, brand };
