@@ -43,7 +43,9 @@ function toSectionFormat<T extends object>(config: T): Table {
  * @param value - TOML-compatible object or ParsedToml for round-trip
  * @returns Result containing branded TomlStringified<T>
  */
-function stringify<T extends object>(value: T): Result<TomlStringified<T>>;
+function stringify<TData extends object>(
+  value: TData
+): Result<TomlStringified<TData>>;
 /**
  * Converts a ParsedToml back to TOML string, preserving metadata.
  * @example
@@ -55,8 +57,12 @@ function stringify<T extends object>(value: T): Result<TomlStringified<T>>;
  * @param value - ParsedToml from a previous parse call
  * @returns Result containing branded TomlStringified<T>
  */
-function stringify<T>(value: ParsedToml<T>): Result<TomlStringified<T>>;
-function stringify<T>(value: T | ParsedToml<T>): Result<TomlStringified<T>> {
+function stringify<TData>(
+  value: ParsedToml<TData>
+): Result<TomlStringified<TData>>;
+function stringify<TData>(
+  value: TData | ParsedToml<TData>
+): Result<TomlStringified<TData>> {
   let table: ReadonlyTable;
   // If value has _raw, treat as ParsedToml
   if (typeof value === "object" && value !== null && "_raw" in value) {
@@ -72,7 +78,7 @@ function stringify<T>(value: T | ParsedToml<T>): Result<TomlStringified<T>> {
   });
 
   // Creates a branded TOML string - only exported for use by stringify
-  return result.map(tomlString => tomlString as TomlStringified<T>);
+  return result.map(tomlString => tomlString as TomlStringified<TData>);
 }
 
 /**
@@ -87,7 +93,9 @@ function stringify<T>(value: T | ParsedToml<T>): Result<TomlStringified<T>> {
  * @param source - Raw TOML string (e.g., from file read) or TomlStringified<T>
  * @returns Result containing ParsedToml<T> with data and _raw, or error
  */
-function parse<T>(source: string | TomlStringified<T>): Result<ParsedToml<T>> {
+function parse<TData>(
+  source: string | TomlStringified<TData>
+): Result<ParsedToml<TData>> {
   const result = safeParse(source, {
     bigint: true,
     joiner: "\n",
@@ -96,7 +104,7 @@ function parse<T>(source: string | TomlStringified<T>): Result<ParsedToml<T>> {
 
   // Extract clean data from the Table, filtering out symbol keys (comments, order)
   return result.map(table => ({
-    data: extractCleanData<T>(table),
+    data: extractCleanData<TData>(table),
     _raw: table,
   }));
 }
@@ -107,7 +115,7 @@ function parse<T>(source: string | TomlStringified<T>): Result<ParsedToml<T>> {
  * @param table - Raw j-toml Table with possible symbol keys
  * @returns Clean object with only string keys and TOML values
  */
-function extractCleanData<T>(table: Table): TomlObject<T> {
+function extractCleanData<TData>(table: Table): TomlObject<TData> {
   const result: Record<string, unknown> = {};
 
   for (const key of Object.keys(table)) {
@@ -137,7 +145,7 @@ function extractCleanData<T>(table: Table): TomlObject<T> {
     }
   }
 
-  return result as TomlObject<T>;
+  return result as TomlObject<TData>;
 }
 
 export default {

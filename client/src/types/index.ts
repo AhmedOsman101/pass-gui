@@ -20,7 +20,7 @@ type Stringifiable = string | number | boolean | bigint | null;
  * Each item is either a string (file/folder name) or an array
  * where the first element is the folder name and rest are children.
  */
-type FileSystemTree = Array<string | FileSystemTree>;
+type FileSystemTree = (string | FileSystemTree)[];
 
 /**
  * Raw error object structure returned by NeutralinoJS.

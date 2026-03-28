@@ -8,10 +8,10 @@ import type { Brand, Stringifiable } from "./index";
  * type Config = TomlObject<{ name: string; count: number }>;
  * // Valid: { name: string; count: number }
  */
-type TomlObject<T> = {
-  [K in keyof T as [TomlValue<T[K]>] extends [never] ? never : K]: TomlValue<
-    T[K]
-  >;
+type TomlObject<TData> = {
+  [K in keyof TData as [TomlValue<TData[K]>] extends [never]
+    ? never
+    : K]: TomlValue<TData[K]>;
 };
 
 /**
@@ -49,7 +49,7 @@ type Table = ReturnType<typeof TOML.parse>;
  * const toml = tomlLib.stringify({ key: "value" });
  * // toml: TomlStringified<{ key: string }>
  */
-type TomlStringified<T> = Brand<string, T>;
+type TomlStringified<TData> = Brand<string, TData>;
 
 /**
  * Parsed TOML result containing both clean data and raw Table reference
@@ -61,9 +61,9 @@ type TomlStringified<T> = Brand<string, T>;
  *   console.log(result.ok._raw);  // Raw Table for re-stringifying
  * }
  */
-type ParsedToml<T> = {
+type ParsedToml<TData> = {
   /** Clean, cloneable data matching the original structure */
-  data: TomlObject<T>;
+  data: TomlObject<TData>;
   /** Internal j-toml Table reference for round-trip metadata preservation */
   _raw: Table;
 };
