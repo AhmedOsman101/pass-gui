@@ -1,4 +1,5 @@
-import type { AppConfig, Version } from "@/types";
+import type { Version } from "@/types";
+import type { AppConfig } from "@/types/config";
 
 /**
  * Minimum supported version of the pass password manager.

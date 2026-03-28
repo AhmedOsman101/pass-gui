@@ -2,7 +2,7 @@ import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants";
 import { ConfigParseError, ConfigWriteError } from "@/lib/errors";
 import toml from "@/lib/toml";
-import type { AppConfig, ConfigSection } from "@/types";
+import type { AppConfig, ConfigSection } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
@@ -85,12 +85,12 @@ class ConfigService {
    * @returns Result containing void or an error
    */
   static async save(content: ParsedToml<AppConfig>): Promise<Result<void>> {
-    const configPath = await ConfigService.getPath();
-    if (configPath.isError()) return Err(configPath.error);
-
     // Ensure the config exists
     const ensureResult = await ConfigService.ensure();
     if (ensureResult.isError()) return Err(ensureResult.error);
+
+    const configPath = await ConfigService.getPath();
+    if (configPath.isError()) return Err(configPath.error);
 
     // Serialize to TOML
     const tomlContent = toml.stringify(content);
@@ -119,10 +119,6 @@ class ConfigService {
 
     // Create default config if it doesn't exist
     if (existsResult.isError() || !existsResult.ok) {
-      // For initial creation, use toml.stringify with the DEFAULT_CONFIG
-      const tomlContent = toml.stringify(DEFAULT_CONFIG);
-      if (tomlContent.isError()) return Err(tomlContent.error);
-
       const configPath = await ConfigService.getPath();
       if (configPath.isError()) return Err(configPath.error);
 
@@ -136,6 +132,10 @@ class ConfigService {
         const mkdirResult = await fs.mkdir(dirPath);
         if (mkdirResult.isError()) return Err(mkdirResult.error);
       }
+
+      // For initial creation, use toml.stringify with the DEFAULT_CONFIG
+      const tomlContent = toml.stringify(DEFAULT_CONFIG);
+      if (tomlContent.isError()) return Err(tomlContent.error);
 
       const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
       if (writeResult.isError()) {
