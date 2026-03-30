@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 /**
  * Mapping of NeutralinoJS error codes to human-readable error types.
  * Used for structured error handling across the application.
@@ -160,13 +162,13 @@ class ConfigWriteError extends Error {
 class ConfigValidationError extends Error {
   public code: ConfigErrorCode;
   public type: ConfigErrorType;
-  public field: string | null;
+  public zodError: z.ZodError | null;
 
-  constructor(field: string | null, message: string) {
+  constructor(message: string, zodError?: z.ZodError) {
     super(message);
     this.code = "CONFIG_VALIDATION_ERROR";
     this.type = CONFIG_ERROR_CODES.CONFIG_VALIDATION_ERROR;
-    this.field = field;
+    this.zodError = zodError ?? null;
   }
 }
 

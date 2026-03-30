@@ -1,9 +1,14 @@
 import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants";
-import { ConfigParseError, ConfigWriteError } from "@/lib/errors";
+import {
+  ConfigParseError,
+  ConfigValidationError,
+  ConfigWriteError,
+} from "@/lib/errors";
 import toml from "@/lib/toml";
 import type { AppConfig, ConfigSection } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
+import { formatZodError, validateAppConfig } from "./config-validation";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
 
@@ -70,6 +75,18 @@ class ConfigService {
         )
       );
     }
+
+    // Validate the parsed config
+    const validationResult = validateAppConfig(configResult.ok.data);
+    if (validationResult.isError()) {
+      return Err(
+        new ConfigValidationError(
+          formatZodError(validationResult.error),
+          validationResult.error
+        )
+      );
+    }
+
     return Ok(configResult.ok);
   }
 
@@ -91,6 +108,17 @@ class ConfigService {
 
     const configPath = await ConfigService.getPath();
     if (configPath.isError()) return Err(configPath.error);
+
+    // Validate before saving
+    const validationResult = validateAppConfig(content.data);
+    if (validationResult.isError()) {
+      return Err(
+        new ConfigValidationError(
+          formatZodError(validationResult.error),
+          validationResult.error
+        )
+      );
+    }
 
     // Serialize to TOML
     const tomlContent = toml.stringify(content);
@@ -131,6 +159,17 @@ class ConfigService {
       if (!dirExists.ok || dirExists.isError()) {
         const mkdirResult = await fs.mkdir(dirPath);
         if (mkdirResult.isError()) return Err(mkdirResult.error);
+      }
+
+      // For initial creation, validate default config before writing
+      const validationResult = validateAppConfig(DEFAULT_CONFIG);
+      if (validationResult.isError()) {
+        return Err(
+          new ConfigValidationError(
+            `Default config validation failed: ${formatZodError(validationResult.error)}`,
+            validationResult.error
+          )
+        );
       }
 
       // For initial creation, use toml.stringify with the DEFAULT_CONFIG
