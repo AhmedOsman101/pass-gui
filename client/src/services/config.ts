@@ -6,7 +6,12 @@ import {
   ConfigWriteError,
 } from "@/lib/errors";
 import toml from "@/lib/toml";
-import type { AppConfig, ConfigSection } from "@/types/config";
+import type {
+  AppConfig,
+  ConfigKey,
+  ConfigValue,
+  FixedConfigSection,
+} from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
 import { fs } from "./filesystem";
@@ -194,37 +199,43 @@ class ConfigService {
    * Generic typed getter for configuration values.
    * Provides type-safe access to config sections and keys.
    *
-   * @param section - The config section to query (core, preferences, generate, clipboard)
+   * @param section - The config section to query
    * @param key - The specific key within the section
    * @returns Result containing the config value or an error
    */
-  static async getValue<S extends ConfigSection, K extends keyof AppConfig[S]>(
+  static async getValue<S extends FixedConfigSection, K extends ConfigKey<S>>(
     section: S,
     key: K
-  ): Promise<Result<AppConfig[S][K]>> {
+  ): Promise<Result<ConfigValue<S, K>>> {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
     const config = configResult.ok.data;
-    const value = config[section]?.[key];
-    const defaultValue = DEFAULT_CONFIG[section]?.[key];
+    const sectionConfig = config[section] as AppConfig[S] | undefined;
+    const defaultSectionConfig = DEFAULT_CONFIG[section] as
+      | AppConfig[S]
+      | undefined;
+    const value = sectionConfig?.[key];
+    const defaultValue = defaultSectionConfig?.[key];
 
-    return Ok((value !== undefined ? value : defaultValue) as AppConfig[S][K]);
+    return Ok(
+      (value !== undefined ? value : defaultValue) as ConfigValue<S, K>
+    );
   }
 
   /**
    * Generic typed setter for configuration values.
    * Provides type-safe updates to config sections and keys.
    *
-   * @param section - The config section to update (core, preferences, generate, clipboard)
+   * @param section - The config section to update
    * @param key - The specific key within the section
    * @param value - The value to set
    * @returns Result containing void or an error
    */
-  static async setValue<S extends ConfigSection, K extends keyof AppConfig[S]>(
+  static async setValue<S extends FixedConfigSection, K extends ConfigKey<S>>(
     section: S,
     key: K,
-    value: AppConfig[S][K]
+    value: ConfigValue<S, K>
   ): Promise<Result<void>> {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);

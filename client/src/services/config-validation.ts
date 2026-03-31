@@ -4,8 +4,11 @@ import type {
   AppConfig,
   ClipboardConfig,
   CoreConfig,
-  GenerateConfig,
+  ExtensionsConfig,
+  GenerationConfig,
+  GpgConfig,
   PreferencesConfig,
+  StoreConfig,
 } from "@/types/config";
 
 // Zod schemas for config validation
@@ -14,36 +17,51 @@ const CoreConfigSchema = z.object({
 });
 
 const PreferencesConfigSchema = z.object({
-  clipboard_timeout_seconds: z
-    .number()
-    .int()
-    .positive("clipboard_timeout_seconds must be a positive integer"),
   auto_refresh_interval_ms: z
     .number()
     .int()
     .nonnegative("auto_refresh_interval_ms must be a non-negative integer"),
 });
 
-const GenerateConfigSchema = z.object({
+const GenerationConfigSchema = z.object({
   default_length: z
     .number()
     .int()
     .min(8)
     .max(128, "default_length must be between 8 and 128"),
   symbols: z.boolean(),
+  character_set: z.string().min(1, "character_set cannot be empty"),
+  character_set_no_symbols: z
+    .string()
+    .min(1, "character_set_no_symbols cannot be empty"),
 });
 
 const ClipboardConfigSchema = z.object({
-  clear_timeout: z
+  clear_after_seconds: z
     .number()
     .int()
-    .nonnegative("clear_timeout must be a non-negative number"),
+    .nonnegative("clear_after_seconds must be a non-negative number"),
+  selection: z.enum(["clipboard", "primary", "secondary"], {
+    message: "selection must be one of: clipboard, primary, secondary",
+  }),
+});
+
+const GpgConfigSchema = z.object({
+  opts: z.array(z.string().min(1, "gpg.opts entries cannot be empty")),
+  signing_key: z.string().min(1, "signing_key cannot be empty").optional(),
+  key: z.string().min(1, "key cannot be empty").optional(),
+});
+
+const ExtensionsConfigSchema = z.object({
+  enabled: z.boolean(),
 });
 
 const StoreConfigSchema = z.object({
   path: z.string().min(1, "Store path cannot be empty"),
   gnupg_home: z.string().optional(),
 });
+
+const StoresConfigSchema = z.record(z.string(), StoreConfigSchema);
 
 /**
  * Root app config schema with cross-field validation.
@@ -53,9 +71,11 @@ const AppConfigSchema = z
   .object({
     core: CoreConfigSchema,
     preferences: PreferencesConfigSchema,
-    generate: GenerateConfigSchema,
+    generation: GenerationConfigSchema,
     clipboard: ClipboardConfigSchema,
-    stores: z.record(z.string(), StoreConfigSchema),
+    gpg: GpgConfigSchema,
+    extensions: ExtensionsConfigSchema,
+    stores: StoresConfigSchema,
   })
   .superRefine((val, ctx) => {
     const stores = val.stores;
@@ -116,12 +136,12 @@ function validatePreferencesConfig(
 }
 
 /**
- * Validates the generate config section.
+ * Validates the generation config section.
  */
-function validateGenerateConfig(
-  generate: unknown
-): ValidationResult<GenerateConfig> {
-  const result = GenerateConfigSchema.safeParse(generate);
+function validateGenerationConfig(
+  generation: unknown
+): ValidationResult<GenerationConfig> {
+  const result = GenerationConfigSchema.safeParse(generation);
   if (!result.success) return Err(result.error);
   return Ok(result.data);
 }
@@ -133,6 +153,37 @@ function validateClipboardConfig(
   clipboard: unknown
 ): ValidationResult<ClipboardConfig> {
   const result = ClipboardConfigSchema.safeParse(clipboard);
+  if (!result.success) return Err(result.error);
+  return Ok(result.data);
+}
+
+/**
+ * Validates the gpg config section.
+ */
+function validateGpgConfig(gpg: unknown): ValidationResult<GpgConfig> {
+  const result = GpgConfigSchema.safeParse(gpg);
+  if (!result.success) return Err(result.error);
+  return Ok(result.data);
+}
+
+/**
+ * Validates the extensions config section.
+ */
+function validateExtensionsConfig(
+  extensions: unknown
+): ValidationResult<ExtensionsConfig> {
+  const result = ExtensionsConfigSchema.safeParse(extensions);
+  if (!result.success) return Err(result.error);
+  return Ok(result.data);
+}
+
+/**
+ * Validates the stores config section.
+ */
+function validateStoresConfig(
+  stores: unknown
+): ValidationResult<Record<string, StoreConfig>> {
+  const result = StoresConfigSchema.safeParse(stores);
   if (!result.success) return Err(result.error);
   return Ok(result.data);
 }
@@ -162,8 +213,11 @@ function formatZodError(error: z.ZodError): string {
 export {
   validateCoreConfig,
   validatePreferencesConfig,
-  validateGenerateConfig,
+  validateGenerationConfig,
   validateClipboardConfig,
+  validateGpgConfig,
+  validateExtensionsConfig,
+  validateStoresConfig,
   validateAppConfig,
   formatZodError,
   type ValidationResult,

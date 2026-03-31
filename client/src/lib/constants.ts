@@ -21,15 +21,23 @@ const DEFAULT_CONFIG: AppConfig = {
     active_store: "default",
   },
   preferences: {
-    clipboard_timeout_seconds: 30,
     auto_refresh_interval_ms: 5000,
   },
-  generate: {
+  generation: {
     default_length: 25,
     symbols: true,
+    character_set: "[:punct:][:alnum:]",
+    character_set_no_symbols: "[:alnum:]",
   },
   clipboard: {
-    clear_timeout: 45,
+    clear_after_seconds: 45,
+    selection: "clipboard",
+  },
+  gpg: {
+    opts: [],
+  },
+  extensions: {
+    enabled: false,
   },
   stores: {
     default: {

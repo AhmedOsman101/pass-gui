@@ -9,23 +9,41 @@ type CoreConfig = {
  * User preferences for application behavior.
  */
 type PreferencesConfig = {
-  clipboard_timeout_seconds: number;
   auto_refresh_interval_ms: number;
 };
 
 /**
  * Password generation configuration.
  */
-type GenerateConfig = {
+type GenerationConfig = {
   default_length: number;
   symbols: boolean;
+  character_set: string;
+  character_set_no_symbols: string;
 };
 
 /**
  * Clipboard configuration.
  */
 type ClipboardConfig = {
-  clear_timeout: number;
+  clear_after_seconds: number;
+  selection: "clipboard" | "primary" | "secondary";
+};
+
+/**
+ * GPG-related configuration that maps to supported pass CLI behavior.
+ */
+type GpgConfig = {
+  opts: string[];
+  signing_key?: string;
+  key?: string;
+};
+
+/**
+ * Pass extension-related configuration.
+ */
+type ExtensionsConfig = {
+  enabled: boolean;
 };
 
 /**
@@ -44,43 +62,48 @@ type StoreConfig = {
 type AppConfig = {
   core: CoreConfig;
   preferences: PreferencesConfig;
-  generate: GenerateConfig;
+  generation: GenerationConfig;
   clipboard: ClipboardConfig;
+  gpg: GpgConfig;
+  extensions: ExtensionsConfig;
   stores: Record<string, StoreConfig>;
 };
 
 /**
- * Configuration sections for generic get/set access.
+ * All top-level configuration sections.
+ */
+type ConfigSection = keyof AppConfig;
+
+/**
+ * Fixed configuration sections supported by the generic get/set methods.
  * Note: stores is handled separately due to its dynamic nature.
  */
-type ConfigSection = "core" | "preferences" | "generate" | "clipboard";
+type FixedConfigSection = Exclude<ConfigSection, "stores">;
 
 /**
- * Union type of all valid config keys across sections.
+ * Valid config key for a given fixed config section.
  */
-type ConfigKey =
-  | keyof CoreConfig
-  | keyof PreferencesConfig
-  | keyof GenerateConfig
-  | keyof ClipboardConfig;
+type ConfigKey<T extends FixedConfigSection> = keyof AppConfig[T];
 
 /**
- * Type for config value by section and key.
+ * Type for config value by fixed section and key.
  */
-type ConfigValue =
-  | CoreConfig[keyof CoreConfig]
-  | PreferencesConfig[keyof PreferencesConfig]
-  | GenerateConfig[keyof GenerateConfig]
-  | ClipboardConfig[keyof ClipboardConfig];
+type ConfigValue<
+  T extends FixedConfigSection,
+  K extends ConfigKey<T>,
+> = AppConfig[T][K];
 
 export type {
   CoreConfig,
   PreferencesConfig,
-  GenerateConfig,
+  GenerationConfig,
   ClipboardConfig,
+  GpgConfig,
+  ExtensionsConfig,
   StoreConfig,
   AppConfig,
   ConfigSection,
+  FixedConfigSection,
   ConfigKey,
   ConfigValue,
 };
