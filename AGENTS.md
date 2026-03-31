@@ -7,7 +7,25 @@ Guidelines for agentic coding assistants on GNU Pass GUI project.
 **Type**: Desktop GUI for GNU Pass password manager
 **Stack**: Vue 3 + Pinia + NeutralinoJS + TypeScript + TailwindCSS + shadcn-vue + lib-result
 **Structure**: pnpm workspace (root + client/)
-**Status**: Phase 1 (Foundation) - 70% complete
+**Direction**: Backend-first; finish readiness and backend contracts before major frontend work
+
+## Current Project Reality
+
+- The repo is past the initial scaffold phase.
+- Config loading, validation, and default config generation are already implemented.
+- Core services for `pass`, `gpg`, filesystem access, and Neutralino command execution already exist.
+- Frontend state and screens are still intentionally minimal.
+- The current roadmap source of truth is the numbered sequence under `roadmap/`.
+
+## Current Roadmap Order
+
+Read in order:
+
+1. `roadmap/01-current-state-and-direction.md`
+2. `roadmap/02-backend-foundation-and-readiness.md`
+3. `roadmap/03-entry-and-operations-backend.md`
+4. `roadmap/04-frontend-after-backend.md`
+5. `roadmap/05-release-and-future-work.md`
 
 ## Commands
 
@@ -25,7 +43,7 @@ pnpm dev:frontend       # Vite dev server only
 pnpm typecheck          # Vue-TSC type checking
 pnpm build:frontend     # Vite build only
 pnpm build              # Full build (frontend + NeutralinoJS)
-pnpm dist               # Release build
+pnpm release            # Release build
 ```
 
 ### Lint & Test
@@ -40,7 +58,7 @@ pnpm format:unsafe     # Biome auto-fix (including unsafe)
 
 ```bash
 pnpm typecheck           # Root + client type checking
-./pnpm-client typecheck  # Client only
+pnpm --filter=client typecheck  # Client only
 ```
 
 ### File Operations (for you, the agent to use not for the developer)
@@ -132,9 +150,23 @@ Never throw: Use `lib-result` wrapper methods like `wrap`, `wrapAsync`, `wrapThr
 
 Use services for NeutralinoJS calls, don't call directly in components
 
+### Backend-First Development Order
+
+Prefer this implementation order:
+
+1. Config and validation
+2. Readiness and environment checks
+3. Store validation
+4. Entry operations and backend contracts
+5. Pinia stores that consume those contracts
+6. UI flows and components
+
 ### Pinia Stores
 
 State flat, actions return results, use `computed()` for derived state
+
+Do not invent backend behavior in stores. Stores should consume explicit
+service and domain contracts.
 
 ### Vue Router
 
@@ -152,7 +184,10 @@ Already initialized in `main.ts` (do NOT re-initialize)
 2. `$HOME/.password-store` (default fallback)
 3. Prompt the user to create a store if none of them were found.
 
-**DO NOT** Search arbitrary paths, validate by checking for `.gpg-id` file
+**DO NOT** Search arbitrary paths.
+
+Validate stores through the app's readiness and store-validation flow, not by
+UI assumptions alone.
 
 ## Security
 
@@ -163,23 +198,24 @@ Already initialized in `main.ts` (do NOT re-initialize)
 ## Before Changes
 
 1. Run `pnpm typecheck` - must pass
-2. Run `pnpm lint` - should have no errors or warnings
+2. Run `pnpm lint && pnpm format`
 3. Check existing patterns for style consistency
-4. Review `roadmap/phased-development-roadmap.md` for phase status
+4. Review the numbered roadmap files under `roadmap/`
 
 ## Summary Checklist
 
 - [ ] Use `pnpm typecheck` before committing
-- [ ] Use `pnpm lint` to ensure code quality
+- [ ] Use `pnpm lint && pnpm format` to ensure code quality
 - [ ] Return `Result<T, E>` from all operations that may error
 - [ ] Use TypeScript types, avoid `any`
 - [ ] Follow Biome formatting (80 char width, 2 space indent)
 - [ ] Use composition API in Vue 3 components
 - [ ] Keep components focused and reusable
 - [ ] Use services layer for NeutralinoJS calls
+- [ ] Keep backend and domain logic out of UI components and ad hoc store code
 - [ ] Mask passwords in logs and UI
 - [ ] Follow existing naming conventions
 
 ---
 
-**Last Updated**: February 17, 2026
+**Last Updated**: March 31, 2026

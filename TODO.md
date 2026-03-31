@@ -27,8 +27,8 @@
   - `$HOME/.password-store`
 
 - [x] Normalize path (cross-platform)
+- [x] Persist last selected store (config-level, not OS-level)
 - [ ] Support per-session override
-- [ ] Persist last selected store (config-level, not OS-level)
 
 ## 3. Store Validation
 
@@ -159,8 +159,8 @@ This is missing entirely from your list and it matters.
 
 ## 13. Documentation
 
-- [ ] Document configuration file format
-- [ ] Document TOML comment preservation limitations:
-  - [ ] Full-line comments (lines entirely as comments) may be lost when file is modified via the app
-  - [ ] Commented-out configuration keys are not preserved
-  - [ ] Inline comments (only comments written directly after key/value pairs or table headers) are preserved
+- [x] Document configuration file format
+- [x] Document TOML comment preservation limitations:
+  - [x] Full-line comments (lines entirely as comments) may be lost when file is modified via the app
+  - [x] Commented-out configuration keys are not preserved
+  - [x] Inline comments (only comments written directly after key/value pairs or table headers) are preserved
