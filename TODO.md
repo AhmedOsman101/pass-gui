@@ -154,7 +154,7 @@ This is missing entirely from your list and it matters.
 - [x] Design configuration file format
 - [x] Implement config file read/write
 - [ ] Migrate runtime preferences to config file
-- [ ] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
+- [x] Define configuration schema (store paths, GNUPGHOME overrides, preferences)
 - [x] Store custom GNUPGHOME per password store
 
 ## 13. Documentation
