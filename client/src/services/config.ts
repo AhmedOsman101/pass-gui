@@ -177,8 +177,9 @@ class ConfigService {
         );
       }
 
-      // For initial creation, use toml.stringify with the DEFAULT_CONFIG
-      const tomlContent = toml.stringify(DEFAULT_CONFIG);
+      // For initial creation, write a commented default config table
+      const defaultConfigTable = toml.buildDefaultConfigTable(DEFAULT_CONFIG);
+      const tomlContent = toml.stringify<AppConfig>(defaultConfigTable);
       if (tomlContent.isError()) return Err(tomlContent.error);
 
       const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
