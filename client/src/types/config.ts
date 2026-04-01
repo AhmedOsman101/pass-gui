@@ -83,13 +83,13 @@ type FixedConfigSection = Exclude<ConfigSection, "stores">;
 /**
  * Valid config key for a given fixed config section.
  */
-type ConfigKey<T extends FixedConfigSection> = keyof AppConfig[T];
+type ConfigKey<T extends ConfigSection> = keyof AppConfig[T];
 
 /**
  * Type for config value by fixed section and key.
  */
 type ConfigValue<
-  T extends FixedConfigSection,
+  T extends ConfigSection,
   K extends ConfigKey<T>,
 > = AppConfig[T][K];
 

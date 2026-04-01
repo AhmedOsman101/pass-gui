@@ -9,8 +9,8 @@ import toml from "@/lib/toml";
 import type {
   AppConfig,
   ConfigKey,
+  ConfigSection,
   ConfigValue,
-  FixedConfigSection,
 } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
@@ -204,7 +204,7 @@ class ConfigService {
    * @param key - The specific key within the section
    * @returns Result containing the config value or an error
    */
-  static async getValue<S extends FixedConfigSection, K extends ConfigKey<S>>(
+  static async getValue<S extends ConfigSection, K extends ConfigKey<S>>(
     section: S,
     key: K
   ): Promise<Result<ConfigValue<S, K>>> {
@@ -233,7 +233,7 @@ class ConfigService {
    * @param value - The value to set
    * @returns Result containing void or an error
    */
-  static async setValue<S extends FixedConfigSection, K extends ConfigKey<S>>(
+  static async setValue<S extends ConfigSection, K extends ConfigKey<S>>(
     section: S,
     key: K,
     value: ConfigValue<S, K>
