@@ -23,23 +23,6 @@ function compareVersions(current: Version, target: Version): number {
 }
 
 /**
- * Expands the tilde (~) character at the start of a path to the user's home directory.
- *
- * @param path - The file path that may start with a tilde character
- * @param homeDir - The absolute path to the user's home directory
- * @returns The expanded path with the tilde replaced by the home directory path,
- *          or the original path if it doesn't start with a tilde
- *
- * @example
- * expandTilde("~/documents/file.txt", "/home/user") // Returns "/home/user/documents/file.txt"
- * expandTilde("~/", "/home/user") // Returns "/home/user/"
- * expandTilde("/absolute/path", "/home/user") // Returns "/absolute/path"
- */
-function expandTilde(path: string, homeDir: string): string {
-  return path.replace(/^~(?=[/\\]|$)/, homeDir);
-}
-
-/**
  * Creates or preserves branded types for type-safe distinct types.
  *
  * This function has three overloads:
@@ -83,4 +66,4 @@ function brand(brandOrValue: unknown, value?: unknown): unknown {
   return value ?? brandOrValue;
 }
 
-export { cn, compareVersions, expandTilde, brand };
+export { cn, compareVersions, brand };

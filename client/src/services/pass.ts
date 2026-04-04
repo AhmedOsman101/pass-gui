@@ -94,7 +94,7 @@ class PassService {
       debug.log(`Warning: ${validateResult.error.message}`);
     }
 
-    const cmdResult = await neu.safeExec("pass", ["--version"]);
+    const cmdResult = await neu.safeExec({ cmd: "pass", args: ["--version"] });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return Ok(false);
 
     const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
@@ -131,11 +131,11 @@ class PassService {
       validatedArgs.push(argValidation.ok);
     }
 
-    return await neu.execCmd(
-      `PASSWORD_STORE_DIR="${this.storeDirectory}" pass`,
-      validatedArgs,
-      options
-    );
+    return await neu.execCmd({
+      cmd: `PASSWORD_STORE_DIR="${this.storeDirectory}" pass`,
+      args: validatedArgs,
+      options,
+    });
   }
 }
 

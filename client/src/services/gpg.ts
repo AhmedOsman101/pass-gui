@@ -73,7 +73,10 @@ class GpgService {
    * Parses GPG version and home directory from `gpg --version` output.
    */
   private async parseVersion(): Promise<Result<boolean>> {
-    const cmdResult = await neu.safeExec(this.getCommand(), ["--version"]);
+    const cmdResult = await neu.safeExec({
+      cmd: this.getCommand(),
+      args: ["--version"],
+    });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
       return ErrFromText("Failed to get GPG version");
     }
@@ -137,11 +140,10 @@ class GpgService {
       return ErrFromText("GPG binary not resolved");
     }
 
-    const cmdResult = await neu.safeExec(this.getCommand(), [
-      "--list-secret-keys",
-      "--with-colons",
-      "--fixed-list-mode",
-    ]);
+    const cmdResult = await neu.safeExec({
+      cmd: this.getCommand(),
+      args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
+    });
 
     if (cmdResult.isError()) return Err(cmdResult.error);
 
@@ -230,7 +232,7 @@ class GpgService {
         ? `${envParts.join(" ")} ${this.getCommand()}`
         : this.getCommand();
 
-    return await neu.execCmd(fullCommand, args, options);
+    return await neu.execCmd({ cmd: fullCommand, args, options });
   }
 }
 

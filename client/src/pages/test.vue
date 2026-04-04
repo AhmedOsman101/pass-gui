@@ -12,10 +12,13 @@ const {
 } = useAsyncState(
   () =>
     Promise.all([
-      neu.execCmd("VAR1=one VAR2=two VAR3=three ./test.sh", [1, 2, 3]),
-      neu.execCmd("echo", ["$(echo hi) $USER"]),
+      neu.execCmd({
+        cmd: "VAR1=one VAR2=two VAR3=three ./test.sh",
+        args: [1, 2, 3],
+      }),
+      neu.execCmd({ cmd: "echo", args: ["$(echo hi) $USER"] }),
       config.ensure(),
-      config.load()
+      config.load(),
     ]),
   [] as Result<unknown>[], // initial empty array
 );

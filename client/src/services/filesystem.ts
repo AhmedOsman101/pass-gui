@@ -11,6 +11,7 @@ import {
   NEU_ERROR_CODES_MAP,
   type NeuErrorCode,
 } from "@/lib/errors";
+import Path from "@/lib/path";
 import type { NeuErrorObj } from "@/types";
 
 /**
@@ -18,6 +19,10 @@ import type { NeuErrorObj } from "@/types";
  * All methods return Result types for safe error handling.
  */
 class fs {
+  private static async resolvePath(path: string): Promise<Result<string>> {
+    return await Path.resolveUserPath(path);
+  }
+
   /**
    * Creates a directory at the specified path.
    * Returns a DirectoryCreationError on failure for detailed error context.
@@ -25,8 +30,11 @@ class fs {
   static async mkdir(
     path: string
   ): Promise<Result<boolean, DirectoryCreationError | Error>> {
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
     try {
-      await filesystem.createDirectory(path);
+      await filesystem.createDirectory(resolvedPath.ok);
       return Ok(true);
     } catch (e) {
       const err = e as NeuErrorObj;
@@ -36,7 +44,7 @@ class fs {
           new DirectoryCreationError(
             NEU_ERROR_CODES[errorCode],
             errorCode,
-            path,
+            resolvedPath.ok,
             err.message
           )
         );
@@ -50,7 +58,10 @@ class fs {
    * Checks if a file or directory exists at the given path.
    */
   static async exists(path: string): Promise<Result<boolean>> {
-    const res = await fs.getStats(path);
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    const res = await fs.getStats(resolvedPath.ok);
     if (res.isOk()) return Ok(res.ok.isFile || res.ok.isDirectory);
     return Err(res.error);
   }
@@ -59,7 +70,10 @@ class fs {
    * Checks if the path points to a regular file.
    */
   static async isFile(path: string): Promise<Result<boolean>> {
-    const res = await fs.getStats(path);
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    const res = await fs.getStats(resolvedPath.ok);
     if (res.isOk()) return Ok(res.ok.isFile);
     return Err(res.error);
   }
@@ -68,7 +82,10 @@ class fs {
    * Checks if the path points to a directory.
    */
   static async isDirectory(path: string): Promise<Result<boolean>> {
-    const res = await fs.getStats(path);
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    const res = await fs.getStats(resolvedPath.ok);
     if (res.isOk()) return Ok(res.ok.isDirectory);
     return Err(res.error);
   }
@@ -77,7 +94,12 @@ class fs {
    * Gets file/directory statistics (size, dates, type, etc.).
    */
   static async getStats(path: string): Promise<Result<Stats>> {
-    return await wrapAsync(async () => await filesystem.getStats(path));
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    return await wrapAsync(
+      async () => await filesystem.getStats(resolvedPath.ok)
+    );
   }
 
   /**
@@ -88,8 +110,11 @@ class fs {
     path: string,
     options?: FileReaderOptions
   ): Promise<Result<string>> {
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
     return await wrapAsync(
-      async () => await filesystem.readFile(path, options)
+      async () => await filesystem.readFile(resolvedPath.ok, options)
     );
   }
 
@@ -97,8 +122,11 @@ class fs {
    * Normalizes a path, resolving . and .. segments and symlinks.
    */
   static async getNormalizedPath(path: string): Promise<Result<string>> {
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
     return await wrapAsync(
-      async () => await filesystem.getNormalizedPath(path)
+      async () => await filesystem.getNormalizedPath(resolvedPath.ok)
     );
   }
 
@@ -115,7 +143,12 @@ class fs {
    * Includes root, relative path, filename, extension, etc.
    */
   static async getPathParts(path: string): Promise<Result<PathParts>> {
-    return await wrapAsync(async () => await filesystem.getPathParts(path));
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    return await wrapAsync(
+      async () => await filesystem.getPathParts(resolvedPath.ok)
+    );
   }
 
   /**
@@ -127,8 +160,11 @@ class fs {
     path: string,
     data: string
   ): Promise<Result<boolean, Error>> {
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
     try {
-      await filesystem.writeFile(path, data);
+      await filesystem.writeFile(resolvedPath.ok, data);
       return Ok(true);
     } catch (e) {
       const err = e as NeuErrorObj;
@@ -138,7 +174,7 @@ class fs {
           new DirectoryCreationError(
             NEU_ERROR_CODES[errorCode],
             errorCode,
-            path,
+            resolvedPath.ok,
             err.message
           )
         );
