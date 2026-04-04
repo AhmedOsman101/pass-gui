@@ -53,7 +53,12 @@ class NeutralinoService {
   async init(): Promise<void> {
     if (this.initialized) return;
 
-    this.HOME_DIR = await Path.getHomeDir();
+    const homeDir = await Path.getHomeDir();
+    if (homeDir.isError()) {
+      throw homeDir.error;
+    }
+
+    this.HOME_DIR = homeDir.ok;
     this.initialized = true;
   }
 
@@ -138,7 +143,7 @@ class NeutralinoService {
 
   /**
    * Checks if a command/program exists in the system PATH.
-   * Uses `type` on Unix and `where.exe` on Windows.
+   * Uses `which` on Unix and `where.exe` on Windows.
    */
   async commandExists(program: string): Promise<Result<boolean>> {
     if (this.OS === "Windows") {
@@ -146,18 +151,10 @@ class NeutralinoService {
         cmd: "where.exe",
         args: [program],
       });
-      if (!whereResult.isError() && whereResult.ok.exitCode === 0) {
+      if (whereResult.isOk() && whereResult.ok.exitCode === 0) {
         return Ok(true);
       }
     } else {
-      const typeResult = await this.execCmd({
-        cmd: "type",
-        args: [program],
-      });
-      if (typeResult.isOk() && typeResult.ok.exitCode === 0) {
-        return Ok(true);
-      }
-
       const whichResult = await this.execCmd({
         cmd: "which",
         args: [program],
@@ -183,52 +180,35 @@ class NeutralinoService {
       case "Linux":
       case "Darwin":
       case "FreeBSD": {
-        const typeResult = await this.execCmd({
-          cmd: "type",
-          args: ["-p", program],
+        const whichResult = await this.execCmd({
+          cmd: "which",
+          args: [program],
         });
-        let binPath: string;
-        if (typeResult.isOk() && typeResult.ok.exitCode === 0) {
-          binPath = typeResult.ok.stdOut.trim();
-        } else {
-          const whichResult = await this.execCmd({
-            cmd: "which",
-            args: [program],
-          });
-          if (whichResult.isOk() && whichResult.ok.exitCode === 0) {
-            binPath = whichResult.ok.stdOut.trim();
-          } else {
-            return ErrFromText(`Failed to resolve path for: ${program}`);
+        if (whichResult.isError() || whichResult.ok.exitCode !== 0) {
+          return ErrFromText(`Failed to resolve path for: ${program}`);
+        }
+
+        const binPath = whichResult.ok.stdOut.trim();
+        if (!binPath) {
+          return ErrFromText(`Could not resolve path for: ${program}`);
+        }
+
+        const readlinkResult = await this.execCmd({
+          cmd: "readlink",
+          args: ["-f", binPath],
+        });
+
+        if (readlinkResult.isOk() && readlinkResult.ok.exitCode === 0) {
+          const resolvedPath = readlinkResult.ok.stdOut.trim();
+          if (resolvedPath && resolvedPath !== binPath) {
+            debug.log(
+              `Binary '${program}' is a symlink. Real path: ${resolvedPath}`
+            );
+            return Ok(resolvedPath);
           }
         }
 
-        const lsResult = await this.execCmd({
-          cmd: "ls",
-          args: ["-l", binPath],
-        });
-        let resolvedPath = binPath;
-        let isSymlink = false;
-
-        if (!lsResult.isError() && lsResult.ok.exitCode === 0) {
-          const lsOutput = lsResult.ok.stdOut;
-          isSymlink = lsOutput.startsWith("l");
-          if (isSymlink) {
-            const match = lsOutput.match(/->\s+(.+)$/m);
-            if (match?.[1]) {
-              let target = match[1].trim();
-              if (!target.startsWith("/")) {
-                const dir = binPath.substring(0, binPath.lastIndexOf("/"));
-                target = `${dir}/${target}`;
-              }
-              resolvedPath = target;
-              debug.log(
-                `Binary '${program}' is a symlink. Real path: ${resolvedPath}`
-              );
-            }
-          }
-        }
-
-        return Ok(resolvedPath);
+        return Ok(binPath);
       }
       case "Windows": {
         const whereResult = await this.execCmd({

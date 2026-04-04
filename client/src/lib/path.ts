@@ -1,5 +1,5 @@
 import { os } from "@neutralinojs/lib";
-import { ErrFromUnknown, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 
 /**
  * Expands the tilde (~) character at the start of a path to the user's home
@@ -16,43 +16,42 @@ function expandTilde(path: string, homeDir: string): string {
 async function resolveUserPath(path: string): Promise<Result<string>> {
   if (!path.startsWith("~")) return Ok(path);
 
-  try {
-    const homeDir = await getHomeDir();
-    return Ok(expandTilde(path, homeDir));
-  } catch (error) {
-    return ErrFromUnknown(error);
+  const homeDir = await getHomeDir();
+  if (homeDir.isError()) {
+    return Err(homeDir.error);
   }
+
+  return Ok(expandTilde(path, homeDir.ok));
 }
 
 /**
  * Resolves the user's home directory based on the current OS.
  * Uses $HOME on Unix and $USERPROFILE on Windows.
- * Throws if the directory cannot be resolved (critical failure).
  */
-async function getHomeDir(): Promise<string> {
+async function getHomeDir(): Promise<Result<string>> {
   switch (window.NL_OS) {
     case "Linux":
     case "Darwin":
     case "FreeBSD": {
       const home = await os.getEnv("HOME");
       if (!home) {
-        throw new Error(
+        return ErrFromText(
           "Unable to locate home directory. Please set the HOME environment variable."
         );
       }
-      return home;
+      return Ok(home);
     }
     case "Windows": {
       const home = await os.getEnv("USERPROFILE");
       if (!home) {
-        throw new Error(
+        return ErrFromText(
           "Unable to locate home directory. Please set the USERPROFILE environment variable."
         );
       }
-      return home;
+      return Ok(home);
     }
     default:
-      throw new Error(
+      return ErrFromText(
         "Unable to locate home directory. Please set the HOME (Unix) or USERPROFILE (Windows) environment variable."
       );
   }
