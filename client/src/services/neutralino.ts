@@ -9,7 +9,6 @@ import { ErrFromText, Ok, type Result, wrapAsyncThrowable } from "lib-result";
 import stripAnsi from "strip-ansi";
 import { buildShellCommand, type OsType as ShellOsType } from "@/lib/shell";
 import type { AllowedCommand, Stringifiable } from "@/types";
-import { fs } from "./filesystem";
 
 const ALLOWED_COMMANDS: AllowedCommand[] = [
   "pass",
@@ -219,13 +218,6 @@ class NeutralinoService {
           }
         }
 
-        const shebangResult = await this.detectShebang(resolvedPath);
-        if (!shebangResult.isError() && shebangResult.ok) {
-          debug.log(
-            `Binary '${program}' is a script (${shebangResult.ok}). Real path: ${resolvedPath}`
-          );
-        }
-
         return Ok(resolvedPath);
       }
       case "Windows": {
@@ -254,27 +246,6 @@ class NeutralinoService {
       default:
         return ErrFromText("Unknown Operating System");
     }
-  }
-
-  /**
-   * Detects if a file is a script by checking for shebang (#!) prefix.
-   */
-  private async detectShebang(path: string): Promise<Result<string | null>> {
-    const readFileResult = await fs.readFile(path, { pos: 0, size: 2 });
-
-    if (readFileResult.isError()) {
-      return Ok(null);
-    }
-
-    const content = readFileResult.ok;
-    if (
-      content.length >= 2 &&
-      content.charCodeAt(0) === 0x23 &&
-      content.charCodeAt(1) === 0x21
-    ) {
-      return Ok("script");
-    }
-    return Ok(null);
   }
 }
 

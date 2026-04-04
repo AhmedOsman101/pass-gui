@@ -86,9 +86,7 @@ function validateArgument(arg: string): Result<string> {
  */
 async function checkSneakyPath(path: string): Promise<boolean> {
   const normalizedResult = await fs.getNormalizedPath(path);
-  if (normalizedResult.isError()) {
-    return false;
-  }
+  if (normalizedResult.isError()) return false;
 
   const normalized = normalizedResult.ok
     .replace(/\/+/g, "/")
