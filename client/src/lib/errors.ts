@@ -94,6 +94,25 @@ class DirectoryCreationError extends NeuError {
 }
 
 /**
+ * Specialized error for file write failures.
+ * Includes the path that failed to be written.
+ */
+class FileWriteError extends NeuError {
+  public path: string;
+
+  constructor(
+    type: NeuErrorMap,
+    code: NeuErrorCode,
+    path: string,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(type, code, message, options);
+    this.path = path;
+  }
+}
+
+/**
  * Error types for configuration-related failures.
  */
 const CONFIG_ERROR_CODES = Object.freeze({
@@ -177,6 +196,7 @@ export {
   type NeuErrorMap,
   NeuError,
   DirectoryCreationError,
+  FileWriteError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
   CONFIG_ERROR_CODES,

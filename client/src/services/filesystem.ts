@@ -7,6 +7,7 @@ import {
 import { Err, ErrFromUnknown, Ok, type Result, wrapAsync } from "lib-result";
 import {
   DirectoryCreationError,
+  FileWriteError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
   type NeuErrorCode,
@@ -159,7 +160,7 @@ class fs {
   static async writeFile(
     path: string,
     data: string
-  ): Promise<Result<boolean, Error>> {
+  ): Promise<Result<boolean, FileWriteError | Error>> {
     const resolvedPath = await fs.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -171,7 +172,7 @@ class fs {
       if (err?.code === "NE_FS_FILWRER") {
         const errorCode = err.code as NeuErrorCode;
         return Err(
-          new DirectoryCreationError(
+          new FileWriteError(
             NEU_ERROR_CODES[errorCode],
             errorCode,
             resolvedPath.ok,
