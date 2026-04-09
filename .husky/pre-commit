@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+pnpm audit --fix &>/dev/null &
+pnpm install &>/dev/null &
+
 yesNo() {
   local answer prompt="$1"
   printf '%b' "${prompt} [Y/n] "
@@ -43,7 +46,7 @@ formatted_files=()
 for file in "${files[@]}"; do
   diffFile="${tmpDir}/${file//\//_}.diff"
   if [[ -f "${diffFile}" ]]; then
-    git diff -- "${file}" > "${diffFile}.new"
+    git diff -- "${file}" >"${diffFile}.new"
     if ! diff "${diffFile}" "${diffFile}.new" &>/dev/null; then
       formatted_files+=("${file}")
     fi
