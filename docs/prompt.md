@@ -1,8 +1,8 @@
 You must checkout these links first:
 
-[How the frontend is structred](https://neutralino.js.org/docs/getting-started/using-frontend-libraries)
-[The native API docutmentation](https://neutralino.js.org/docs/api/overview/)
-[`lib-result` Wiki](https://github.com/AhmedOsman101/lib-result/wiki)
+- [How the frontend is structred](https://neutralino.js.org/docs/getting-started/using-frontend-libraries)
+- [The native API docutmentation](https://neutralino.js.org/docs/api/overview/)
+- [`lib-result` Wiki](https://github.com/AhmedOsman101/lib-result/wiki)
 
 ### Problem Statement
 
