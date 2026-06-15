@@ -37,7 +37,6 @@ lerna-debug.log*
 *.sw?
 
 # Private markdown files
-roadmap/
-references/
+docs/references
 review.md
 test.sh
