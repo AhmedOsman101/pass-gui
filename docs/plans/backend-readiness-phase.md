@@ -309,8 +309,6 @@ This is the cleanest next step because it finishes the backend foundation that a
 After this phase is complete, the next planning target should be the backend
 operations phase in `roadmap/03-entry-and-operations-backend.md`.
 
+## Related Specification
 
-## Required Specs
-<!-- SPECS_START -->
-- backend-readiness
-<!-- SPECS_END -->
+See `docs/specs/backend-readiness.md` for the formal spec this plan implements.

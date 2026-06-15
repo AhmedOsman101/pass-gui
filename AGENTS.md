@@ -15,7 +15,7 @@ Guidelines for agentic coding assistants on GNU Pass GUI project.
 - Config loading, validation, and default config generation are already implemented.
 - Core services for `pass`, `gpg`, filesystem access, and Neutralino command execution already exist.
 - Frontend state and screens are still intentionally minimal.
-- The current roadmap source of truth is the numbered sequence under `roadmap/`.
+- The current roadmap source of truth is the numbered sequence under `docs/roadmap/`.
 - `todo.md` at repo root is the authoritative checklist of remaining work.
 - `docs/plans/` contains execution plans for each roadmap phase.
 - `docs/specs/` contains detailed specs for specific subsystems.
@@ -28,11 +28,11 @@ Guidelines for agentic coding assistants on GNU Pass GUI project.
 
 Read in order:
 
-1. `roadmap/01-current-state-and-direction.md`
-2. `roadmap/02-backend-foundation-and-readiness.md`
-3. `roadmap/03-entry-and-operations-backend.md`
-4. `roadmap/04-frontend-after-backend.md`
-5. `roadmap/05-release-and-future-work.md`
+1. `docs/roadmap/01-current-state-and-direction.md`
+2. `docs/roadmap/02-backend-foundation-and-readiness.md`
+3. `docs/roadmap/03-entry-and-operations-backend.md`
+4. `docs/roadmap/04-frontend-after-backend.md`
+5. `docs/roadmap/05-release-and-future-work.md`
 
 ## Commands
 
@@ -209,14 +209,14 @@ UI assumptions alone.
 
 **NEVER**: Log plaintext passwords, store passwords in plain text in state, send passwords through console.log, include passwords in error messages
 
-**ALWAYS**: Mask passwords with `•••••`, clear clipboard after timeout, use GPG agent for passphrase, validate all user inputs
+**ALWAYS**: Mask passwords with â¢â¢â¢â¢â¢, clear clipboard after timeout, use GPG agent for passphrase, validate all user inputs
 
 ## Before Changes
 
 1. Run `pnpm typecheck` - must pass
 2. Run `pnpm lint && pnpm format`
 3. Check existing patterns for style consistency
-4. Review the numbered roadmap files under `roadmap/`
+4. Review the numbered roadmap files under `docs/roadmap/`
 5. Check `docs/plans/` for any existing execution plans relevant to the work
 6. Check `todo.md` for checklist coverage
 
