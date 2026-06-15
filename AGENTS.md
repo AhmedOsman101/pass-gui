@@ -16,6 +16,13 @@ Guidelines for agentic coding assistants on GNU Pass GUI project.
 - Core services for `pass`, `gpg`, filesystem access, and Neutralino command execution already exist.
 - Frontend state and screens are still intentionally minimal.
 - The current roadmap source of truth is the numbered sequence under `roadmap/`.
+- `todo.md` at repo root is the authoritative checklist of remaining work.
+- `docs/plans/` contains execution plans for each roadmap phase.
+- `docs/specs/` contains detailed specs for specific subsystems.
+
+## Known Architecture Issues
+
+- **Module-level init promises**: `neuInitialized`, `gpgInitialized`, `passInitialized` in `main.ts` block app mount with `Promise.all()`. If any service init fails, the app never renders. The readiness orchestrator in roadmap phase 2 should fix this with graceful degradation (show blocked states instead of failing silently).
 
 ## Current Roadmap Order
 
@@ -150,6 +157,15 @@ Never throw: Use `lib-result` wrapper methods like `wrap`, `wrapAsync`, `wrapThr
 
 Use services for NeutralinoJS calls, don't call directly in components
 
+Available services (all in `client/src/services/`):
+- `NeutralinoService` (`neutralino.ts`) — Command exec, binary resolution, env vars
+- `fs` (`filesystem.ts`) — Filesystem abstraction (mkdir, exists, readFile, writeFile)
+- `ConfigService` (`config.ts`) — Config load/save/ensure/getValue/setValue
+- `config-validation.ts` — Zod schemas + validators
+- `PassService` (`pass.ts`) — pass binary validation, version check, scoped exec
+- `GpgService` (`gpg.ts`) — gpg/gpg2 detection, version, secret key listing
+- `StoreService` (`store.ts`) — Store CRUD by name from config (path, gpg home validation)
+
 ### Backend-First Development Order
 
 Prefer this implementation order:
@@ -201,6 +217,8 @@ UI assumptions alone.
 2. Run `pnpm lint && pnpm format`
 3. Check existing patterns for style consistency
 4. Review the numbered roadmap files under `roadmap/`
+5. Check `docs/plans/` for any existing execution plans relevant to the work
+6. Check `todo.md` for checklist coverage
 
 ## Summary Checklist
 
@@ -215,7 +233,8 @@ UI assumptions alone.
 - [ ] Keep backend and domain logic out of UI components and ad hoc store code
 - [ ] Mask passwords in logs and UI
 - [ ] Follow existing naming conventions
+- [ ] Check `todo.md` and `docs/plans/` before starting new work
 
 ---
 
-**Last Updated**: March 31, 2026
+**Last Updated**: June 15, 2026
