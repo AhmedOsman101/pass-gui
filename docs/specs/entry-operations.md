@@ -76,6 +76,7 @@ Define stable TypeScript contracts (types only, no UI) for:
 All operations must use `Result<T, E>` with project error types.
 
 New error categories needed:
+
 - EntryNotFoundError (path does not exist in store)
 - EntryAlreadyExistsError (insert/generate on existing path)
 - EntryParseError (unexpected pass output format)

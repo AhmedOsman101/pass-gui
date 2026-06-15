@@ -5,8 +5,7 @@
 
 ## Purpose
 
-Build the user interface that consumes the backend contracts from phases 02 and
-03. Every screen reflects backend state rather than inventing its own.
+Build the user interface that consumes the backend contracts from phases 02 and 03. Every screen reflects backend state rather than inventing its own.
 
 ## Required Outcomes
 
@@ -15,13 +14,13 @@ Build the user interface that consumes the backend contracts from phases 02 and
 The app must not assume it enters at a password list. It shows the correct
 screen based on the readiness state:
 
-| Readiness State | UI Behavior |
-|----------------|-------------|
-| `DEPENDENCIES_MISSING` | Show blocked screen: which dependency is missing, how to install |
-| `GPG_NOT_INITIALIZED` | Show blocked screen: no GPG keys found, how to generate them |
-| `STORE_NOT_FOUND` | Show blocked screen: store path does not exist, offer creation flow |
-| `STORE_INVALID` | Show blocked screen: .gpg-id issues, recipient mismatch, etc. |
-| `READY` | Show password list |
+| Readiness State        | UI Behavior                                                         |
+| ---------------------- | ------------------------------------------------------------------- |
+| `DEPENDENCIES_MISSING` | Show blocked screen: which dependency is missing, how to install    |
+| `GPG_NOT_INITIALIZED`  | Show blocked screen: no GPG keys found, how to generate them        |
+| `STORE_NOT_FOUND`      | Show blocked screen: store path does not exist, offer creation flow |
+| `STORE_INVALID`        | Show blocked screen: .gpg-id issues, recipient mismatch, etc.       |
+| `READY`                | Show password list                                                  |
 
 Blocked screens must include actionable recovery guidance, not just error
 messages.
@@ -45,7 +44,7 @@ results.
 
 Build in this order:
 
-1. Readiness screen flow (blocked → ready transition)
+1. Readiness screen flow (blocked -> ready transition)
 2. Store-aware entry list (tree sidebar or folder view)
 3. Entry detail panel (password display, metadata, copy button)
 4. Clipboard UX (visual feedback, timer indicator)

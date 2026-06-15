@@ -17,20 +17,20 @@ new services. Work is verification, documentation, packaging, and cleanup.
 
 ## Files Affected
 
-| File | Change |
-|------|--------|
-| `neutralino.config.json` | Verify release config, update app version |
-| `docs/wiki/` (new dir) | User documentation |
-| `docs/wiki/system-requirements.md` | Pass/GPG/platform requirements |
-| `docs/wiki/installation.md` | Install and setup guide |
-| `docs/wiki/configuration.md` | Config file reference (or link existing) |
-| `docs/wiki/troubleshooting.md` | Common recovery steps |
-| `docs/wiki/keyboard-shortcuts.md` | Shortcut reference |
-| `docs/roadmap/README.md` | Add post-release direction note |
-| `TODO.md` | Mark release items, consolidate completed work |
-| `AGENTS.md` | Verify current-state section is accurate |
-| `docs/README.md` | Verify phase mapping is correct |
-| (release script) | `scripts/release.sh` or `package.json` release target |
+| File                               | Change                                                |
+| ---------------------------------- | ----------------------------------------------------- |
+| `neutralino.config.json`           | Verify release config, update app version             |
+| `docs/wiki/` (new dir)             | User documentation                                    |
+| `docs/wiki/system-requirements.md` | Pass/GPG/platform requirements                        |
+| `docs/wiki/installation.md`        | Install and setup guide                               |
+| `docs/wiki/configuration.md`       | Config file reference (or link existing)              |
+| `docs/wiki/troubleshooting.md`     | Common recovery steps                                 |
+| `docs/wiki/keyboard-shortcuts.md`  | Shortcut reference                                    |
+| `docs/roadmap/README.md`           | Add post-release direction note                       |
+| `TODO.md`                          | Mark release items, consolidate completed work        |
+| `AGENTS.md`                        | Verify current-state section is accurate              |
+| `docs/README.md`                   | Verify phase mapping is correct                       |
+| (release script)                   | `scripts/release.sh` or `package.json` release target |
 
 ---
 
@@ -43,24 +43,24 @@ Systematic check of every critical path.
 **Checklist to verify:**
 
 1. **Readiness flows**
-   - Remove `pass` binary from PATH temporarily → app shows DEPENDENCIES_MISSING
-   - Remove GPG keyring → app shows GPG_NOT_INITIALIZED
-   - Remove `.gpg-id` → app shows STORE_INVALID
-   - Valid setup → app shows READY and loads password list
+   - Remove `pass` binary from PATH temporarily -> app shows DEPENDENCIES_MISSING
+   - Remove GPG keyring -> app shows GPG_NOT_INITIALIZED
+   - Remove `.gpg-id` -> app shows STORE_INVALID
+   - Valid setup -> app shows READY and loads password list
    - Each blocked state shows actionable text
 
 2. **Entry operations**
    - List entries from a real store with 20+ entries across folders
    - Show detail for a multi-line entry (password + metadata)
-   - Copy to clipboard → verify content matches → wait for clear → verify cleared
-   - Create a new entry → verify it appears in listing
-   - Generate a password → verify it appears in store filesystem
-   - Remove an entry → verify it disappears from listing
+   - Copy to clipboard -> verify content matches -> wait for clear -> verify cleared
+   - Create a new entry -> verify it appears in listing
+   - Generate a password -> verify it appears in store filesystem
+   - Remove an entry -> verify it disappears from listing
 
 3. **Config persistence**
-   - Delete existing config → app regenerates it with comments
-   - Modify a config value → save → reopen config → value persists
-   - Modify store path → app shows correct new state
+   - Delete existing config -> app regenerates it with comments
+   - Modify a config value -> save -> reopen config -> value persists
+   - Modify store path -> app shows correct new state
 
 4. **Security**
    - Search logs for any plaintext password output
@@ -88,12 +88,14 @@ are awaited with `Promise.all()`. If one fails, the app never renders.
    state that transitions to blocked or ready based on readiness check result.
 
 **`client/src/main.ts` changes:**
+
 - Only `await neuInitialized` here (or restructure to use Neutralino ready
   callback instead of a module-level promise).
 - Remove gpg/pass init promises from main.ts.
 - Move their initialization into the readiness orchestrator.
 
 **`client/src/services/neutralino.ts` changes:**
+
 - Keep `init()` but ensure it only resolves once.
 - No longer export `gpgInitialized`/`passInitialized` -style promises from
   neutralino.ts. These belong in their respective service modules, and only
@@ -104,11 +106,13 @@ are awaited with `Promise.all()`. If one fails, the app never renders.
 Prepare a repeatable build path.
 
 **Verify:**
+
 - `pnpm build` completes without errors
 - `pnpm build:frontend` completes without errors
 - The built binary is runnable from a clean environment
 
 **Create or update:**
+
 - Add `pnpm release` target in `package.json` if not already correct
 - Verify `neutralino.config.json` has correct:
   - `appVersion` (semver)
@@ -117,6 +121,7 @@ Prepare a repeatable build path.
   - `neu CLI version` matches workspace dev dependency
 
 **Document:**
+
 - Build requirements (Neutralino CLI, pnpm, node version)
 - Build steps in README or wiki
 - How to create a distributable binary
@@ -126,44 +131,52 @@ Prepare a repeatable build path.
 Create `docs/wiki/` with user-facing docs.
 
 **`docs/wiki/system-requirements.md`**
+
 - Required: `pass` (>= 1.7.0), `gpg`/`gpg2`, GPG key pair
 - Platform notes: Linux (primary), macOS, Windows
 - Optional: custom GNUPGHOME, extensions
 
 **`docs/wiki/installation.md`**
+
 - Download binary (or build from source)
 - First-launch config generation
 - Store setup: `pass init` if no store exists
 
 **`docs/wiki/configuration.md`**
+
 - Config file location per platform
 - All sections and keys with descriptions
 - Default values
 - Cross-field validation rules (active_store must reference defined store)
 
 **`docs/wiki/troubleshooting.md`**
-- "pass not found" → how to install pass
-- "No GPG keys" → how to generate a key pair
-- "Store not found" → how to create/init a store
-- "Invalid .gpg-id" → how to fix recipient mismatch
-- "Clipboard not working" → platform-specific clipboard issues
+
+- "pass not found" -> how to install pass
+- "No GPG keys" -> how to generate a key pair
+- "Store not found" -> how to create/init a store
+- "Invalid .gpg-id" -> how to fix recipient mismatch
+- "Clipboard not working" -> platform-specific clipboard issues
 
 **`docs/wiki/keyboard-shortcuts.md`**
+
 - Document implemented shortcuts as they exist
 
 ### Sub-phase 5.5: Docs Cleanup
 
 **`TODO.md`**
+
 - Mark all verified-complete items with `[x]`
 - Add a "Future" section for deferred items
 - Remove or consolidate redundant items
 
 **`docs/roadmap/README.md`**
+
 - Update status: all 5 phases complete
 - Add post-release section: "The app is at MVP. Future work listed in
   roadmap/05-release-and-future-work.md under Future Work."
 
 **`docs/README.md`**
+
 - Verify phase mapping is complete
 - Update status from "Planned" to "Done" for all phases
 
@@ -179,13 +192,13 @@ pnpm build                                  # Must produce valid binary
 
 Full end-to-end test:
 
-1. Delete config → launch app → config regenerates correctly
-2. App detects pass/GPG/store → shows ready state
-3. List entries → view detail → copy password → verify clipboard
-4. Wait for clipboard clear → verify clipboard is empty
-5. Create entry → verify in listing
-6. Remove entry → verify removed from listing
-7. Change config in settings → restart → changes persist
+1. Delete config -> launch app -> config regenerates correctly
+2. App detects pass/GPG/store -> shows ready state
+3. List entries -> view detail -> copy password -> verify clipboard
+4. Wait for clipboard clear -> verify clipboard is empty
+5. Create entry -> verify in listing
+6. Remove entry -> verify removed from listing
+7. Change config in settings -> restart -> changes persist
 8. Verify no plaintext passwords in logs, errors, or state
 
 ---

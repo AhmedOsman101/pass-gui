@@ -4,12 +4,12 @@
 
 ```
 docs/
-├── README.md            ← this file
-├── archive/             ← completed or historical documents
-├── roadmap/             ← strategic direction (read first, in order)
-├── specs/               ← atomic specifications per phase
-├── plans/               ← execution plans per phase
-└── references/          ← external reference material
+├── README.md            <- this file
+├── archive/             <- completed or historical documents
+├── roadmap/             <- strategic direction (read first, in order)
+├── specs/               <- atomic specifications per phase
+├── plans/               <- execution plans per phase
+└── references/          <- external reference material
 ```
 
 ## How To Use These Docs
@@ -30,15 +30,15 @@ scope, required outcomes, and acceptance criteria. The spec is the
 Each phase has an execution plan under `docs/plans/` that specifies
 the "how" — file changes, implementation order, and verification steps.
 
-### Phase ↔ Spec ↔ Plan Mapping
+### Phase <-> Spec <-> Plan Mapping
 
-| Roadmap Phase | Spec | Plan | Status |
-|---------------|------|------|--------|
-| 01. Current State & Direction | — (strategic only) | — | ✅ Agreed |
-| 02. Backend Readiness | `specs/backend-readiness.md` | `plans/backend-readiness-phase.md` | 📋 Ready to implement |
-| 03. Entry Operations | `specs/entry-operations.md` | `plans/entry-operations-phase.md` | 📋 Planned |
-| 04. Frontend UI | `specs/frontend-ui.md` | `plans/frontend-ui-phase.md` | 📋 Planned |
-| 05. Release | `specs/release.md` | `plans/release-phase.md` | 📋 Planned |
+| Roadmap Phase                 | Spec                         | Plan                               | Status                |
+| ----------------------------- | ---------------------------- | ---------------------------------- | --------------------- |
+| 01. Current State & Direction | — (strategic only)           | —                                  | ✅ Agreed             |
+| 02. Backend Readiness         | `specs/backend-readiness.md` | `plans/backend-readiness-phase.md` | 📋 Ready to implement |
+| 03. Entry Operations          | `specs/entry-operations.md`  | `plans/entry-operations-phase.md`  | 📋 Planned            |
+| 04. Frontend UI               | `specs/frontend-ui.md`       | `plans/frontend-ui-phase.md`       | 📋 Planned            |
+| 05. Release                   | `specs/release.md`           | `plans/release-phase.md`           | 📋 Planned            |
 
 ## Convention Rules
 

@@ -18,25 +18,25 @@ to dedicated functions. No UI code in this phase.
 
 ## New Files
 
-| File | Purpose |
-|------|---------|
-| `client/src/types/entries.ts` | Entry domain types (tree, detail, mutation, clipboard contracts) |
-| `client/src/lib/parse-pass-ls.ts` | Parse `pass ls` output into entry tree |
-| `client/src/lib/parse-pass-show.ts` | Parse `pass show` output into entry detail model |
-| `client/src/services/entries.ts` | EntriesService: list, show, insert, generate, rm, mv, edit |
-| `client/src/services/clipboard.ts` | ClipboardService: write, clear, timer management |
+| File                                | Purpose                                                          |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| `client/src/types/entries.ts`       | Entry domain types (tree, detail, mutation, clipboard contracts) |
+| `client/src/lib/parse-pass-ls.ts`   | Parse `pass ls` output into entry tree                           |
+| `client/src/lib/parse-pass-show.ts` | Parse `pass show` output into entry detail model                 |
+| `client/src/services/entries.ts`    | EntriesService: list, show, insert, generate, rm, mv, edit       |
+| `client/src/services/clipboard.ts`  | ClipboardService: write, clear, timer management                 |
 
 ## Modified Files
 
-| File | Change |
-|------|--------|
-| `client/src/lib/errors.ts` | Add EntryNotFoundError, EntryParseError, ClipboardError, MutationError |
-| `client/src/lib/constants.ts` | No changes needed unless new constants emerge |
-| `client/src/types/index.ts` | May re-export from entries.ts if convention dictates |
-| `client/src/services/pass.ts` | No changes needed (already handles scoped exec). Only if scoping gaps are found |
-| `client/src/services/gpg.ts` | No changes needed |
-| `client/src/services/config.ts` | No changes needed |
-| `TODO.md` | Mark entry ops items done |
+| File                            | Change                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `client/src/lib/errors.ts`      | Add EntryNotFoundError, EntryParseError, ClipboardError, MutationError          |
+| `client/src/lib/constants.ts`   | No changes needed unless new constants emerge                                   |
+| `client/src/types/index.ts`     | May re-export from entries.ts if convention dictates                            |
+| `client/src/services/pass.ts`   | No changes needed (already handles scoped exec). Only if scoping gaps are found |
+| `client/src/services/gpg.ts`    | No changes needed                                                               |
+| `client/src/services/config.ts` | No changes needed                                                               |
+| `TODO.md`                       | Mark entry ops items done                                                       |
 
 ---
 
@@ -67,7 +67,7 @@ calls, no side effects.
 **Files:** `client/src/lib/parse-pass-ls.ts`, `client/src/lib/parse-pass-show.ts`
 
 - `parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>`
-  - Handle empty output (empty store) → empty tree
+  - Handle empty output (empty store) -> empty tree
   - Parse indentation-based tree format
   - Distinguish folders (trailing `/`) from files
   - Preserve full relative paths
@@ -75,7 +75,7 @@ calls, no side effects.
 - `parsePassShowOutput(stdout: string): Result<EntryDetail, EntryParseError>`
   - First line = secret (password)
   - Remaining lines = optional metadata
-  - Split metadata on first `:` → key/value pairs
+  - Split metadata on first `:` -> key/value pairs
   - Lines without `:` go into an `other` array
   - Handle single-line entries (secret only, no metadata)
 
@@ -140,6 +140,7 @@ Manages clipboard operations with config-backed timer.
   - Called on manual clear or lifecycle boundary
 
 Design notes:
+
 - Timer uses `setTimeout` in a manager, not in the UI.
 - ClipboardClearTimer is an internal concern; the service exposes `write`
   and `clear` and manages the timer as a private implementation detail.
@@ -158,6 +159,7 @@ Add these error classes following existing patterns:
 - `MutationError` extends `PassError` with type `MutationFailed`
 
 Each should carry metadata:
+
 - `path?: string` for path-related errors
 - `exitCode?: number` for command failures
 - `stderr?: string` for debugging

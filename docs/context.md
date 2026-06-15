@@ -1,0 +1,308 @@
+# pass-gui Context File
+
+> Handoff document for AI agents reviewing or working on the pass-gui project.
+> Last updated: June 15, 2026
+
+---
+
+## What is pass-gui
+
+A **desktop GUI for GNU Pass** (the standard Unix password manager). It wraps `pass` and GPG under a graphical interface using NeutralinoJS (a lightweight alternative to Electron). It manages multiple password stores, validates environment readiness, lists entries, and provides clipboard-backed copy operations.
+
+**Tech stack**: Vue 3 + Pinia + NeutralinoJS + TypeScript + TailwindCSS v4 + shadcn-vue + lib-result + Zod + `@ltd/j-toml`
+
+---
+
+## Project Structure
+
+```
+pass-gui/
+├── AGENTS.md                    # Agent guidelines (code style, architecture, commands)
+├── TODO.md                      # Authoritative checklist of remaining work
+├── biome.json                   # Biome linter/formatter (sole lint tool, no ESLint)
+├── neutralino.config.json       # NeutralinoJS app config
+├── docs/
+│   ├── README.md                # Doc directory index
+│   ├── roadmap/                 # Strategic roadmap (5 files, read in order)
+│   │   ├── 01-current-state-and-direction.md
+│   │   ├── 02-backend-foundation-and-readiness.md  <- CURRENT PHASE
+│   │   ├── 03-entry-and-operations-backend.md
+│   │   ├── 04-frontend-after-backend.md
+│   │   └── 05-release-and-future-work.md
+│   ├── specs/                   # Stable scoping specs per phase
+│   │   ├── backend-readiness.md
+│   │   ├── entry-operations.md
+│   │   ├── frontend-ui.md
+│   │   └── release.md
+│   ├── plans/                   # Execution plans per phase
+│   │   ├── backend-readiness-phase.md
+│   │   ├── entry-operations-phase.md
+│   │   ├── frontend-ui-phase.md
+│   │   └── release-phase.md
+│   ├── archive/                 # Stale/historical docs
+│   └── references/              # NeutralinoJS + j-toml API docs
+├── client/src/
+│   ├── main.ts                  # Entry point: mounts Vue, inits services
+│   ├── App.vue                  # Root component (Vue logo + RouterView stub)
+│   ├── types/                   # All type definitions
+│   │   ├── index.ts              # Brand, Version, PassBinaryInfo, SecretKey, etc.
+│   │   ├── config.ts             # AppConfig, CoreConfig, StoreConfig, etc.
+│   │   └── toml.ts               # TomlObject, ParsedToml, etc.
+│   ├── lib/
+│   │   ├── errors.ts             # NeuError, FileWriteError, ConfigError, etc.
+│   │   ├── constants.ts          # PASS_MIN_VERSION (1.7.0), DEFAULT_CONFIG
+│   │   ├── utils.ts              # cn(), compareVersions(), brand()
+│   │   ├── path.ts               # expandTilde(), resolveUserPath()
+│   │   ├── shell.ts              # Shell quoting, path traversal prevention
+│   │   └── toml.ts               # TOML parse/stringify with comment preservation
+│   ├── services/                 # Backend service layer (all singletons)
+│   │   ├── neutralino.ts         # NeutralinoService: command exec, binary resolution
+│   │   ├── filesystem.ts         # fs class: mkdir, exists, readFile, writeFile
+│   │   ├── config.ts             # ConfigService: load/save/ensure/getValue/setValue
+│   │   ├── config-validation.ts  # Zod schemas per config section
+│   │   ├── pass.ts               # PassService: binary check, version, scoped exec
+│   │   ├── gpg.ts                # GpgService: gpg2/gpg detection, secret key listing
+│   │   └── store.ts              # StoreService: CRUD stores from config
+│   ├── stores/
+│   │   └── counter.ts            # Placeholder store only (template artifact)
+│   ├── pages/
+│   │   ├── index.vue             # Home page (RouterLink stub)
+│   │   ├── about.vue             # Static stub
+│   │   └── test.vue              # Runs hardcoded service calls for testing
+│   └── components/
+│       ├── AppSidebar.vue        # Sidebar with hardcoded sample data (not real)
+│       ├── ModeToggle.vue        # Dark/light/system mode toggle (works)
+│       ├── Tree.vue              # Recursive file tree (wired to sample data)
+│       └── ui/                   # shadcn-vue components (button, sidebar, etc.)
+└── references/                   # External docs (Neutralino, j-toml API)
+```
+
+---
+
+## Architecture
+
+### Layering
+
+```
+config -> readiness -> entry operations -> state contracts -> UI
+```
+
+Each layer depends on the one before it. The app is currently between layers 1 (config) and 2 (readiness).
+
+### Services Layer
+
+Six service singletons, all in `client/src/services/`:
+
+| Service        | File            | Purpose                                                   |
+| -------------- | --------------- | --------------------------------------------------------- |
+| `neu`          | `neutralino.ts` | NeutralinoJS command exec, binary resolution, env vars    |
+| `fs`           | `filesystem.ts` | mkdir, exists, readFile, writeFile, isDirectory, getStats |
+| `config`       | `config.ts`     | Load/save/ensure config, generic getValue/setValue        |
+| `pass`         | `pass.ts`       | pass binary validation, version check, scoped exec        |
+| `gpg`          | `gpg.ts`        | gpg2/gpg detection, version parsing, secret key listing   |
+| `StoreService` | `store.ts`      | get/set/validatePath for stores from config               |
+
+### Init Flow (main.ts)
+
+```ts
+// main.ts — current architecture
+Neutralino.init();
+await neuInitialized; // from neutralino.ts
+await gpgInitialized; // from gpg.ts
+await passInitialized; // from pass.ts
+```
+
+**Known issue**: These are module-level promise singletons. App mounts via `app.mount("#app")` BEFORE the awaits, but if any init fails, there is no graceful degradation. Phase 2 (readiness) is supposed to fix this.
+
+### Pinia Stores
+
+Only one exists: `useCounterStore` (template placeholder). All stores must be setup stores (function form), return `Result` types from actions, and consume service contracts — not invent backend behavior.
+
+### Error Handling
+
+**Mandatory**: `Result<T, E>` from `lib-result` for everything that can fail. Never throw for expected failures.
+
+```ts
+import { Ok, Err, ErrFromObject, ErrFromUnknown } from "lib-result";
+
+async function doSomething(): Promise<Result<ResultType, ErrorType>> {
+  // try / wrap / wrapAsync — never throw
+}
+```
+
+Error classes in `client/src/lib/errors.ts`:
+
+- `NeuError` (+ `DirectoryCreationError`, `FileWriteError`) — NeutralinoJS errors
+- `ConfigNotFoundError`, `ConfigParseError`, `ConfigWriteError`, `ConfigValidationError` — config errors
+
+---
+
+## Current State: What is IMPLEMENTED
+
+- **pnpm workspace** (root + client/) with full build: Vite 7, Neutralino 6, Vue 3.5, TypeScript 5.9, Tailwind v4
+- **Config system** — load/save/ensure/getValue/setValue with Zod validation, TOML comment preservation via `@ltd/j-toml`, cross-field validation (active_store references valid store), commented default config on first write
+- **NeutralinoService** — command execution with ANSI stripping, binary resolution with symlink following, env var access, command existence checking, path traversal prevention
+- **Filesystem service** — mkdir, exists, readFile, writeFile, isDirectory, isFile, getStats, normalize, join, path parts
+- **PassService** — binary validation, version check (min 1.7.0), `pass` exec with PASSWORD_STORE_DIR scoping, path validation
+- **GpgService** — gpg2/gpg detection, version parsing, home directory detection, secret key listing with colon-parsed output, GNUPGHOME scoping
+- **StoreService** — basic store get/set/validatePath from config
+- **Shell security** — POSIX/Windows quoting, argument validation, directory traversal detection (`../`, null bytes)
+- **shadcn-vue** — installed: sidebar (full suite), button, input, separator, skeleton, tooltip, breadcrumb, sheet, collapsible, dropdown-menu
+- **Dark/light mode** — via `@vueuse/core` useColorMode (works)
+- **Auto-routing** — Vue Router auto-routes from pages/
+
+---
+
+## Current State: What is NOT IMPLEMENTED
+
+### Readiness Layer (phase 02 — IMMEDIATE GAP)
+
+- No `ReadinessState`, `ReadinessSnapshot`, or `ReadinessIssue` types
+- No store validation service (beyond `.gpg-id` existence check)
+- No `.gpg-id` parsing and recipient verification against GPG keyring
+- No `pass ls` behavioral check
+- No readiness orchestrator service
+- No readiness Pinia store
+- Module-level init promises block app mount (no graceful degradation)
+
+### Entry Operations (phase 03)
+
+- No entry listing (`pass ls` parsing into tree structure)
+- No entry detail retrieval (`pass show` -> secret + metadata)
+- No entry mutations (insert, generate, edit, rm, mv)
+- No clipboard service (Neutralino clipboard API not called)
+- No entry domain types (entry tree, entry detail, mutation result)
+
+### Pinia Stores (beyond counter stub)
+
+- No readiness store
+- No entries store
+- No selected entry store
+- No clipboard store
+- No store-context store
+
+### Frontend (phase 04)
+
+- No readiness-driven app entry (blocked screens for missing deps)
+- No password list view
+- No entry detail view
+- No onboarding flows (missing pass, missing GPG keys, store creation)
+- App.vue is just a logo + RouterView — no app shell
+- AppSidebar.vue uses hardcoded sample data, not real pass output
+- Test page runs hardcoded service calls for development only
+
+### Security (partial)
+
+- Clipboard clearing not implemented
+- Sensitive data not cleared from memory
+- GPG agent passphrase handling not wired
+
+---
+
+## Roadmap (Read in Order)
+
+1. **01 — Current State & Direction** (accepted): Backend-first direction established.
+2. **02 — Backend Readiness** (CURRENT): Readiness pipeline validates pass -> GPG -> active store -> store structure -> recipients -> behavioral check -> snapshot. Produce `ReadinessSnapshot` with state (`DEPENDENCIES_MISSING`, `GPG_NOT_INITIALIZED`, `STORE_NOT_FOUND`, `STORE_INVALID`, `READY`) + list of `ReadinessIssue`.
+3. **03 — Entry Operations**: Listing, detail, mutations, clipboard, state contracts.
+4. **04 — Frontend UI**: Readiness-driven app entry, Pinia stores, user flows, settings.
+5. **05 — Release**: Hardening, packaging, user docs, maintenance baseline.
+
+---
+
+## Type System
+
+All in `client/src/types/`:
+
+```ts
+// index.ts
+type Brand<T, TBrand> = T & { [__brand]: TBrand };
+type Version = { major: number; minor: number; patch: number };
+type PassBinaryInfo = { path: string; isSystemBinary: boolean };
+type GpgBinaryInfo = { path: string; command: string };
+type SecretKey = {
+  keyId: string;
+  fingerprint?: string;
+  userId: string;
+  userIds: string[];
+  algorithm: string;
+  creationDate: string | null;
+  expirationDate: string | null;
+};
+type AllowedCommand =
+  | "pass"
+  | "gpg"
+  | "gpg2"
+  | "type"
+  | "ls"
+  | "where.exe"
+  | "which"
+  | "readlink"
+  | "file";
+type OsType = "Linux" | "Darwin" | "Windows NT" | "Unknown";
+
+// config.ts
+type AppConfig = {
+  core: CoreConfig; // { active_store: string }
+  preferences: PreferencesConfig; // { auto_refresh_interval_ms: number }
+  generation: GenerationConfig; // { default_length, symbols, character_set, character_set_no_symbols }
+  clipboard: ClipboardConfig; // { clear_after_seconds, selection }
+  gpg: GpgConfig; // { opts: string[], signing_key?, key? }
+  extensions: ExtensionsConfig; // { enabled: boolean }
+  stores: Record<string, StoreConfig>; // { path: string, gnupg_home?: string }
+};
+```
+
+---
+
+## Code Style Rules
+
+- **TypeScript**: `type` over `interface`, explicit type imports (`useImportType: error`), named functions preferred, no `any` (use `unknown`), no `enum`
+- **Vue 3**: `<script setup lang="ts">`, Composition API, state first then computed then functions, `defineProps`/`defineEmits` with runtime options
+- **Formatting (Biome)**: 2-space indent, 80 char width, LF, ES5 trailing commas, semicolons always, double quotes for JSX/HTML
+- **Naming**: `PascalCase.vue` (components), `kebab-case.ts` (composables: `use*.ts`), `camelCase.ts` (stores/services/utils), `UPPER_SNAKE_CASE` (constants)
+- **Security**: Never log plaintext passwords, mask with `- - - - - `, clear clipboard after timeout, use GPG agent, validate all inputs
+
+---
+
+## Key Commands
+
+```bash
+pnpm dev              # Parallel: frontend + NeutralinoJS
+pnpm typecheck        # Vue-TSC type checking (MUST pass before changes)
+pnpm lint && pnpm format  # Biome lint + format (MUST pass before changes)
+pnpm build            # Full build (frontend + NeutralinoJS)
+pnpm release          # Release build
+```
+
+---
+
+## TODO.md Checklist Summary
+
+From `TODO.md` at repo root:
+
+- ✅ Pass binary resolution, version check, path validation
+- ✅ GPG binary detection, version parsing, secret key listing
+- ✅ Store path resolution ($PASSWORD_STORE_DIR / ~/.password-store)
+- ✅ Config file read/write, Zod schema validation, TOML comment preservation
+- ✅ Command injection prevention, path traversal prevention
+- ❌ Readiness state machine (DEPENDENCIES_MISSING, GPG_NOT_INITIALIZED, STORE_NOT_FOUND, STORE_INVALID, READY)
+- ❌ Store validation beyond existence (.gpg-id contents, recipient verification)
+- ❌ Behavioral validation (pass ls)
+- ❌ Entry listing, detail retrieval, mutations, clipboard
+- ❌ All Pinia stores (readiness, entries, selected entry, clipboard, store-context)
+- ❌ All UI flows (readiness screens, password list, entry detail, onboarding, settings)
+- ❌ Security: clipboard clearing, memory clearing, GPG agent handling
+
+Full checklist at `TODO.md` — 63 total items, ~20 checked, ~43 pending.
+
+---
+
+## Key Architecture Constraints
+
+1. **Services call NeutralinoJS, not components.** Components never call Neutralino directly.
+2. **All errors use `Result<T, E>`.** No throwing for expected failures.
+3. **Backend-first.** Readiness -> entry ops -> state contracts -> UI. Never skip layers.
+4. **Password stores are valid only in**: `$PASSWORD_STORE_DIR` (if set) or `$HOME/.password-store`. Do not search arbitrary paths.
+5. **Neutralino is already initialized in `main.ts`.** Do not reinitialize.
+6. **Multi-store from day one.** Config already supports `stores: Record<string, StoreConfig>`.
+7. **Config is a product surface.** Keep it validated, user-readable, with comment-preserving TOML round-trips.

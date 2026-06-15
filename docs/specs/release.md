@@ -73,8 +73,8 @@ Create user-facing docs under `docs/wiki/`:
 - The app can be built, packaged, and run on the target platform.
 - A new user can set up the app with only the user docs.
 - One full end-to-end user journey works:
-  open → readiness check → view entries → inspect an entry →
-  copy a value → create an entry → remove an entry → quit.
+  open -> readiness check -> view entries -> inspect an entry ->
+  copy a value -> create an entry -> remove an entry -> quit.
 - `pnpm build` produces a valid distributable binary.
 - The project is ready for public or personal use.
 

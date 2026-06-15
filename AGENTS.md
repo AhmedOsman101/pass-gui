@@ -158,6 +158,7 @@ Never throw: Use `lib-result` wrapper methods like `wrap`, `wrapAsync`, `wrapThr
 Use services for NeutralinoJS calls, don't call directly in components
 
 Available services (all in `client/src/services/`):
+
 - `NeutralinoService` (`neutralino.ts`) — Command exec, binary resolution, env vars
 - `fs` (`filesystem.ts`) — Filesystem abstraction (mkdir, exists, readFile, writeFile)
 - `ConfigService` (`config.ts`) — Config load/save/ensure/getValue/setValue

@@ -33,12 +33,12 @@ before moving to the next file.
 
 Each roadmap phase has two companion files in `docs/`:
 
-| Phase | Spec (scope + acceptance) | Plan (execution steps) |
-|-------|--------------------------|------------------------|
+| Phase                  | Spec (scope + acceptance)         | Plan (execution steps)                  |
+| ---------------------- | --------------------------------- | --------------------------------------- |
 | 02 – Backend Readiness | `docs/specs/backend-readiness.md` | `docs/plans/backend-readiness-phase.md` |
-| 03 – Entry Operations | `docs/specs/entry-operations.md` | `docs/plans/entry-operations-phase.md` |
-| 04 – Frontend UI | `docs/specs/frontend-ui.md` | `docs/plans/frontend-ui-phase.md` |
-| 05 – Release | `docs/specs/release.md` | `docs/plans/release-phase.md` |
+| 03 – Entry Operations  | `docs/specs/entry-operations.md`  | `docs/plans/entry-operations-phase.md`  |
+| 04 – Frontend UI       | `docs/specs/frontend-ui.md`       | `docs/plans/frontend-ui-phase.md`       |
+| 05 – Release           | `docs/specs/release.md`           | `docs/plans/release-phase.md`           |
 
 ## Notes
 

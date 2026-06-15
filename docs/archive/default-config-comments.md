@@ -18,7 +18,7 @@ Build the default config as a j-toml raw table with comments attached via `comme
 
 Why this approach:
 
-- It uses the library’s intended metadata model instead of post-processing strings.
+- It uses the library's intended metadata model instead of post-processing strings.
 - It fits the current architecture where `ensure()` creates the initial file and `save()` round-trips `_raw`.
 - It avoids rewriting existing user config files just to inject comments.
 
@@ -124,7 +124,7 @@ Because you asked for planning only and no tests are desired for this work, veri
 ## Risks / Watchouts
 
 - `commentFor` values cannot contain newlines, so comments must stay one-line and concise.
-- The project’s `extractCleanData()` intentionally strips symbol metadata from `data`; comment manipulation must happen on raw tables, not on clean data objects.
+- The project's `extractCleanData()` intentionally strips symbol metadata from `data`; comment manipulation must happen on raw tables, not on clean data objects.
 - `toSectionFormat()` currently creates plain `Section(...)` tables only; adding comments may require a second builder path instead of overloading generic stringify behavior.
 - If both `commentFor('table')` and `commentForThis` are used for the same section, serialization depends on `preferCommentFor`; the implementation should standardize on one style.
 
