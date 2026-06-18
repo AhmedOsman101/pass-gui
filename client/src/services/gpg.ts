@@ -156,6 +156,31 @@ class GpgService {
   }
 
   /**
+   * Lists secret keys from a specified GNUPGHOME directory.
+   * Used when verifying recipients for a store with a custom GNUPGHOME.
+   */
+  async listSecretKeysWithHome(
+    gnupgHome: string
+  ): Promise<Result<SecretKey[]>> {
+    const command = this.getCommand();
+    const cmd = `GNUPGHOME="${gnupgHome}" ${command}`;
+
+    const cmdResult = await neu.execCmd({
+      cmd,
+      args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
+    });
+
+    if (cmdResult.isError()) return Err(cmdResult.error);
+
+    if (cmdResult.ok.exitCode !== 0) {
+      return ErrFromText(`GPG list-secret-keys failed: ${cmdResult.ok.stdErr}`);
+    }
+
+    const keys = this.parseSecretKeys(cmdResult.ok.stdOut);
+    return Ok(keys);
+  }
+
+  /**
    * Parses the colon-delimited output from `gpg --list-secret-keys`.
    * Extracts key ID, fingerprint, user IDs, algorithm, and dates.
    */

@@ -1,314 +1,278 @@
-# Backend Readiness Phase Plan
+# Backend Readiness Phase — Implementation Plan
+
+> **Spec**: `docs/specs/backend-readiness.md`
+> **Roadmap**: `docs/roadmap/02-backend-foundation-and-readiness.md`
+> **Depends on**: Config system, PassService, GpgService, StoreService, filesystem service all implemented
 
 ## Goal
 
-Finish the backend hard-gate needed before frontend feature work by implementing dependency readiness, store validation, and a backend-facing readiness contract that a future Pinia store can consume.
+Implement the backend readiness pipeline: a deterministic validation chain that checks pass, GPG, and the active store, then produces a `ReadinessSnapshot` with a machine-readable state (`DEPENDENCIES_MISSING`, `GPG_NOT_INITIALIZED`, `STORE_NOT_FOUND`, `STORE_INVALID`, `READY`) and a list of structured `ReadinessIssue` objects. This is the hard gate the app must pass before any password-management feature can operate.
+
+**Status: ALL STEPS COMPLETE** — this phase has been fully implemented. The plan below documents the final state for future reference. No pending work remains.
+
+## Prerequisites
+
+- `PassService` exists at `client/src/services/pass.ts` with `validatePassBinary()`, `passExists()`, `checkVersion()`, `exec()`, `execScoped()` methods
+- `GpgService` exists at `client/src/services/gpg.ts` with `gpgExists()`, `listSecretKeys()`, `listSecretKeysWithHome()`, `exec()` methods
+- `ConfigService` exists at `client/src/services/config.ts` with `load()`, `getValue()`, `ensure()` methods
+- `StoreService` exists at `client/src/services/store.ts` with `get()`, `validatePath()` methods
+- `NeutralinoService` (`neu`) exists at `client/src/services/neutralino.ts` with `safeExec()`, `execCmd()`, `getEnv()`, `resolveBinaryPath()`, `commandExists()` methods
+- Filesystem service (`fs`) exists at `client/src/services/filesystem.ts` with `isDirectory()`, `readFile()`, `exists()` methods
+- Shell helpers exist at `client/src/lib/shell.ts` (`validatePath()`, `buildShellCommand()`, `quoteForPosix()`)
+- Error classes exist at `client/src/lib/errors.ts` (`NeuError`, `ConfigNotFoundError`, etc.)
+- Version comparison exists at `client/src/lib/utils.ts` (`compareVersions()`)
+- `PASS_MIN_VERSION`, `SYSTEM_PASS_PATHS` constants exist at `client/src/lib/constants.ts`
+- Path helpers exist at `client/src/lib/path.ts` (`expandTilde`, `resolveUserPath`)
+
+## New Types Required
+
+### 1. `ReadinessState` — in `client/src/types/index.ts`
+
+```ts
+type ReadinessState =
+  | "DEPENDENCIES_MISSING"
+  | "GPG_NOT_INITIALIZED"
+  | "STORE_NOT_FOUND"
+  | "STORE_INVALID"
+  | "READY";
+```
+
+### 2. `ReadinessIssueCode` — in `client/src/types/index.ts`
+
+```ts
+type ReadinessIssueCode =
+  | "PASS_NOT_FOUND"
+  | "PASS_VERSION_UNSUPPORTED"
+  | "GPG_NOT_FOUND"
+  | "GPG_NO_SECRET_KEYS"
+  | "ACTIVE_STORE_UNDEFINED"
+  | "STORE_CONFIG_MISSING"
+  | "STORE_PATH_NOT_FOUND"
+  | "STORE_PATH_NOT_DIRECTORY"
+  | "STORE_GPG_ID_MISSING"
+  | "STORE_GPG_ID_EMPTY"
+  | "STORE_RECIPIENT_PARSE_FAILED"
+  | "STORE_RECIPIENT_UNKNOWN"
+  | "STORE_BEHAVIORAL_CHECK_FAILED";
+```
+
+### 3. `ReadinessIssue` — in `client/src/types/index.ts`
+
+```ts
+type ReadinessIssue = {
+  code: ReadinessIssueCode;
+  message: string;
+  details?: Record<string, string>;
+};
+```
 
-## Roadmap Alignment
+### 4. `ReadinessSnapshot` — in `client/src/types/index.ts`
 
-This plan is the implementation-oriented companion to:
+```ts
+type ReadinessSnapshot = {
+  state: ReadinessState;
+  issues: ReadinessIssue[];
+  passInfo: PassBinaryInfo | null;
+  passVersion: Version | null;
+  gpgInfo: GpgBinaryInfo | null;
+  gpgVersion: Version | null;
+  gpgHome: string | null;
+  secretKeyCount: number;
+  activeStoreName: string | null;
+  activeStorePath: string | null;
+  activeStoreGnupgHome: string | null;
+  checkedAt: number;
+};
+```
 
-- `roadmap/01-current-state-and-direction.md`
-- `roadmap/02-backend-foundation-and-readiness.md`
-- `roadmap/03-entry-and-operations-backend.md`
+## New Files Created
 
-It exists to execute roadmap step `02` in concrete terms, while keeping the
-later transition into roadmap step `03` explicit.
+### 1. `client/src/services/store-validation.ts`
 
-## Current Context
+**Responsibility**: Validates a single password store's structure (path, .gpg-id), parses recipient IDs, verifies them against the GPG keyring, and runs a safe behavioral check with `pass ls`.
 
-The repository is ahead of the old roadmap in some backend areas and behind it in readiness orchestration:
+**Exports**:
 
-- `client/src/services/pass.ts` already validates `pass` existence/version and executes scoped `pass` commands.
-- `client/src/services/gpg.ts` already resolves GPG, parses version/home, and lists secret keys.
-- `client/src/services/config.ts` and related config validation are now in solid shape.
-- There is no real readiness orchestrator yet.
-- There is no meaningful app state store yet beyond `client/src/stores/counter.ts`.
+```ts
+function validateStoreStructure(storePath: string): Promise<Result<void, StoreValidationError>>
+function parseGpgId(storePath: string): Promise<Result<string[], StoreValidationError>>
+function verifyRecipients(recipientIds: string[], gnupgHome: string): Promise<Result<boolean, StoreValidationError>>
+function validateStoreBehaviorally(storePath: string): Promise<Result<void, StoreValidationError>>
+```
 
-This means the next phase should not jump to password listing UI or entry operations yet. The backend still needs a reliable readiness gate so the rest of the application can depend on known-good state.
+All functions accept already-resolved store paths (tilde already expanded by caller).
 
-## Roadmap Review
+### 2. `client/src/services/app-readiness.ts`
 
-`docs/prompt.md` remains historical context only.
+**Responsibility**: Orchestrates the full readiness pipeline — validates pass, GPG, config, active store, recipients, and behavioral check, then returns a single `ReadinessSnapshot`. This is the single backend source of truth for startup readiness.
 
-The current strategic source of truth is the numbered roadmap under
-`roadmap/`. This plan should be read as the executable planning layer for the
-backend readiness phase, not as a replacement for the roadmap.
+**Exports**:
 
-## Recommended Next Phase
+```ts
+function checkReadiness(): Promise<Result<ReadinessSnapshot>>
+```
 
-### Phase Name
+The return type has no concrete error type because all expected failures are captured as `ReadinessIssue` objects inside the snapshot. The outer `Result` only errors on unexpected runtime failures (e.g. `NeuError` from NeutralinoJS itself).
 
-Backend Readiness Gate
+### 3. `client/src/stores/readiness.ts`
 
-### Objective
+**Responsibility**: Pinia store that consumes the readiness orchestrator and exposes reactive readiness state for UI. Must not reimplement backend logic.
 
-Provide a single backend source of truth for whether the app is usable, why it is blocked when it is not usable, and what validated runtime inputs should be exposed to the rest of the application.
+**Exports**:
 
-### Deliverables
+```ts
+function useReadinessStore(): {
+  snapshot: Ref<ReadinessSnapshot | null>;
+  loading: Ref<boolean>;
+  lastCheckedAt: Ref<number | null>;
+  checkReadiness: () => Promise<void>;
+  isReady: ComputedRef<boolean>;
+  blockingState: ComputedRef<ReadinessState | null>;
+  issues: ComputedRef<ReadinessIssue[]>;
+};
+```
 
-- dependency validation for `pass` and `gpg`
-- store validation beyond simple `.gpg-id` existence
-- readiness result/error model for backend consumers
-- future Pinia-facing store contract definition, without UI implementation
-- startup orchestration service that produces deterministic readiness states
+## Files Modified
 
-These deliverables map directly to the outputs described in
-`roadmap/02-backend-foundation-and-readiness.md`.
+### 1. `client/src/types/index.ts`
 
-## Scope
+**Added** (lines 80-131): `ReadinessState`, `ReadinessIssueCode`, `ReadinessIssue`, `ReadinessSnapshot` after the `SecretKey` type. All exported in the export block (lines 159-162).
 
-### In Scope
+### 2. `client/src/lib/errors.ts`
 
-- validate `pass` availability and minimum version
-- validate GPG availability and ensure at least one secret key exists
-- respect configured and per-store `GNUPGHOME` where relevant
-- validate the active store path and `.gpg-id`
-- ensure `.gpg-id` is not empty
-- parse store recipient IDs from `.gpg-id`
-- verify recipients against the GPG keyring
-- detect invalid or mismatched store recipients
-- run a safe behavioral check with `pass ls`
-- map outcomes into deterministic readiness states
-- define a store contract for later Pinia integration
+**Added** (lines 197-230): `STORE_VALIDATION_ERROR_CODES` const, `StoreValidationErrorCode` and `StoreValidationErrorType` types, `StoreValidationError` class. All exported (lines 247-250).
 
-### Out of Scope
+### 3. `client/src/services/pass.ts`
 
-- actual frontend views or onboarding UI flows
-- password listing UI
-- entry operations (`show`, `insert`, `generate`, `rm`, etc.)
-- clipboard UX
-- full app routing integration
+**Added** (lines 147-168): `execScoped` method after the existing `exec` method:
 
-Those concerns belong to the later backend operations and frontend phases in
-`roadmap/03-entry-and-operations-backend.md` and
-`roadmap/04-frontend-after-backend.md`.
+```ts
+async execScoped(
+  env: Record<string, string>,
+  args: Stringifiable[] = [],
+  options?: ExecCommandOptions
+): Promise<Result<ExecCommandResult>>
+```
 
-## Proposed Architecture
+**Logic**: Build environment variable prefix string from `env` entries (each `KEY=value` with value quoted via `quoteForPosix`), validate args same as `exec()`, call `neu.execCmd` with the composed command. Uses `execCmd` (not `safeExec`) because the env-prefixed command string does not match the `ALLOWED_COMMANDS` whitelist.
 
-### 1. Readiness Domain Types
+### 4. `client/src/services/gpg.ts`
 
-Create explicit backend-facing readiness types that separate:
+**Added** (lines 162-181): `listSecretKeysWithHome` method after `listSecretKeys`:
 
-- current status
-- validated environment details
-- actionable failure reasons
+```ts
+async listSecretKeysWithHome(gnupgHome: string): Promise<Result<SecretKey[]>>
+```
 
-Recommended shape:
+**Logic**: Get resolved GPG command from `getCommand()`, build `GNUPGHOME="/path" gpg` prefix, call `neu.execCmd` with `--list-secret-keys --with-colons --fixed-list-mode` args, parse stdout with `parseSecretKeys()`.
 
-- `ReadinessState`
-  - `DEPENDENCIES_MISSING`
-  - `GPG_NOT_INITIALIZED`
-  - `STORE_NOT_FOUND`
-  - `STORE_INVALID`
-  - `READY`
-- `ReadinessIssue`
-  - structured machine-readable issue code
-  - user-displayable message
-  - optional supporting metadata
-- `ReadinessSnapshot`
-  - final state
-  - validated `pass` info
-  - validated `gpg` info
-  - validated active store info
-  - issue list
+### 5. `client/src/main.ts`
 
-This should live in `client/src/types/` so both backend services and a future store can share it.
+**Removed**: `import { passInitialized } from "@/services/pass"`, `import { gpgInitialized } from "./services/gpg"`, `await gpgInitialized`, `await passInitialized`. Only `import { neuInitialized }` and `await neuInitialized` remain. App mounts immediately without blocking on GPG/pass init promises.
 
-### 2. Store Validation Model
+## Implementation Steps (All Complete)
 
-Add a dedicated validation service rather than growing `PassService` into a god module.
+### Step 1: Define readiness types — DONE
 
-Recommended split:
+**File**: `client/src/types/index.ts` (current lines 80-131)
 
-- `PassService`: command execution and pass-specific low-level helpers
-- `GpgService`: gpg-specific low-level helpers
-- new store validation service: `.gpg-id`, recipients, and behavioral checks
-- new readiness service: orchestrates everything and returns a `ReadinessSnapshot`
+Added 4 types after `SecretKey`:
+- `ReadinessState`: union of 5 string literals
+- `ReadinessIssueCode`: union of 13 string literals
+- `ReadinessIssue`: object with `code`, `message`, optional `details`
+- `ReadinessSnapshot`: metadata container with state, issues, pass/GPG info, store info, timestamp
 
-This keeps boundaries clear:
+All exported in the `export type { ... }` block.
 
-- low-level command services stay reusable
-- validation logic stays explicit and testable
-- orchestration remains the single startup decision point
+### Step 2: Add StoreValidationError — DONE
 
-### 3. Future Pinia Store Contract
+**File**: `client/src/lib/errors.ts` (current lines 197-230)
 
-Even though frontend work is deferred, define a stable store-facing contract now.
+Added `STORE_VALIDATION_ERROR_CODES` const object with 7 entries, extracted `StoreValidationErrorCode` and `StoreValidationErrorType` types, defined `StoreValidationError` class extending `Error` with `code`, `type`, and `details` fields. All exported.
 
-Recommended contract shape:
+### Step 3: Add execScoped to PassService — DONE
 
-- state
-  - `snapshot: ReadinessSnapshot | null`
-  - `loading: boolean`
-  - `lastCheckedAt: string | null`
-- actions
-  - `checkReadiness()`
-  - `refreshReadiness()`
-- getters/derived semantics
-  - `isReady`
-  - `blockingState`
-  - `issues`
+**File**: `client/src/services/pass.ts` (current lines 147-168)
 
-Do not implement UI consumers in this phase. The point is to lock the boundary so later frontend work consumes the backend cleanly.
+Signature: `execScoped(env, args?, options?)` with `env: Record<string, string>` first parameter. Imports `quoteForPosix` from `@/lib/shell`. Builds env prefix string, validates args, calls `neu.execCmd`. Uses `execCmd` (not `safeExec`) because the env-prefixed command does not match the whitelist.
 
-## Validation Pipeline
+### Step 4: Add listSecretKeysWithHome to GpgService — DONE
 
-Run readiness in a fixed order so the first hard failure is deterministic and debugging is straightforward.
+**File**: `client/src/services/gpg.ts` (current lines 162-181)
 
-### Step 1: Validate `pass`
+Takes `gnupgHome: string`, builds `GNUPGHOME="/path" gpg` command, calls `neu.execCmd`, parses output with `parseSecretKeys()`.
 
-- ensure binary exists
-- resolve actual path
-- verify minimum supported version
-- if missing or invalid, return `DEPENDENCIES_MISSING`
+### Step 5: Create store-validation.ts — DONE
 
-### Step 2: Validate GPG backend
+**File**: `client/src/services/store-validation.ts` (199 lines, fully implemented)
 
-- ensure `gpg` or `gpg2` exists
-- resolve binary info
-- parse version and home directory
-- list secret keys
-- require at least one secret key
-- if no usable keyring, return `GPG_NOT_INITIALIZED`
+Four exported functions:
+- `validateStoreStructure(storePath)`: checks `fs.isDirectory`, `.gpg-id` exists and non-empty
+- `parseGpgId(storePath)`: reads and parses `.gpg-id`, filters comments/empty lines
+- `verifyRecipients(recipientIds, gnupgHome)`: checks each recipient against GPG keyring (suffix match for short IDs, exact for fingerprints)
+- `validateStoreBehaviorally(storePath)`: runs `pass.execScoped(["ls"])` with scoped `PASSWORD_STORE_DIR`
 
-### Step 3: Resolve active store configuration
+All return `Promise<Result<..., StoreValidationError>>`.
 
-- load config
-- resolve `core.active_store`
-- fetch store definition from `stores`
-- normalize path and effective `GNUPGHOME`
+### Step 6: Create app-readiness.ts — DONE
 
-If the configured active store is missing at runtime, map to `STORE_NOT_FOUND` or `STORE_INVALID` depending on the cause.
+**File**: `client/src/services/app-readiness.ts` (244 lines, fully implemented)
 
-### Step 4: Structural store validation
+Single exported function `checkReadiness(): Promise<Result<ReadinessSnapshot>>`. Runs the full validation pipeline in order:
+1. Pass check → `PASS_NOT_FOUND` / `PASS_VERSION_UNSUPPORTED`
+2. GPG check → `GPG_NOT_FOUND` / `GPG_NO_SECRET_KEYS`
+3. Config + active store resolution → `STORE_CONFIG_MISSING` / `ACTIVE_STORE_UNDEFINED`
+4. Store structure validation
+5. Recipient parsing and verification
+6. Behavioral check (`pass ls`)
+7. State determination via `determineState()` helper
 
-- path exists
-- path is directory
-- `.gpg-id` exists
-- `.gpg-id` is not empty
+All checks run (no short-circuit). Contains `determineState()` function that classifies accumulated issues into the correct `ReadinessState` using priority ordering.
 
-### Step 5: Cryptographic store validation
+### Step 7: Create readiness Pinia store — DONE
 
-- parse recipient lines from `.gpg-id`
-- ignore empty/comment lines if needed
-- verify each recipient against the active GPG keyring
-- distinguish:
-  - empty recipient list
-  - malformed file
-  - unknown key ids
-  - mismatched key material
+**File**: `client/src/stores/readiness.ts` (64 lines, fully implemented)
 
-### Step 6: Behavioral store validation
+Setup store with `snapshot`, `loading`, `lastCheckedAt` state. `checkReadiness()` calls the orchestrator, handles catastrophic failure by setting a minimal `DEPENDENCIES_MISSING` snapshot (prevents infinite loop in Phase 04 router guard). Exposes `isReady`, `blockingState`, `issues` computed properties. Does NOT auto-call `checkReadiness()` — the router guard or blocked page triggers it.
 
-- run safe `pass ls` under the resolved store environment
-- fail if command exits non-zero
-- include command error details in machine-readable form
+### Step 8: Update main.ts — DONE
 
-### Step 7: Produce readiness snapshot
+**File**: `client/src/main.ts` (17 lines, already cleaned)
 
-- if all checks pass, return `READY`
-- include validated binary/store metadata for downstream consumers
+Removed all `gpgInitialized`/`passInitialized` imports and awaits. Only `neuInitialized` remains. App mounts immediately; readiness is lazy-initialized by the router guard or blocked page.
 
-## File-Level Plan
+## Integration Points
 
-### Likely new files
+This phase exposes these contracts consumed by Phase 03 (entry operations):
 
-- `client/src/types/readiness.ts`
-- `client/src/services/store-validation.ts`
-- `client/src/services/app-readiness.ts`
-- `client/src/stores/readiness.ts` or equivalent contract file if you want the store boundary captured now
+1. **`ReadinessSnapshot` type**: Phase 03 entry operations must check readiness before allowing listing/mutations.
+2. **`checkReadiness()` orchestrator**: Single source of truth for whether the app can operate.
+3. **`StoreValidationError`**: Store validation error types inform entry operations of structural issues.
+4. **`PassService.execScoped(env, args, options)`**: Used by Phase 03 for listing/mutations with custom env scoping.
+5. **`GpgService.listSecretKeysWithHome()`**: Used by Phase 03 for recipient re-verification after store switching.
+6. **`ReadinessStore`**: Phase 04 frontend consumes this store for readiness-driven app entry.
 
-### Likely modified files
+## Verification Checklist
 
-- `client/src/services/pass.ts`
-- `client/src/services/gpg.ts`
-- `client/src/services/config.ts`
-- `client/src/lib/errors.ts`
-- `TODO.md` after completion
-
-## Error Model Recommendations
-
-The current project already uses custom error classes and `Result<T, E>`. Extend that pattern rather than introducing ad-hoc strings.
-
-Add readiness-oriented error categories for:
-
-- missing dependency
-- unsupported version
-- missing secret keys
-- invalid store path
-- invalid `.gpg-id`
-- unknown recipient key
-- behavioral `pass` command failure
-
-Each should be suitable for both:
-
-- machine branching in the readiness service
-- direct user display later in onboarding UI
-
-## Design Choices and Trade-offs
-
-### Recommended Approach: dedicated readiness orchestrator
-
-Why:
-
-- keeps `pass.ts` and `gpg.ts` focused
-- makes startup behavior deterministic
-- creates a stable boundary for later UI work
-- aligns with backend-first development
-
-### Alternative: grow `PassService.init()` into the readiness orchestrator
-
-Why not recommended:
-
-- mixes command execution with high-level app startup policy
-- makes store/GPG/config interactions harder to reason about
-- will become harder to extend when onboarding and multi-store switching are added
-
-### Alternative: implement the store first and let it orchestrate services
-
-Why not recommended:
-
-- pulls frontend state into a backend phase
-- makes the store responsible for domain orchestration instead of consuming it
-
-## Verification Plan
-
-Because the current project has no real test framework configured and you are finishing backend first, the minimum implementation verification for this phase should be:
-
-1. `pnpm typecheck`
-2. `pnpm lint && pnpm format`
-3. manual readiness checks covering:
-   - missing `pass`
-   - missing/empty GPG keyring
-   - missing store path
-   - empty `.gpg-id`
-   - unknown recipient in `.gpg-id`
-   - valid ready state
-
-If you later choose to add tests, this phase would benefit most from fixture-based service tests for `.gpg-id` parsing and readiness state mapping.
-
-## Suggested Execution Order
-
-1. define readiness types and issue model
-2. implement `.gpg-id` parsing and structural store validation
-3. implement GPG recipient verification helpers
-4. implement behavioral validation with `pass ls`
-5. build the `app-readiness` orchestrator
-6. define or add the future Pinia store contract without UI wiring
-7. verify all target readiness scenarios manually and with static checks
-
-## Recommendation
-
-The next planned implementation phase should be:
-
-**Backend Readiness Gate**
-
-This is the cleanest next step because it finishes the backend foundation that all later frontend features depend on, while still giving you a stable store-facing contract for future UI work.
-
-After this phase is complete, the next planning target should be the backend
-operations phase in `roadmap/03-entry-and-operations-backend.md`.
-
-## Related Specification
-
-See `docs/specs/backend-readiness.md` for the formal spec this plan implements.
+- [x] `pnpm typecheck` passes with all new types, methods, and services
+- [x] `pnpm lint && pnpm format` passes
+- [x] `checkReadiness()` returns `DEPENDENCIES_MISSING` when `pass` binary is not found
+- [x] `checkReadiness()` returns `DEPENDENCIES_MISSING` when `pass` version is below 1.7.0
+- [x] `checkReadiness()` returns `DEPENDENCIES_MISSING` when no `gpg`/`gpg2` binary exists
+- [x] `checkReadiness()` returns `GPG_NOT_INITIALIZED` when `gpg` exists but has no secret keys
+- [x] `checkReadiness()` returns `STORE_NOT_FOUND` when `active_store` references a non-existent store in config
+- [x] `checkReadiness()` returns `STORE_NOT_FOUND` when the store path does not exist on disk
+- [x] `checkReadiness()` returns `STORE_INVALID` when `.gpg-id` is missing from the store
+- [x] `checkReadiness()` returns `STORE_INVALID` when `.gpg-id` is empty
+- [x] `checkReadiness()` returns `STORE_INVALID` when `.gpg-id` contains a recipient not in the GPG keyring
+- [x] `checkReadiness()` returns `STORE_INVALID` when `pass ls` exits non-zero for the store
+- [x] `checkReadiness()` returns `READY` when all checks pass
+- [x] `ReadinessSnapshot.checkedAt` is a valid timestamp
+- [x] `ReadinessSnapshot.issues` is empty when state is `READY`
+- [x] `ReadinessStore.loading` is true during check, false after
+- [x] `ReadinessStore.isReady` is true only when state is `READY`
+- [x] `ReadinessStore.blockingState` returns the correct non-READY state label
+- [x] GNUPGHOME env var resolution works (per-store → env → gpg.homeDir → empty)
+- [x] Store paths with `~` are correctly expanded
+- [x] `main.ts` does not import or await `gpgInitialized` or `passInitialized`
+- [x] `neuInitialized` is still imported and awaited in `main.ts`

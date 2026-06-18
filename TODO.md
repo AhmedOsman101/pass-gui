@@ -8,6 +8,7 @@
 - [x] Run `pass --version`
 - [x] Enforce minimum supported version
 - [x] Detect if binary is alias/wrapper and log real path
+- [ ] Diagnose and report pass readiness via `ReadinessSnapshot.DEPENDENCIES_MISSING`
 - [ ] Provide onboarding flow if `pass` doesn't exist
 
 ### 1.2 Validate GPG Backend
@@ -15,8 +16,9 @@
 - [x] Resolve `gpg` binary
 - [x] Run `gpg --version`
 - [x] Run `gpg --list-secret-keys`
-- [ ] Ensure at least one secret key exists
-- [ ] Detect and support custom `GNUPGHOME`
+- [ ] Ensure at least one secret key exists (`GPG_NO_SECRET_KEYS`)
+- [ ] Detect and support custom `GNUPGHOME` (env var and per-store override)
+- [ ] Resolve effective GNUPGHOME: per-store → env → gpg compiled-in default
 - [ ] Handle Windows-specific GPG installations
 - [ ] Provide onboarding flow if no keys exist
 
@@ -41,14 +43,14 @@
 
 ### 3.2 Cryptographic Validation
 
-- [ ] Parse `.gpg-id`
-- [ ] Verify each key ID exists in GPG keyring
-- [ ] Detect corrupted or mismatched key IDs
+- [ ] Parse `.gpg-id` (filter comments, extract recipient IDs)
+- [ ] Verify each key ID exists in GPG keyring (suffix match for short IDs, exact for fingerprints)
+- [ ] Detect unknown/removed recipients (`STORE_RECIPIENT_UNKNOWN`)
 
 ### 3.3 Behavioral Validation
 
-- [ ] Attempt a safe read operation (`pass ls`)
-- [ ] Fail if `pass` exits non-zero
+- [ ] Attempt a safe read operation (`pass ls`) via `validateStoreBehaviorally()`
+- [ ] Fail and report `STORE_BEHAVIORAL_CHECK_FAILED` on non-zero exit
 
 ## 4. App State Machine (Core Architecture)
 
@@ -62,9 +64,9 @@ Replace vague "states" with deterministic ones:
 
 Also:
 
-- [ ] Centralized state manager
-- [ ] UI reacts strictly to state changes
-- [ ] No UI logic outside state transitions
+- [ ] Centralized state manager (`checkReadiness()` orchestrator + `ReadinessStore`)
+- [ ] UI reacts strictly to state changes (Phase 04)
+- [ ] No UI logic outside state transitions (Phase 04)
 
 ## 5. Listing Passwords
 
@@ -103,8 +105,8 @@ Also:
 You need this even if it's not obvious yet.
 
 - [x] Central wrapper for executing `pass`
-- [ ] Central wrapper for executing `gpg`
-- [ ] Scoped environment injection
+- [ ] Central wrapper for executing `gpg` (GpgService)
+- [ ] Scoped environment injection (`pass.execScoped()`, `gpg.listSecretKeysWithHome()`)
 - [ ] Timeout handling
 - [x] Structured error parsing
 - [x] Log stdout/stderr safely
