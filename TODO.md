@@ -18,7 +18,7 @@
 - [x] Run `gpg --list-secret-keys`
 - [ ] Ensure at least one secret key exists (`GPG_NO_SECRET_KEYS`)
 - [ ] Detect and support custom `GNUPGHOME` (env var and per-store override)
-- [ ] Resolve effective GNUPGHOME: per-store → env → gpg compiled-in default
+- [ ] Resolve effective GNUPGHOME: per-store -> env -> gpg compiled-in default
 - [ ] Handle Windows-specific GPG installations
 - [ ] Provide onboarding flow if no keys exist
 
