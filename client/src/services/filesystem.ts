@@ -1,4 +1,6 @@
 import {
+  type DirectoryEntry,
+  type DirectoryReaderOptions,
   type FileReaderOptions,
   filesystem,
   type PathParts,
@@ -75,7 +77,9 @@ class fs {
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     const res = await fs.getStats(resolvedPath.ok);
-    if (res.isOk()) return Ok(res.ok.isFile);
+    // Everything that's not a directory is a file.
+    // NOTE: isFile property checks only for regular files.
+    if (res.isOk()) return Ok(!res.ok.isDirectory);
     return Err(res.error);
   }
 
@@ -149,6 +153,21 @@ class fs {
 
     return await wrapAsync(
       async () => await filesystem.getPathParts(resolvedPath.ok)
+    );
+  }
+
+  /**
+   * Reads a directory's contents, optionally recursive.
+   */
+  static async readDirectory(
+    path: string,
+    options?: DirectoryReaderOptions
+  ): Promise<Result<DirectoryEntry[]>> {
+    const resolvedPath = await fs.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    return await wrapAsync(
+      async () => await filesystem.readDirectory(resolvedPath.ok, options)
     );
   }
 

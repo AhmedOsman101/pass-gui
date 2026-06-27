@@ -143,8 +143,7 @@ class PassService {
 
   /**
    * Executes a pass command with custom environment variables.
-   * Used when running pass against a specific store path or GNUPGHOME.
-   * Uses execCmd directly (not safeExec) because we pass envs through options.
+   * Used when running pass against a custom store path or GNUPGHOME.
    */
   async execScoped(
     args: Stringifiable[] = [],

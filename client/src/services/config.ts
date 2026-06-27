@@ -5,7 +5,7 @@ import {
   ConfigValidationError,
   ConfigWriteError,
 } from "@/lib/errors";
-import path from "@/lib/path";
+import Path from "@/lib/path";
 import toml from "@/lib/toml";
 import type {
   AppConfig,
@@ -36,7 +36,7 @@ class ConfigService {
    * @returns Result containing the config file path or an error
    */
   static async getPath(): Promise<Result<string>> {
-    const configDir = await path.getKnownPath("config");
+    const configDir = await Path.getKnownPath("config");
     if (configDir.isError()) return Err(configDir.error);
 
     return Ok(await fs.join(configDir.ok, "pass-gui", "config.toml"));

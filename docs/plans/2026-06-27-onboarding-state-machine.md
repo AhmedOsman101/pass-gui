@@ -183,7 +183,7 @@ A `StoreValidationService` class with four static methods:
    - For each recipient, check if it matches any key: fingerprints get exact match, short IDs get suffix match (the recipient string must be a suffix of the key's fingerprint or keyId field)
    - Return `{ recipients, missingKeys: string[] }` — `missingKeys` lists any recipient IDs that weren't found
 
-3. **`validateBehaviorally(storePath, gnupgHome?)`** -> `Result<void>`
+3. **`validateBehavior(storePath, gnupgHome?)`** -> `Result<void>`
    - Run `pass ls` scoped to the given store path (and optional GNUPGHOME)
    - Use `pass.execScoped()` with the appropriate env vars
    - Return error if `pass ls` fails
