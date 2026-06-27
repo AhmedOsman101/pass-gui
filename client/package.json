@@ -9,6 +9,5 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "typecheck": "vue-tsc --build"
-  },
-  "dependencies": {}
+  }
 }

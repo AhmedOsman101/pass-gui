@@ -21,6 +21,7 @@ minimumReleaseAgeExclude:
   - esbuild@0.28.1
   - vite@8.0.16
   - '@babel/core@7.29.1'
+  - undici@7.28.0
 
 onlyBuiltDependencies:
   - esbuild

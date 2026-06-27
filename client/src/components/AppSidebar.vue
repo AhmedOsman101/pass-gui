@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { File } from "lucide-vue-next";
+import { File } from "@lucide/vue";
 import Tree from "@/components/Tree.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {

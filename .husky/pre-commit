@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-pnpm audit --fix update &>/dev/null &
-
 yesNo() {
   local answer prompt="$1"
   printf '%b' "${prompt} [Y/n] "
