@@ -5,7 +5,7 @@ import {
 } from "@neutralinojs/lib";
 import { ErrFromText, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
-import { quoteForPosix, validatePath } from "@/lib/shell";
+import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import { fs } from "./filesystem";
@@ -132,29 +132,24 @@ class PassService {
     }
 
     return await neu.execCmd({
-      cmd: `PASSWORD_STORE_DIR="${this.storeDirectory}" pass`,
+      cmd: "pass",
       args: validatedArgs,
-      options,
+      options: {
+        ...options,
+        envs: { PASSWORD_STORE_DIR: this.storeDirectory },
+      },
     });
   }
 
   /**
    * Executes a pass command with custom environment variables.
    * Used when running pass against a specific store path or GNUPGHOME.
-   * Uses execCmd directly (not safeExec) because the env-prefixed command
-   * string won't match the ALLOWED_COMMANDS whitelist.
+   * Uses execCmd directly (not safeExec) because we pass envs through options.
    */
   async execScoped(
-    env: Record<string, string>,
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
   ): Promise<Result<ExecCommandResult>> {
-    const envPrefix = Object.entries(env)
-      .map(([key, val]) => `${key}=${quoteForPosix(val)}`)
-      .join(" ");
-
-    const cmd = `${envPrefix} pass`;
-
     const validatedArgs: Stringifiable[] = [];
     for (const arg of args) {
       const argValidation = await validatePath(arg);
@@ -164,7 +159,11 @@ class PassService {
       validatedArgs.push(argValidation.ok);
     }
 
-    return await neu.execCmd({ cmd, args: validatedArgs, options });
+    return await neu.execCmd({
+      cmd: "pass",
+      args: validatedArgs,
+      options,
+    });
   }
 }
 

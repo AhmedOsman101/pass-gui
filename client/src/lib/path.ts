@@ -1,5 +1,5 @@
-import { os } from "@neutralinojs/lib";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { type KnownPath, os } from "@neutralinojs/lib";
+import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 
 /**
  * Expands the tilde (~) character at the start of a path to the user's home
@@ -24,37 +24,29 @@ async function resolveUserPath(path: string): Promise<Result<string>> {
   return Ok(expandTilde(path, homeDir.ok));
 }
 
+let cachedHomeDir: string | undefined;
+
 /**
- * Resolves the user's home directory based on the current OS.
- * Uses $HOME on Unix and $USERPROFILE on Windows.
+ * Resolves the requested platform-specific directory.
+ * Wraps os.getPath("...") from NeutralinoJS.
  */
-async function getHomeDir(): Promise<Result<string>> {
-  switch (window.NL_OS) {
-    case "Linux":
-    case "Darwin":
-    case "FreeBSD": {
-      const home = await os.getEnv("HOME");
-      if (!home) {
-        return ErrFromText(
-          "Unable to locate home directory. Please set the HOME environment variable."
-        );
-      }
-      return Ok(home);
-    }
-    case "Windows": {
-      const home = await os.getEnv("USERPROFILE");
-      if (!home) {
-        return ErrFromText(
-          "Unable to locate home directory. Please set the USERPROFILE environment variable."
-        );
-      }
-      return Ok(home);
-    }
-    default:
-      return ErrFromText(
-        "Unable to locate home directory. Please set the HOME (Unix) or USERPROFILE (Windows) environment variable."
-      );
-  }
+async function getKnownPath(path: KnownPath): Promise<Result<string>> {
+  return await wrapAsync(async () => await os.getPath(path));
 }
 
-export default { expandTilde, resolveUserPath, getHomeDir };
+/** Resolves the user's home directory using NeutralinoJS os.getPath("home"). */
+async function getHomeDir(): Promise<Result<string>> {
+  if (cachedHomeDir !== undefined) return Ok(cachedHomeDir);
+
+  const home = await getKnownPath("home");
+  if (home.isError()) {
+    return ErrFromText(
+      `Unable to locate home directory: ${home.error.message}`
+    );
+  }
+
+  cachedHomeDir = home.ok;
+  return home;
+}
+
+export default { expandTilde, resolveUserPath, getHomeDir, getKnownPath };

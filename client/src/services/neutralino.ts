@@ -5,7 +5,7 @@ import {
   type OperatingSystem,
   os,
 } from "@neutralinojs/lib";
-import { ErrFromText, Ok, type Result, wrapAsyncThrowable } from "lib-result";
+import { ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import stripAnsi from "strip-ansi";
 import Path from "@/lib/path";
 import { buildShellCommand, type OsType as ShellOsType } from "@/lib/shell";
@@ -79,30 +79,22 @@ class NeutralinoService {
     args,
     options,
   }: ExecCommandArgs): Promise<Result<ExecCommandResult>> {
-    const wrappedExec = wrapAsyncThrowable(
-      async ({
-        cmd: command,
-        args: cmdArgs,
-        options: cmdOptions,
-      }: ExecCommandArgs) => {
-        const shellType = this.getShellOsType();
-        const fullCmd = buildShellCommand(command, cmdArgs ?? [], shellType);
+    return await wrapAsync(async () => {
+      const shellType = this.getShellOsType();
+      const fullCmd = buildShellCommand(cmd, args ?? [], shellType);
 
-        const result = await os.execCommand(fullCmd, cmdOptions);
-        result.stdOut = stripAnsi(result.stdOut);
-        result.stdErr = stripAnsi(result.stdErr);
+      const result = await os.execCommand(fullCmd, options);
+      result.stdOut = stripAnsi(result.stdOut);
+      result.stdErr = stripAnsi(result.stdErr);
 
-        if (result.exitCode !== 0) {
-          throw new Error(
-            `Command failed with exit code ${result.exitCode}${result.stdErr.length ? `\n${result.stdErr}` : ""}`
-          );
-        }
-
-        return result;
+      if (result.exitCode !== 0) {
+        throw new Error(
+          `Command failed with exit code ${result.exitCode}${result.stdErr.length ? `\n${result.stdErr}` : ""}`
+        );
       }
-    );
 
-    return await wrappedExec({ cmd, args, options });
+      return result;
+    });
   }
 
   /**
@@ -127,18 +119,6 @@ class NeutralinoService {
   async getEnv(key: string, defaultValue: Stringifiable = ""): Promise<string> {
     const value = await os.getEnv(key);
     return value === "" ? String(defaultValue) : value;
-  }
-
-  /**
-   * Resolves the platform-specific configuration directory.
-   * Uses os.getPath("config") from NeutralinoJS which handles:
-   * - Linux: XDG_CONFIG_HOME or ~/.config
-   * - macOS: ~/Library/Application Support
-   * - Windows: %APPDATA%
-   * @throws Error if the directory cannot be resolved
-   */
-  async getConfigDir(): Promise<string> {
-    return await os.getPath("config");
   }
 
   /**

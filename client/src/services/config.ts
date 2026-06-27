@@ -1,10 +1,11 @@
-import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants";
 import {
   ConfigParseError,
   ConfigValidationError,
   ConfigWriteError,
 } from "@/lib/errors";
+import path from "@/lib/path";
 import toml from "@/lib/toml";
 import type {
   AppConfig,
@@ -15,7 +16,6 @@ import type {
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
 import { fs } from "./filesystem";
-import { neu } from "./neutralino";
 
 /**
  * Configuration service for managing application settings.
@@ -36,7 +36,7 @@ class ConfigService {
    * @returns Result containing the config file path or an error
    */
   static async getPath(): Promise<Result<string>> {
-    const configDir = await wrapAsync(neu.getConfigDir);
+    const configDir = await path.getKnownPath("config");
     if (configDir.isError()) return Err(configDir.error);
 
     return Ok(await fs.join(configDir.ok, "pass-gui", "config.toml"));
