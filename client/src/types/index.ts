@@ -89,14 +89,14 @@ type AllowedCommand =
   | "file";
 
 export type {
-  NeuErrorObj,
-  Stringifiable,
-  OsType,
-  Version,
-  PassBinaryInfo,
   AllowedCommand,
+  Brand,
   FileSystemTree,
   GpgBinaryInfo,
+  NeuErrorObj,
+  OsType,
+  PassBinaryInfo,
   SecretKey,
-  Brand,
+  Stringifiable,
+  Version,
 };

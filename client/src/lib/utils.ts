@@ -66,4 +66,4 @@ function brand(brandOrValue: unknown, value?: unknown): unknown {
   return value ?? brandOrValue;
 }
 
-export { cn, compareVersions, brand };
+export { brand, cn, compareVersions };

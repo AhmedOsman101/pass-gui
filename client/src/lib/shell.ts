@@ -123,11 +123,11 @@ async function validatePath(path: Stringifiable): Promise<Result<string>> {
 }
 
 export {
+  buildShellCommand,
+  checkSneakyPath,
+  type OsType,
   quoteForPosix,
   quoteForWindows,
-  buildShellCommand,
   validateArgument,
-  checkSneakyPath,
   validatePath,
-  type OsType,
 };

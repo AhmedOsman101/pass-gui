@@ -264,4 +264,4 @@ class GpgService {
 const gpg = new GpgService();
 const gpgInitialized = gpg.init();
 
-export { gpg, gpgInitialized, GpgService };
+export { GpgService, gpg, gpgInitialized };

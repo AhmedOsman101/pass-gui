@@ -254,4 +254,4 @@ class ConfigService {
 
 const config = ConfigService;
 
-export { config, ConfigService };
+export { ConfigService, config };

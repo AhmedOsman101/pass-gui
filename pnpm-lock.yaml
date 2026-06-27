@@ -54,8 +54,8 @@ importers:
         specifier: ^1.21.0
         version: 1.21.0(vue@3.5.26(typescript@5.9.3))
       '@neutralinojs/lib':
-        specifier: ^6.4.0
-        version: 6.4.0
+        specifier: ^6.8.0
+        version: 6.8.0
       '@vueuse/core':
         specifier: ^14.2.1
         version: 14.2.1(vue@3.5.26(typescript@5.9.3))
@@ -603,8 +603,8 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@neutralinojs/lib@6.4.0':
-    resolution: {integrity: sha512-jbYkxUtiLGWxah3rdNuOFu30QSi48L8N2Irmv3wZfJX4ftzm8QqZGQepJ5+bPJ7ogyPU9hEBNtEdHOXwZWoxoQ==}
+  '@neutralinojs/lib@6.8.0':
+    resolution: {integrity: sha512-mOUEMSQSL9quFLW5DGtsZpokzz2n4+6pnX2ZCkT+OA+Gse0H5omY8sUO+uWt2RqYCw8vHFCp3qSblGQ3dbjwPg==}
 
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
@@ -737,13 +737,13 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rollup/rollup-darwin-x64@4.55.1':
-    resolution: {integrity: sha512-rDUjG25C9qoTm+e02Esi+aqTKSBYwVTaoS1wxcN47/Luqef57Vgp96xNANwt5npq9GDxsH7kXxNkJVEsWEOEaQ==}
+  '@rollup/rollup-darwin-x64@4.62.2':
+    resolution: {integrity: sha512-yl0y2vq3S3lHeuXhEdss6TWfKW8vkujImO12tn4ZkG/4oghr09LvdYm2RElVjokTQiUvDUGXLGsYeLqUMCKpGA==}
     cpu: [x64]
     os: [darwin]
 
-  '@rollup/rollup-linux-x64-gnu@4.55.1':
-    resolution: {integrity: sha512-a8G4wiQxQG2BAvo+gU6XrReRRqj+pLS2NGXKm8io19goR+K8lw269eTrPkSdDTALwMmJp4th2Uh0D8J9bEV1vg==}
+  '@rollup/rollup-linux-x64-gnu@4.62.2':
+    resolution: {integrity: sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
@@ -3471,10 +3471,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@neutralinojs/lib@6.4.0':
+  '@neutralinojs/lib@6.8.0':
     optionalDependencies:
-      '@rollup/rollup-darwin-x64': 4.55.1
-      '@rollup/rollup-linux-x64-gnu': 4.55.1
+      '@rollup/rollup-darwin-x64': 4.62.2
+      '@rollup/rollup-linux-x64-gnu': 4.62.2
 
   '@noble/ciphers@1.3.0': {}
 
@@ -3553,10 +3553,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rollup/rollup-darwin-x64@4.55.1':
+  '@rollup/rollup-darwin-x64@4.62.2':
     optional: true
 
-  '@rollup/rollup-linux-x64-gnu@4.55.1':
+  '@rollup/rollup-linux-x64-gnu@4.62.2':
     optional: true
 
   '@swc/helpers@0.5.18':

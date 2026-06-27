@@ -246,4 +246,4 @@ class NeutralinoService {
 const neu = new NeutralinoService();
 const neuInitialized = neu.init();
 
-export { neu, neuInitialized, NeutralinoService, ALLOWED_COMMANDS };
+export { ALLOWED_COMMANDS, NeutralinoService, neu, neuInitialized };

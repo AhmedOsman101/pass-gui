@@ -94,16 +94,16 @@ type ConfigValue<
 > = AppConfig[T][K];
 
 export type {
-  CoreConfig,
-  PreferencesConfig,
-  GenerationConfig,
-  ClipboardConfig,
-  GpgConfig,
-  ExtensionsConfig,
-  StoreConfig,
   AppConfig,
-  ConfigSection,
-  FixedConfigSection,
+  ClipboardConfig,
   ConfigKey,
+  ConfigSection,
   ConfigValue,
+  CoreConfig,
+  ExtensionsConfig,
+  FixedConfigSection,
+  GenerationConfig,
+  GpgConfig,
+  PreferencesConfig,
+  StoreConfig,
 };

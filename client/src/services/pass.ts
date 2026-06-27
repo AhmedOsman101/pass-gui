@@ -171,4 +171,4 @@ class PassService {
 const pass = new PassService();
 const passInitialized = pass.init();
 
-export { pass, passInitialized, PassService };
+export { PassService, pass, passInitialized };

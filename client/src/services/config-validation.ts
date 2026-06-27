@@ -211,14 +211,14 @@ function formatZodError(error: z.ZodError): string {
 }
 
 export {
-  validateCoreConfig,
-  validatePreferencesConfig,
-  validateGenerationConfig,
-  validateClipboardConfig,
-  validateGpgConfig,
-  validateExtensionsConfig,
-  validateStoresConfig,
-  validateAppConfig,
   formatZodError,
   type ValidationResult,
+  validateAppConfig,
+  validateClipboardConfig,
+  validateCoreConfig,
+  validateExtensionsConfig,
+  validateGenerationConfig,
+  validateGpgConfig,
+  validatePreferencesConfig,
+  validateStoresConfig,
 };
