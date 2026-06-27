@@ -7,6 +7,11 @@ import type { AppConfig } from "@/types/config";
 const PASS_MIN_VERSION: Version = { major: 1, minor: 7, patch: 0 };
 
 /**
+ * Minimum supported version of GnuPG
+ */
+const GPG_MIN_VERSION: Version = { major: 2, minor: 1 };
+
+/**
  * Known system paths where pass is typically installed.
  * Used to distinguish system binaries from custom wrappers/scripts.
  */
@@ -46,4 +51,4 @@ const DEFAULT_CONFIG: AppConfig = {
   },
 };
 
-export { DEFAULT_CONFIG, PASS_MIN_VERSION, SYSTEM_PASS_PATHS };
+export { DEFAULT_CONFIG, GPG_MIN_VERSION, PASS_MIN_VERSION, SYSTEM_PASS_PATHS };

@@ -41,7 +41,7 @@ type OsType = "Linux" | "Darwin" | "Windows NT" | "Unknown";
 type Version = {
   major: number;
   minor: number;
-  patch: number;
+  patch?: number;
 };
 
 /**

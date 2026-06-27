@@ -13,13 +13,16 @@ function cn(...inputs: ClassValue[]) {
 
 /**
  * Compares two semantic versions.
- * Returns negative if current < target, positive if current > target, 0 if equal.
+ * Returns -1 if current < target, 1 if current > target, 0 if equal.
  * Compares major, then minor, then patch versions.
  */
 function compareVersions(current: Version, target: Version): number {
-  if (current.major !== target.major) return current.major - target.major;
-  if (current.minor !== target.minor) return current.minor - target.minor;
-  return current.patch - target.patch;
+  return (
+    // NOTE: Math.sign Returns the sign of the expression (-1, 0, 1)
+    Math.sign(current.major - target.major) ||
+    Math.sign(current.minor - target.minor) ||
+    Math.sign((current.patch ?? 0) - (target.patch ?? 0))
+  );
 }
 
 /**

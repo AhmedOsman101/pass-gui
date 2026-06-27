@@ -51,7 +51,7 @@ class PassService {
   }
 
   /**
-   * Checks if a version meets the minimum supported version requirement.
+   * Checks if pass version meets the minimum supported version requirement.
    */
   checkVersion(version: Version): boolean {
     return compareVersions(version, PASS_MIN_VERSION) >= 0;

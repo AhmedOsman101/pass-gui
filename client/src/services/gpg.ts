@@ -4,6 +4,7 @@ import {
   type ExecCommandResult,
 } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { GPG_MIN_VERSION } from "@/lib/constants";
 import { compareVersions } from "@/lib/utils";
 import type {
   AllowedCommand,
@@ -102,11 +103,10 @@ class GpgService {
   }
 
   /**
-   * Checks if a version meets the minimum requirement.
-   * Currently no minimum version is enforced (GPG has no minimum requirement from pass).
+   * Checks if GPG version meets the minimum supported version requirement.
    */
   checkVersion(version: Version): boolean {
-    return compareVersions(version, { major: 0, minor: 0, patch: 0 }) >= 0;
+    return compareVersions(version, GPG_MIN_VERSION) >= 0;
   }
 
   /**
