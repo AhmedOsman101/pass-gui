@@ -16,13 +16,13 @@ Guidelines for agentic coding assistants on GNU Pass GUI project.
 - Core services for `pass`, `gpg`, filesystem access, and Neutralino command execution already exist.
 - Frontend state and screens are still intentionally minimal.
 - The current roadmap source of truth is the numbered sequence under `docs/roadmap/`.
-- `todo.md` at repo root is the authoritative checklist of remaining work.
+- `TODO.md` at repo root is the authoritative checklist of remaining work.
 - `docs/plans/` contains execution plans for each roadmap phase.
 - `docs/specs/` contains detailed specs for specific subsystems.
 
 ## Known Architecture Issues
 
-- **Module-level init promises**: `neuInitialized`, `gpgInitialized`, `passInitialized` in `main.ts` block app mount with `Promise.all()`. If any service init fails, the app never renders. The readiness orchestrator in roadmap phase 2 should fix this with graceful degradation (show blocked states instead of failing silently).
+- **Module-level init promises**: `neuInitialized`, `gpgInitialized`, `passInitialized` in `main.ts` block app mount sequentially after `app.mount("#app")`. If any service init fails, the app never renders. The readiness orchestrator in roadmap phase 2 should fix this with graceful degradation (show blocked states instead of failing silently).
 
 ## Current Roadmap Order
 
@@ -219,7 +219,7 @@ UI assumptions alone.
 3. Check existing patterns for style consistency
 4. Review the numbered roadmap files under `docs/roadmap/`
 5. Check `docs/plans/` for any existing execution plans relevant to the work
-6. Check `todo.md` for checklist coverage
+6. Check `TODO.md` for checklist coverage
 
 ## Summary Checklist
 
@@ -234,7 +234,7 @@ UI assumptions alone.
 - [ ] Keep backend and domain logic out of UI components and ad hoc store code
 - [ ] Mask passwords in logs and UI
 - [ ] Follow existing naming conventions
-- [ ] Check `todo.md` and `docs/plans/` before starting new work
+- [ ] Check `TODO.md` and `docs/plans/` before starting new work
 
 ---
 

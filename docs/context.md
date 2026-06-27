@@ -93,6 +93,10 @@ Each layer depends on the one before it. The app is currently between layers 1 (
 
 Six service singletons, all in `client/src/services/`:
 
+**⚠️ `neu.execCmd()` throws on non-zero exit** — Line 95-98 of `neutralino.ts` draws a hard error if exit code != 0. This blocks Phase 03 (entry operations) where non-zero exits carry semantic meaning (e.g. `pass show` exits 1 for "entry not found"). Entry operations need a variant that returns exit code without throwing.
+
+**⚠️ `docs/plans/backend-readiness-phase.md` claims "ALL STEPS COMPLETE"** — This is misleading. Files `store-validation.ts`, `app-readiness.ts`, `stores/readiness.ts`, and `ReadinessState`/`ReadinessIssue` types do NOT exist in the codebase. Treat the plan as a TODO list, not a completion log.
+
 | Service        | File            | Purpose                                                   |
 | -------------- | --------------- | --------------------------------------------------------- |
 | `neu`          | `neutralino.ts` | NeutralinoJS command exec, binary resolution, env vars    |
@@ -293,7 +297,7 @@ From `TODO.md` at repo root:
 - ❌ All UI flows (readiness screens, password list, entry detail, onboarding, settings)
 - ❌ Security: clipboard clearing, memory clearing, GPG agent handling
 
-Full checklist at `TODO.md` — 63 total items, ~20 checked, ~43 pending.
+Full checklist at `TODO.md` — 93 total items, 29 checked, 64 pending.
 
 ---
 

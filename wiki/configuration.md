@@ -5,7 +5,7 @@ The application stores its configuration in `config.toml`.
 Typical locations:
 
 - Linux: `~/.config/pass-gui/config.toml`
-- macOS: `~/Library/Application Support/pass-gui/config.toml`
+- macOS: `~/.config/pass-gui/config.toml`
 - Windows: `%APPDATA%/pass-gui/config.toml`
 
 When pass-gui creates this file for the first time, it writes short inline
