@@ -22,59 +22,42 @@ pass-gui/
 ├── biome.json                   # Biome linter/formatter (sole lint tool, no ESLint)
 ├── neutralino.config.json       # NeutralinoJS app config
 ├── docs/
-│   ├── README.md                # Doc directory index
-│   ├── roadmap/                 # Strategic roadmap (5 files, read in order)
-│   │   ├── 01-current-state-and-direction.md
-│   │   ├── 02-backend-foundation-and-readiness.md  <- CURRENT PHASE
-│   │   ├── 03-entry-and-operations-backend.md
-│   │   ├── 04-frontend-after-backend.md
-│   │   └── 05-release-and-future-work.md
 │   ├── specs/                   # Stable scoping specs per phase
-│   │   ├── backend-readiness.md
-│   │   ├── entry-operations.md
-│   │   ├── frontend-ui.md
-│   │   └── release.md
 │   ├── plans/                   # Execution plans per phase
-│   │   ├── backend-readiness-phase.md
-│   │   ├── entry-operations-phase.md
-│   │   ├── frontend-ui-phase.md
-│   │   └── release-phase.md
-│   ├── archive/                 # Stale/historical docs
 │   └── references/              # NeutralinoJS + j-toml API docs
-├── client/src/
-│   ├── main.ts                  # Entry point: mounts Vue, inits services
-│   ├── App.vue                  # Root component (Vue logo + RouterView stub)
-│   ├── types/                   # All type definitions
-│   │   ├── index.ts              # Brand, Version, PassBinaryInfo, SecretKey, etc.
-│   │   ├── config.ts             # AppConfig, CoreConfig, StoreConfig, etc.
-│   │   └── toml.ts               # TomlObject, ParsedToml, etc.
-│   ├── lib/
-│   │   ├── errors.ts             # NeuError, FileWriteError, ConfigError, etc.
-│   │   ├── constants.ts          # PASS_MIN_VERSION (1.7.0), DEFAULT_CONFIG
-│   │   ├── utils.ts              # cn(), compareVersions(), brand()
-│   │   ├── path.ts               # expandTilde(), resolveUserPath()
-│   │   ├── shell.ts              # Shell quoting, path traversal prevention
-│   │   └── toml.ts               # TOML parse/stringify with comment preservation
-│   ├── services/                 # Backend service layer (all singletons)
-│   │   ├── neutralino.ts         # NeutralinoService: command exec, binary resolution
-│   │   ├── filesystem.ts         # fs class: mkdir, exists, readFile, writeFile
-│   │   ├── config.ts             # ConfigService: load/save/ensure/getValue/setValue
-│   │   ├── config-validation.ts  # Zod schemas per config section
-│   │   ├── pass.ts               # PassService: binary check, version, scoped exec
-│   │   ├── gpg.ts                # GpgService: gpg2/gpg detection, secret key listing
-│   │   └── store.ts              # StoreService: CRUD stores from config
-│   ├── stores/
-│   │   └── counter.ts            # Placeholder store only (template artifact)
-│   ├── pages/
-│   │   ├── index.vue             # Home page (RouterLink stub)
-│   │   ├── about.vue             # Static stub
-│   │   └── test.vue              # Runs hardcoded service calls for testing
-│   └── components/
-│       ├── AppSidebar.vue        # Sidebar with hardcoded sample data (not real)
-│       ├── ModeToggle.vue        # Dark/light/system mode toggle (works)
-│       ├── Tree.vue              # Recursive file tree (wired to sample data)
-│       └── ui/                   # shadcn-vue components (button, sidebar, etc.)
-└── references/                   # External docs (Neutralino, j-toml API)
+└── client/src/
+    ├── main.ts                  # Entry point: mounts Vue, inits services
+    ├── App.vue                  # Root component (Vue logo + RouterView stub)
+    ├── types/                   # All type definitions
+    │   ├── index.ts              # Brand, Version, PassBinaryInfo, SecretKey, etc.
+    │   ├── config.ts             # AppConfig, CoreConfig, StoreConfig, etc.
+    │   └── toml.ts               # TomlObject, ParsedToml, etc.
+    ├── lib/
+    │   ├── errors.ts             # NeuError, FileWriteError, ConfigError, etc.
+    │   ├── constants.ts          # PASS_MIN_VERSION (1.7.0), DEFAULT_CONFIG
+    │   ├── utils.ts              # cn(), compareVersions(), brand()
+    │   ├── path.ts               # expandTilde(), resolveUserPath()
+    │   ├── shell.ts              # Shell quoting, path traversal prevention
+    │   └── toml.ts               # TOML parse/stringify with comment preservation
+    ├── services/                 # Backend service layer (all singletons)
+    │   ├── neutralino.ts         # NeutralinoService: command exec, binary resolution
+    │   ├── filesystem.ts         # fs class: mkdir, exists, readFile, writeFile
+    │   ├── config.ts             # ConfigService: load/save/ensure/getValue/setValue
+    │   ├── config-validation.ts  # Zod schemas per config section
+    │   ├── pass.ts               # PassService: binary check, version, scoped exec
+    │   ├── gpg.ts                # GpgService: gpg2/gpg detection, secret key listing
+    │   └── store.ts              # StoreService: CRUD stores from config
+    ├── stores/
+    │   └── counter.ts            # Placeholder store only (template artifact)
+    ├── pages/
+    │   ├── index.vue             # Home page (RouterLink stub)
+    │   ├── about.vue             # Static stub
+    │   └── test.vue              # Runs hardcoded service calls for testing
+    └─ components/
+        ├── AppSidebar.vue        # Sidebar with hardcoded sample data (not real)
+        ├── ModeToggle.vue        # Dark/light/system mode toggle (works)
+        ├── Tree.vue              # Recursive file tree (wired to sample data)
+        └── ui/                   # shadcn-vue components (button, sidebar, etc.)
 ```
 
 ---
@@ -153,7 +136,7 @@ Error classes in `client/src/lib/errors.ts`:
 - **Shell security** — POSIX/Windows quoting, argument validation, directory traversal detection (`../`, null bytes)
 - **shadcn-vue** — installed: sidebar (full suite), button, input, separator, skeleton, tooltip, breadcrumb, sheet, collapsible, dropdown-menu
 - **Dark/light mode** — via `@vueuse/core` useColorMode (works)
-- **Auto-routing** — Vue Router auto-routes from pages/
+- **File-based routing** — Vue Router uses file-based routing from pages/
 
 ---
 
@@ -200,16 +183,6 @@ Error classes in `client/src/lib/errors.ts`:
 - Clipboard clearing not implemented
 - Sensitive data not cleared from memory
 - GPG agent passphrase handling not wired
-
----
-
-## Roadmap (Read in Order)
-
-1. **01 — Current State & Direction** (accepted): Backend-first direction established.
-2. **02 — Backend Readiness** (CURRENT): Readiness pipeline validates pass -> GPG -> active store -> store structure -> recipients -> behavioral check -> snapshot. Produce `ReadinessSnapshot` with state (`DEPENDENCIES_MISSING`, `GPG_NOT_INITIALIZED`, `STORE_NOT_FOUND`, `STORE_INVALID`, `READY`) + list of `ReadinessIssue`.
-3. **03 — Entry Operations**: Listing, detail, mutations, clipboard, state contracts.
-4. **04 — Frontend UI**: Readiness-driven app entry, Pinia stores, user flows, settings.
-5. **05 — Release**: Hardening, packaging, user docs, maintenance baseline.
 
 ---
 
@@ -273,7 +246,7 @@ type AppConfig = {
 ```bash
 pnpm dev              # Parallel: frontend + NeutralinoJS
 pnpm typecheck        # Vue-TSC type checking (MUST pass before changes)
-pnpm lint && pnpm format  # Biome lint + format (MUST pass before changes)
+pnpm format           # Biome lint + format (MUST pass before changes)
 pnpm build            # Full build (frontend + NeutralinoJS)
 pnpm release          # Release build
 ```
