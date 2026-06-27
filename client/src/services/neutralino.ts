@@ -5,10 +5,15 @@ import {
   type OperatingSystem,
   os,
 } from "@neutralinojs/lib";
-import { ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
+import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import stripAnsi from "strip-ansi";
 import Path from "@/lib/path";
-import { buildShellCommand, type OsType as ShellOsType } from "@/lib/shell";
+import {
+  buildShellCommand,
+  type OsType as ShellOsType,
+  validateArgument,
+  validateCommand,
+} from "@/lib/shell";
 import {
   ALLOWED_COMMANDS,
   type AllowedCommand,
@@ -71,6 +76,14 @@ class NeutralinoService {
     args,
     options,
   }: ExecCommandArgs): Promise<Result<ExecCommandResult>> {
+    const cmdValidation = validateCommand(cmd);
+    if (cmdValidation.isError()) return Err(cmdValidation.error);
+
+    for (const arg of args ?? []) {
+      const argValidation = validateArgument(String(arg));
+      if (argValidation.isError()) return Err(argValidation.error);
+    }
+
     return await wrapAsync(async () => {
       const shellType = this.getShellOsType();
       const fullCmd = buildShellCommand(cmd, args ?? [], shellType);

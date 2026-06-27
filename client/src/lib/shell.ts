@@ -51,6 +51,8 @@ function quoteForWindows(arg: string): string {
 
 /**
  * Builds a shell command string with properly quoted arguments.
+ * The command is quoted on POSIX (defense-in-depth against shell injection).
+ * Arguments are quoted on all platforms.
  * Uses POSIX quoting for Linux/macOS and Windows quoting for Windows.
  */
 function buildShellCommand(
@@ -58,12 +60,39 @@ function buildShellCommand(
   args: Stringifiable[],
   os: OsType
 ): string {
+  const quotedCmd = os === "windows" ? cmd : quoteForPosix(cmd);
   const quotedArgs = args.map(arg => {
     const strArg = String(arg);
     return os === "windows" ? quoteForWindows(strArg) : quoteForPosix(strArg);
   });
 
-  return quotedArgs.length > 0 ? `${cmd} ${quotedArgs.join(" ")}` : cmd;
+  return quotedArgs.length > 0
+    ? `${quotedCmd} ${quotedArgs.join(" ")}`
+    : quotedCmd;
+}
+
+/**
+ * Validates that a command name is safe to pass through the shell.
+ * Since commands are single-quote wrapped, only a single quote could break out.
+ * Rejects empty strings, null bytes, leading dashes, and control characters.
+ */
+function validateCommand(cmd: string): Result<string> {
+  if (!cmd) return ErrFromText("Command name is empty");
+
+  if (cmd.includes("'")) {
+    return ErrFromText(
+      `Command "${cmd}" contains a single quote (unsafe for shell quoting)`
+    );
+  }
+  if (cmd.includes("\0") || cmd.includes("\n") || cmd.includes("\r")) {
+    return ErrFromText(
+      "Command contains one or more invalid characters (\\0, \\n, \\r)"
+    );
+  }
+  if (cmd.startsWith("-")) {
+    return ErrFromText(`Command "${cmd}" starts with a dash`);
+  }
+  return Ok(cmd);
 }
 
 /**
@@ -129,5 +158,6 @@ export {
   quoteForPosix,
   quoteForWindows,
   validateArgument,
+  validateCommand,
   validatePath,
 };

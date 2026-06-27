@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { quoteForPosix } from "@/lib/shell";
 import { config } from "@/services/config";
 import { neu } from "@/services/neutralino";
 import { useAsyncState } from "@vueuse/core";
-import { type Result } from "lib-result";
+import { Ok, type Result } from "lib-result";
 
 // Run all async operations in parallel
 const {
@@ -13,12 +14,18 @@ const {
   () =>
     Promise.all([
       neu.execCmd({
-        cmd: "VAR1=one VAR2=two VAR3=three ./test.sh",
+        cmd: "./test.sh",
         args: [1, 2, 3],
+        options: {
+          envs: { VAR1: "one", VAR2: "two", VAR3: "three" },
+        },
       }),
-      neu.execCmd({ cmd: "echo", args: ["$(echo hi) $USER"] }),
-      config.ensure(),
-      config.load(),
+      neu.execCmd({ cmd: "echo", args: ["$(printf hi)", "$USER", "`echo hello`", "hello", "'hello'", '"hello"'] }),
+      Ok(
+        quoteForPosix(
+          "echo $(printf hi) $USER `echo hello` \"Hello\" 'hello' hello \\n \\0 \\t \\r",
+        ),
+      ),
     ]),
   [] as Result<unknown>[], // initial empty array
 );
