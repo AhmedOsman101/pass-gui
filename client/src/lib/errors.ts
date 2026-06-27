@@ -225,6 +225,47 @@ class ConfigValidationError extends Error {
   }
 }
 
+/**
+ * Error codes for store validation failures.
+ */
+const STORE_ERROR_CODES = Object.freeze({
+  STORE_DIR_NOT_FOUND: "StoreDirNotFound",
+  STORE_DIR_NOT_DIRECTORY: "StoreDirNotDirectory",
+  STORE_GPG_ID_MISSING: "StoreGpgIdMissing",
+  STORE_GPG_ID_EMPTY: "StoreGpgIdEmpty",
+  STORE_GPG_ID_PARSE_ERROR: "StoreGpgIdParseError",
+  STORE_RECIPIENT_UNKNOWN: "StoreRecipientUnknown",
+  STORE_BEHAVIORAL_CHECK_FAILED: "StoreBehavioralCheckFailed",
+} as const);
+
+type StoreErrorCode = keyof typeof STORE_ERROR_CODES;
+type StoreErrorType = (typeof STORE_ERROR_CODES)[StoreErrorCode];
+
+/**
+ * Error thrown when store validation fails.
+ */
+class StoreValidationError extends Error {
+  public code: StoreErrorCode;
+  public type: StoreErrorType;
+  public storePath: string;
+
+  constructor(
+    code: StoreErrorCode,
+    storePath: string,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(
+      message ??
+        `Store validation failed: ${STORE_ERROR_CODES[code]} at ${storePath}`,
+      options
+    );
+    this.code = code;
+    this.type = STORE_ERROR_CODES[code];
+    this.storePath = storePath;
+  }
+}
+
 export {
   CONFIG_ERROR_CODES,
   type ConfigErrorCode,
@@ -240,4 +281,8 @@ export {
   NeuError,
   type NeuErrorCode,
   type NeuErrorMap,
+  STORE_ERROR_CODES,
+  type StoreErrorCode,
+  type StoreErrorType,
+  StoreValidationError,
 };

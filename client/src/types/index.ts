@@ -77,16 +77,21 @@ type SecretKey = {
  * Commands allowed to be executed through the safeExec method.
  * This whitelist prevents arbitrary command execution.
  */
-type AllowedCommand =
-  | "pass"
-  | "gpg"
-  | "gpg2"
-  | "type"
-  | "ls"
-  | "where.exe"
-  | "which"
-  | "readlink"
-  | "file";
+const ALLOWED_COMMANDS = [
+  "file",
+  "gpg",
+  "gpg2",
+  "ls",
+  "pass",
+  "readlink",
+  "tree",
+  "type",
+  "where.exe",
+  "which",
+] as const;
+
+/** Commands allowed to be executed through the safeExec method. */
+type AllowedCommand = (typeof ALLOWED_COMMANDS)[number];
 
 export type {
   AllowedCommand,
@@ -100,3 +105,4 @@ export type {
   Stringifiable,
   Version,
 };
+export { ALLOWED_COMMANDS };

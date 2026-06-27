@@ -9,19 +9,11 @@ import { ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import stripAnsi from "strip-ansi";
 import Path from "@/lib/path";
 import { buildShellCommand, type OsType as ShellOsType } from "@/lib/shell";
-import type { AllowedCommand, Stringifiable } from "@/types";
-
-const ALLOWED_COMMANDS: AllowedCommand[] = [
-  "pass",
-  "gpg",
-  "gpg2",
-  "type",
-  "ls",
-  "where.exe",
-  "which",
-  "readlink",
-  "file",
-] as const;
+import {
+  ALLOWED_COMMANDS,
+  type AllowedCommand,
+  type Stringifiable,
+} from "@/types";
 
 type ExecCommandArgs = {
   cmd: string;
@@ -226,4 +218,4 @@ class NeutralinoService {
 const neu = new NeutralinoService();
 const neuInitialized = neu.init();
 
-export { ALLOWED_COMMANDS, NeutralinoService, neu, neuInitialized };
+export { NeutralinoService, neu, neuInitialized };

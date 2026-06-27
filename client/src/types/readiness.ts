@@ -41,9 +41,19 @@ type ReadinessIssue = {
     | { path: string; keyId: string };
 };
 
+/**
+ * A point-in-time evaluation of the application's readiness state.
+ */
+type ReadinessSnapshot = {
+  state: ReadinessState;
+  issues: ReadinessIssue[];
+  evaluatedAt: number;
+};
+
 export type {
   ReadinessIssue,
   ReadinessIssueCode,
   ReadinessIssueSeverity,
+  ReadinessSnapshot,
   ReadinessState,
 };
