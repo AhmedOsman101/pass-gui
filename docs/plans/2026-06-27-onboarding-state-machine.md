@@ -2,6 +2,16 @@
 
 > **For agentic workers:** Use superpowers:executing-plans or superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## Progress
+
+- [x] Quest 1: The Type Codex
+- [x] Quest 2: The Error Ledger
+- [x] Quest 3: The Whitelist Amendment
+- [ ] Quest 4: The Store Inspector
+- [ ] Quest 5: The Orchestrator
+- [ ] Quest 6: The First Breath
+- [ ] Quest 7: The Ledger Update
+
 **Goal:** Build a backend readiness state machine that tells the app exactly what's broken — missing binaries, no GPG keys, busted stores — so the UI (Phase 04) can show the right onboarding screen.
 
 **Tech Stack:** TypeScript 5.9, lib-result (`Result<T, E>`), existing service layer (NeutralinoService, GpgService, PassService, filesystem).
@@ -22,17 +32,17 @@ Right now, `main.ts` just blindly awaits service inits and hopes for the best. W
 
 Evaluation order is fixed. First match wins. Each state implies everything before it passed.
 
-| #   | State                      | What it means                                      | Blocking? |
-| --- | -------------------------- | -------------------------------------------------- | --------- |
-| 1   | `NEED_PASS`                | `pass` binary not found or version < 1.7.0         | yes       |
-| 2   | `NEED_TREE`                | `tree` binary not found — `pass ls` depends on it  | yes       |
-| 3   | `NEED_GPG`                 | `gpg` or `gpg2` not found                          | yes       |
-| 4   | `GPG_NO_KEYS`              | GPG installed but zero secret keys in keyring      | yes       |
-| 5   | `STORE_NOT_FOUND`          | Store directory doesn't exist or isn't a directory | yes       |
-| 6   | `STORE_NO_GPG_ID`          | Store exists but `.gpg-id` file missing            | yes       |
-| 7   | `STORE_GPG_ID_EMPTY`       | `.gpg-id` exists but is empty                      | yes       |
-| 8   | `STORE_GPG_ID_KEY_MISSING` | `.gpg-id` references a key not in keyring          | yes       |
-| 9   | `STORE_EMPTY`              | Valid store, no password entries yet               | no (info) |
+|  #  | State                      | What it means                                      | Blocking? |
+| :-: | -------------------------- | -------------------------------------------------- | --------- |
+|  1  | `NEED_PASS`                | `pass` binary not found or version < 1.7.0         | yes       |
+|  2  | `NEED_TREE`                | `tree` binary not found — `pass ls` depends on it  | yes       |
+|  3  | `NEED_GPG`                 | `gpg` or `gpg2` not found                          | yes       |
+|  4  | `GPG_NO_KEYS`              | GPG installed but zero secret keys in keyring      | yes       |
+|  5  | `STORE_NOT_FOUND`          | Store directory doesn't exist or isn't a directory | yes       |
+|  6  | `STORE_NO_GPG_ID`          | Store exists but `.gpg-id` file missing            | yes       |
+|  7  | `STORE_GPG_ID_EMPTY`       | `.gpg-id` exists but is empty                      | yes       |
+|  8  | `STORE_GPG_ID_KEY_MISSING` | `.gpg-id` references a key not in keyring          | yes       |
+|  9  | `STORE_EMPTY`              | Valid store, no password entries yet               | no (info) |
 | 10  | `READY`                    | All good                                           | no        |
 
 **Why `NEED_TREE` is its own state:** `pass` can install without `tree` on many distros and macOS Homebrew. `pass ls` shells out to `tree` — without it, listing dies silently. Catching it early means the onboarding screen says "install tree" instead of showing a cryptic error.
@@ -45,21 +55,22 @@ Evaluation order is fixed. First match wins. Each state implies everything befor
 
 Every state produces zero or more `ReadinessIssue` objects. Each has a `code`, `severity`, and context fields:
 
-| Code                            | Context fields       | When it fires                 |
-| ------------------------------- | -------------------- | ----------------------------- |
-| `PASS_BINARY_MISSING`           | —                    | pass not installed            |
-| `PASS_VERSION_TOO_OLD`          | `found`, `required`  | pass < 1.7.0                  |
-| `TREE_BINARY_MISSING`           | —                    | tree not installed            |
-| `GPG_BINARY_MISSING`            | —                    | gpg/gpg2 not installed        |
-| `GPG_NO_SECRET_KEYS`            | —                    | GPG installed, no secret keys |
-| `STORE_DIR_NOT_FOUND`           | `path`               | Store dir doesn't exist       |
-| `STORE_DIR_NOT_DIRECTORY`       | `path`               | Path exists but isn't a dir   |
-| `STORE_GPG_ID_MISSING`          | `path`               | .gpg-id not found             |
-| `STORE_GPG_ID_EMPTY`            | `path`               | .gpg-id is empty              |
-| `STORE_GPG_ID_PARSE_ERROR`      | `path`, `parseError` | .gpg-id has bad format        |
-| `STORE_RECIPIENT_UNKNOWN`       | `path`, `keyId`      | Recipient not in keyring      |
-| `STORE_BEHAVIORAL_CHECK_FAILED` | `path`, `stderr`     | `pass ls` failed              |
-| `STORE_NO_ENTRIES`              | `path`               | Store has no passwords (info) |
+|  #  | Code                            | Context fields       | When it fires                 |
+| :-: | ------------------------------- | -------------------- | ----------------------------- |
+| 01  | `PASS_BINARY_MISSING`           | —                    | pass not installed            |
+| 02  | `PASS_VERSION_TOO_OLD`          | `found`, `required`  | pass < 1.7.0                  |
+| 03  | `TREE_BINARY_MISSING`           | —                    | tree not installed            |
+| 04  | `GPG_BINARY_MISSING`            | —                    | gpg/gpg2 not installed        |
+| 05  | `GPG_NO_SECRET_KEYS`            | —                    | GPG installed, no secret keys |
+| 02  | `GPG_VERSION_TOO_OLD`           | `found`, `required`  | gpg < 2.1                     |
+| 06  | `STORE_DIR_NOT_FOUND`           | `path`               | Store dir doesn't exist       |
+| 07  | `STORE_DIR_NOT_DIRECTORY`       | `path`               | Path exists but isn't a dir   |
+| 08  | `STORE_GPG_ID_MISSING`          | `path`               | .gpg-id not found             |
+| 09  | `STORE_GPG_ID_EMPTY`            | `path`               | .gpg-id is empty              |
+| 10  | `STORE_GPG_ID_PARSE_ERROR`      | `path`, `parseError` | .gpg-id has bad format        |
+| 11  | `STORE_RECIPIENT_UNKNOWN`       | `path`, `keyId`      | Recipient not in keyring      |
+| 12  | `STORE_BEHAVIORAL_CHECK_FAILED` | `path`, `stderr`     | `pass ls` failed              |
+| 13  | `STORE_NO_ENTRIES`              | `path`               | Store has no passwords (info) |
 
 ---
 
@@ -85,9 +96,7 @@ Complete these in order. Each quest unlocks the next.
 A new type file containing three exports:
 
 1. **`ReadinessState`** — A string union of all 10 states listed above. This is the "current state" enum.
-
 2. **`ReadinessIssue`** — A discriminated union. Each variant has a `code` (the string literal from the issue table), a `severity` (`"blocking"` or `"informational"`), and variant-specific context fields (like `path`, `keyId`, `found`/`required` for version). Study the issue table above — every row becomes one variant.
-
 3. **`ReadinessSnapshot`** — An object with `state: ReadinessState`, `issues: ReadinessIssue[]`, and `evaluatedAt: number` (a `Date.now()` timestamp).
 
 Also add a `ReadinessIssueSeverity` type alias for `"blocking" | "informational"` for reuse.
@@ -96,7 +105,7 @@ Also add a `ReadinessIssueSeverity` type alias for `"blocking" | "informational"
 
 **Re-export from index.ts:** Add a re-export block at the bottom of `client/src/types/index.ts` for all four types from the new file.
 
-**Done when:** `pnpm --filter=client typecheck` passes with no errors.
+**Done when:** `pnpm typecheck` passes with no errors.
 
 **Commit:** `feat(types): add readiness state machine types`
 
@@ -117,14 +126,12 @@ Also add a `ReadinessIssueSeverity` type alias for `"blocking" | "informational"
 Append to the existing errors file:
 
 1. A `STORE_ERROR_CODES` frozen object mapping code strings (like `"STORE_DIR_NOT_FOUND"`) to human-readable type strings (like `"StoreDirNotFound"`). Cover all store-related issue codes from the table above (7 codes).
-
 2. A `StoreErrorCode` type (keyof the codes object) and `StoreErrorType` (value type).
-
 3. A `StoreValidationError` class extending `Error` with three fields: `code: StoreErrorCode`, `type: StoreErrorType`, `storePath: string`. Constructor takes `(code, storePath, message?, options?)`.
 
 **How to follow existing patterns:** Look at how `NeuError` and `ConfigNotFoundError` are structured in the same file. Same pattern: frozen codes object, type aliases, Error subclass with typed fields.
 
-**Done when:** `pnpm --filter=client typecheck` passes.
+**Done when:** `pnpm typecheck` passes.
 
 **Commit:** `feat(errors): add StoreValidationError and store error codes`
 
@@ -143,7 +150,7 @@ Append to the existing errors file:
 
 **Why:** `neu.commandExists()` uses this whitelist. Without `tree` in the list, we can't check if it's installed.
 
-**Done when:** `pnpm --filter=client typecheck` passes.
+**Done when:** `pnpm typecheck` passes.
 
 **Commit:** `feat(neutralino): add tree to allowed commands for pass ls support`
 
@@ -239,7 +246,7 @@ Pass walks **up** from the current subfolder looking for `.gpg-id`. A `.gpg-id` 
 - Keyring listing fails (gpg agent locked, permission denied) -> bubble up the error
 - GPG groups (e.g., `@myteam` in `.gpg-id`) -> pass resolves these via `gpg --list-config`. Your parser should pass these through as-is (don't reject them). Verification against keyring will naturally fail for groups — that's fine, the behavioral check (`pass ls`) will catch it.
 
-**Done when:** `pnpm --filter=client typecheck` passes.
+**Done when:** `pnpm typecheck` passes.
 
 **Commit:** `feat(store-validation): add .gpg-id parsing, recipient verification, behavioral check`
 
@@ -287,7 +294,7 @@ The method runs checks in strict order. **First blocking match wins** — if `pa
 
 **How to follow existing patterns:** The return-objects pattern (state + issues + stop) is similar to how services return `Result<T, E>` — structured data, no throwing. Import types from `@/types/readiness`, services from their files, constants from `@/lib/constants`.
 
-**Done when:** `pnpm --filter=client typecheck` passes.
+**Done when:** `pnpm typecheck` passes.
 
 **Commit:** `feat(readiness): add readiness orchestrator service`
 
@@ -316,7 +323,7 @@ This is temporary. The Pinia readiness store (Phase 04) will consume this proper
 
 **Gotcha:** `pass.storeDirectory` is only set after `pass.init()` resolves, which is what `passInitialized` awaits. So by the time we call `ReadinessService.check()`, the directory is available.
 
-**Done when:** `pnpm --filter=client typecheck` passes.
+**Done when:** `pnpm typecheck` passes.
 
 **Commit:** `feat(main): wire readiness check into init flow`
 
@@ -357,7 +364,7 @@ This is temporary. The Pinia readiness store (Phase 04) will consume this proper
 
 No test framework yet. Manual verification:
 
-1. **Typecheck must pass:** `pnpm --filter=client typecheck` after every quest
+1. **Typecheck must pass:** `pnpm typecheck` after every quest
 2. **Lint must pass:** `pnpm lint && pnpm format` after every quest
 3. **Smoke test after Quest 6:** Run `pnpm dev`, open Neutralino inspector console, check the readiness log output:
    - System with pass + gpg + tree + valid store -> `Readiness: READY (0 issues)` or `READY` with `STORE_NO_ENTRIES` info
