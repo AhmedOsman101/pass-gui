@@ -8,7 +8,7 @@
 - [x] Run `pass --version`
 - [x] Enforce minimum supported version
 - [x] Detect if binary is alias/wrapper and log real path
-- [ ] Diagnose and report pass readiness via `ReadinessSnapshot.DEPENDENCIES_MISSING`
+- [x] Diagnose and report pass readiness via `ReadinessSnapshot.DEPENDENCIES_MISSING`
 - [ ] Provide onboarding flow if `pass` doesn't exist
 
 ### 1.2 Validate GPG Backend
@@ -16,9 +16,9 @@
 - [x] Resolve `gpg` binary
 - [x] Run `gpg --version`
 - [x] Run `gpg --list-secret-keys`
-- [ ] Ensure at least one secret key exists (`GPG_NO_SECRET_KEYS`)
-- [ ] Detect and support custom `GNUPGHOME` (env var and per-store override)
-- [ ] Resolve effective GNUPGHOME: per-store -> env -> gpg compiled-in default
+- [x] Ensure at least one secret key exists (`GPG_NO_SECRET_KEYS`)
+- [x] Detect and support custom `GNUPGHOME` (env var and per-store override)
+- [x] Resolve effective GNUPGHOME: per-store -> env -> gpg compiled-in default
 - [ ] Handle Windows-specific GPG installations
 - [ ] Provide onboarding flow if no keys exist
 
@@ -39,32 +39,32 @@
 - [x] Check path exists
 - [x] Check path is a directory
 - [x] Check `.gpg-id` exists at root
-- [ ] Ensure `.gpg-id` is not empty
+- [x] Ensure `.gpg-id` is not empty
 
 ### 3.2 Cryptographic Validation
 
-- [ ] Parse `.gpg-id` (filter comments, extract recipient IDs)
-- [ ] Verify each key ID exists in GPG keyring (suffix match for short IDs, exact for fingerprints)
-- [ ] Detect unknown/removed recipients (`STORE_RECIPIENT_UNKNOWN`)
+- [x] Parse `.gpg-id` (filter comments, extract recipient IDs)
+- [x] Verify each key ID exists in GPG keyring (suffix match for short IDs, exact for fingerprints)
+- [x] Detect unknown/removed recipients (`STORE_RECIPIENT_UNKNOWN`)
 
 ### 3.3 Behavioral Validation
 
-- [ ] Attempt a safe read operation (`pass ls`) via `validateStoreBehaviorally()`
-- [ ] Fail and report `STORE_BEHAVIORAL_CHECK_FAILED` on non-zero exit
+- [x] Attempt a safe read operation (`pass ls`) via `validateStoreBehaviorally()`
+- [x] Fail and report `STORE_BEHAVIORAL_CHECK_FAILED` on non-zero exit
 
 ## 4. App State Machine (Core Architecture)
 
 Replace vague "states" with deterministic ones:
 
-- [ ] `DEPENDENCIES_MISSING`
-- [ ] `GPG_NOT_INITIALIZED`
-- [ ] `STORE_NOT_FOUND`
-- [ ] `STORE_INVALID`
-- [ ] `READY`
+- [x] `DEPENDENCIES_MISSING`
+- [x] `GPG_NOT_INITIALIZED`
+- [x] `STORE_NOT_FOUND`
+- [x] `STORE_INVALID`
+- [x] `READY`
 
 Also:
 
-- [ ] Centralized state manager (`checkReadiness()` orchestrator + `ReadinessStore`)
+- [x] Centralized state manager (`checkReadiness()` orchestrator + `ReadinessStore`)
 - [ ] UI reacts strictly to state changes (Phase 04)
 - [ ] No UI logic outside state transitions (Phase 04)
 
