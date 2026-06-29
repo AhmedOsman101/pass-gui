@@ -4,7 +4,7 @@
 
 ## Progress
 
-- [ ] Quest 1: The Entry Codex
+- [x] Quest 1: The Entry Codex
 - [ ] Quest 2: The Error Arsenal
 - [ ] Quest 3: The Pass Ls Decoder
 - [ ] Quest 4: The Pass Show Decoder
@@ -38,8 +38,8 @@ Execution order matters. Types first, then parsers, then services, then clipboar
 | :-: | ------------------------- | ------------------------------------------------------------- | ---------- |
 |  1  | The Entry Codex           | Domain types for entries, mutations, clipboard                | —          |
 |  2  | The Error Arsenal         | Error classes for entry operations                            | Quest 1    |
-|  3  | The Pass Ls Decoder       | Parser: `pass ls` stdout -> `EntryNode[]`                     | Quest 1    |
-|  4  | The Pass Show Decoder     | Parser: `pass show` stdout -> `EntryDetail`                   | Quest 1    |
+|  3  | The Pass ls Decoder       | Parser: `pass ls` stdout -> `EntryNode[]`                     | Quest 1    |
+|  4  | The Pass show Decoder     | Parser: `pass show` stdout -> `EntryDetail`                   | Quest 1    |
 |  5  | The Entry Service         | `EntriesService` — list, show, insert, generate, rm, mv, edit | Quest 1-4  |
 |  6  | The Clipboard Ritual      | `ClipboardService` — write, clear                             | Quest 1    |
 |  7  | The Ledger Reconciliation | Wire into main.ts, update TODO.md                             | Quest 1-6  |
