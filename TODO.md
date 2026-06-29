@@ -105,8 +105,8 @@ Also:
 You need this even if it's not obvious yet.
 
 - [x] Central wrapper for executing `pass`
-- [ ] Central wrapper for executing `gpg` (GpgService)
-- [ ] Scoped environment injection (`pass.execScoped()`, `gpg.listSecretKeysWithHome()`)
+- [x] Central wrapper for executing `gpg` (GpgService)
+- [x] Scoped environment injection (`pass.execScoped()`, `gpg.listSecretKeysWithHome()`)
 - [ ] Timeout handling
 - [x] Structured error parsing
 - [x] Log stdout/stderr safely

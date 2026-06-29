@@ -1,7 +1,7 @@
 # pass-gui Context File
 
 > Handoff document for AI agents reviewing or working on the pass-gui project.
-> Last updated: June 15, 2026
+> Last updated: June 30, 2026
 
 ---
 
@@ -78,16 +78,17 @@ Six service singletons, all in `client/src/services/`:
 
 **⚠️ `neu.execCmd()` throws on non-zero exit** — Line 95-98 of `neutralino.ts` draws a hard error if exit code != 0. This blocks Phase 03 (entry operations) where non-zero exits carry semantic meaning (e.g. `pass show` exits 1 for "entry not found"). Entry operations need a variant that returns exit code without throwing.
 
-**⚠️ `docs/plans/backend-readiness-phase.md` claims "ALL STEPS COMPLETE"** — This is misleading. Files `store-validation.ts`, `app-readiness.ts`, `stores/readiness.ts`, and `ReadinessState`/`ReadinessIssue` types do NOT exist in the codebase. Treat the plan as a TODO list, not a completion log.
+**⚠️ Module-level init promises** — `gpgInitialized` and `passInitialized` are imported and awaited in `main.ts` (lines 22-23). If any service init fails, the app never renders. The readiness orchestrator runs after init but does not replace the blocking behavior yet.
 
 | Service        | File            | Purpose                                                   |
 | -------------- | --------------- | --------------------------------------------------------- |
 | `neu`          | `neutralino.ts` | NeutralinoJS command exec, binary resolution, env vars    |
-| `fs`           | `filesystem.ts` | mkdir, exists, readFile, writeFile, isDirectory, getStats |
+| `fs`           | `filesystem.ts` | mkdir, exists, readFile, writeFile, isDirectory, getStats, join, readDirectory |
 | `config`       | `config.ts`     | Load/save/ensure config, generic getValue/setValue        |
-| `pass`         | `pass.ts`       | pass binary validation, version check, scoped exec        |
-| `gpg`          | `gpg.ts`        | gpg2/gpg detection, version parsing, secret key listing   |
+| `pass`         | `pass.ts`       | pass binary validation, version check, exec, execScoped  |
+| `gpg`          | `gpg.ts`        | gpg2/gpg detection, version parsing, secret key listing, exec, listSecretKeysWithHome |
 | `StoreService` | `store.ts`      | get/set/validatePath for stores from config               |
+| `StoreValidationService` | `store-validation.ts` | .gpg-id parsing, recipient verification, behavioral check |
 
 ### Init Flow (main.ts)
 
@@ -142,15 +143,16 @@ Error classes in `client/src/lib/errors.ts`:
 
 ## Current State: What is NOT IMPLEMENTED
 
-### Readiness Layer (phase 02 — IMMEDIATE GAP)
+### Readiness Layer (phase 02 — MOSTLY COMPLETE)
 
-- No `ReadinessState`, `ReadinessSnapshot`, or `ReadinessIssue` types
-- No store validation service (beyond `.gpg-id` existence check)
-- No `.gpg-id` parsing and recipient verification against GPG keyring
-- No `pass ls` behavioral check
-- No readiness orchestrator service
-- No readiness Pinia store
-- Module-level init promises block app mount (no graceful degradation)
+- ✅ `ReadinessState` (10-state union), `ReadinessSnapshot`, `ReadinessIssue` (discriminated union) at `client/src/types/readiness.ts`
+- ✅ Store validation service at `client/src/services/store-validation.ts` (parseGpgId, verifyRecipients, validateBehavior, hasEntries)
+- ✅ Readiness orchestrator at `client/src/services/readiness.ts` (checkPass, checkTree, checkGpg, checkGpgKeys, checkStore, checkStoreEmpty)
+- ✅ Readiness wired into `main.ts` (logs result to debug)
+- ✅ `STORE_ERROR_CODES`, `StoreValidationError` at `client/src/lib/errors.ts`
+- ✅ `readiness-helper.ts` — issue() factory, SEVERITY record
+- ❌ No readiness Pinia store (Phase 04)
+- ❌ Module-level init promises still block app mount (no graceful degradation)
 
 ### Entry Operations (phase 03)
 
@@ -262,15 +264,15 @@ From `TODO.md` at repo root:
 - ✅ Store path resolution ($PASSWORD_STORE_DIR / ~/.password-store)
 - ✅ Config file read/write, Zod schema validation, TOML comment preservation
 - ✅ Command injection prevention, path traversal prevention
-- ❌ Readiness state machine (DEPENDENCIES_MISSING, GPG_NOT_INITIALIZED, STORE_NOT_FOUND, STORE_INVALID, READY)
-- ❌ Store validation beyond existence (.gpg-id contents, recipient verification)
-- ❌ Behavioral validation (pass ls)
+- ✅ Readiness state machine (10 states: NEED_PASS, NEED_TREE, NEED_GPG, GPG_NO_KEYS, STORE_NOT_FOUND, STORE_NO_GPG_ID, STORE_GPG_ID_EMPTY, STORE_GPG_ID_KEY_MISSING, STORE_EMPTY, READY)
+- ✅ Store validation (.gpg-id parsing, recipient verification, behavioral check)
+- ✅ Centralized readiness orchestrator (ReadinessService.check())
 - ❌ Entry listing, detail retrieval, mutations, clipboard
 - ❌ All Pinia stores (readiness, entries, selected entry, clipboard, store-context)
 - ❌ All UI flows (readiness screens, password list, entry detail, onboarding, settings)
 - ❌ Security: clipboard clearing, memory clearing, GPG agent handling
 
-Full checklist at `TODO.md` — 93 total items, 29 checked, 64 pending.
+Full checklist at `TODO.md` — 168 total items, ~45 checked, ~123 pending.
 
 ---
 
