@@ -224,14 +224,23 @@ Create `client/src/services/entries.ts`.
 
 3. **`insert(input)`** -> `Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>`
    - Validates `input.path`
-   - `pass insert` needs stdin piping (content passed via stdin with `-m` flag). Since `pass.execScoped()` can't pipe stdin, use `neu.execCmd()` directly:
+   - `pass insert` needs stdin piping (content passed via stdin with `-m` flag). NeutralinoJS `os.execCommand` supports a `stdIn` option — pass content directly, no shell piping needed.
+   - Calls `neu.execCmd()` with:
+     ```ts
+     const args = input.force
+       ? ["insert", "-f", "-m", input.path]
+       : ["insert", "-m", input.path];
+     const result = await neu.execCmd({
+       cmd: "pass",
+       args,
+       options: { envs: { PASSWORD_STORE_DIR: storePath }, stdIn: input.content },
+     });
      ```
-     echo <quoted_content> | pass insert [-f] -m <quoted_path>
-     ```
-     with `envs: { PASSWORD_STORE_DIR: storePath }`
-   - Use `quoteForPosix()` for content and path
+   - No `quoteForPosix` needed — `stdIn` is passed as a string option, not shell-interpolated.
    - Catch `CommandFailedError`: if stderr contains "already exists" -> `Err(new EntryAlreadyExistsError(input.path))`
    - On success -> `Ok({ success: true, path: input.path })`
+
+   **Note:** Verify `stdIn` is typed on `ExecCommandOptions`. If not, add it to the type definition (same pattern as the `envs` PR — the C++ source supports it but JS client types may lag).
 
 4. **`generate(path, length?, noSymbols?)`** -> `Promise<Result<MutationResult, MutationError>>`
    - Reads generation defaults from config: `ConfigService.getValue("generation", "default_length")` and `ConfigService.getValue("generation", "symbols")`
@@ -340,7 +349,7 @@ Phase 04 Pinia stores consume these directly — no re-interpretation needed.
 
 ## Open Questions
 
-1. **`pass insert` stdin piping:** The `echo content | pass insert -m path` approach works but exposes the password briefly in the process list. Acceptable for v1. Future improvement: write to a temp file and redirect `< tempfile`.
+1. **`stdIn` type on `ExecCommandOptions`:** NeutralinoJS C++ source supports `stdIn` on `os.execCommand` (feeds data to child process stdin). The JS client types may not include it yet. If missing, add `stdIn?: string` to `ExecCommandOptions` in the NeutralinoJS type definitions (same pattern as the `envs` PR).
 
 2. **`pass ls` on empty store:** `pass` exits non-zero with "Error: password store is empty" on some versions. The `list()` method catches this specific error message and returns `Ok([])` instead of failing. Verify this behavior on the target `pass` version (1.7.4+).
 
