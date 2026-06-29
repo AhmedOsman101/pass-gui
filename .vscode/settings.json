@@ -1,4 +1,12 @@
 {
+  "files.exclude": {
+    "**/neutralino-cpp": true,
+    "**/neutralino-js": true
+  },
+  "search.exclude": {
+    "**/neutralino-cpp": true,
+    "**/neutralino-js": true
+  },
   "prettier.useEditorConfig": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never",
