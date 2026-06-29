@@ -72,7 +72,7 @@ class NeutralinoService {
    * ANSI escape codes are stripped from output.
    * Throws on non-zero exit codes (wrapped in Result).
    */
-  async execCmd({
+  async exec({
     cmd,
     args,
     options,
@@ -120,7 +120,7 @@ class NeutralinoService {
     options,
   }: SafeExecCommandArgs): Promise<Result<ExecCommandResult>> {
     if (ALLOWED_COMMANDS.includes(cmd)) {
-      return await this.execCmd({ cmd, args, options });
+      return await this.exec({ cmd, args, options });
     }
 
     return ErrFromText(`Command ${cmd} is not allowed in safe execution mode`);
@@ -140,7 +140,7 @@ class NeutralinoService {
    */
   async commandExists(program: string): Promise<Result<boolean>> {
     if (this.OS === "Windows") {
-      const whereResult = await this.execCmd({
+      const whereResult = await this.exec({
         cmd: "where.exe",
         args: [program],
       });
@@ -148,7 +148,7 @@ class NeutralinoService {
         return Ok(true);
       }
     } else {
-      const whichResult = await this.execCmd({
+      const whichResult = await this.exec({
         cmd: "which",
         args: [program],
       });
@@ -173,7 +173,7 @@ class NeutralinoService {
       case "Linux":
       case "Darwin":
       case "FreeBSD": {
-        const whichResult = await this.execCmd({
+        const whichResult = await this.exec({
           cmd: "which",
           args: [program],
         });
@@ -186,7 +186,7 @@ class NeutralinoService {
           return ErrFromText(`Could not resolve path for: ${program}`);
         }
 
-        const readlinkResult = await this.execCmd({
+        const readlinkResult = await this.exec({
           cmd: "readlink",
           args: ["-f", binPath],
         });
@@ -204,7 +204,7 @@ class NeutralinoService {
         return Ok(binPath);
       }
       case "Windows": {
-        const whereResult = await this.execCmd({
+        const whereResult = await this.exec({
           cmd: "where.exe",
           args: [program],
         });

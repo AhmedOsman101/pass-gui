@@ -154,7 +154,7 @@ class PassService {
       validatedArgs.push(argValidation.ok);
     }
 
-    return await neu.execCmd({
+    return await neu.exec({
       cmd: "pass",
       args: validatedArgs,
       options: {
@@ -183,7 +183,7 @@ class PassService {
       validatedArgs.push(argValidation.ok);
     }
 
-    return await neu.execCmd({
+    return await neu.exec({
       cmd: "pass",
       args: validatedArgs,
       options,

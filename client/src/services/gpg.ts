@@ -184,7 +184,7 @@ class GpgService {
   async listSecretKeysWithHome(
     gnupgHome: string
   ): Promise<Result<SecretKey[]>> {
-    const cmdResult = await neu.execCmd({
+    const cmdResult = await neu.exec({
       cmd: this.getCommand(),
       args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
       options: { envs: { GNUPGHOME: gnupgHome } },
@@ -276,7 +276,7 @@ class GpgService {
   ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
     if (!this.getCommand()) return ErrFromText("GPG binary not resolved");
 
-    return await neu.execCmd({
+    return await neu.exec({
       cmd: this.getCommand(),
       args,
       options: this.homeDir
