@@ -38,7 +38,7 @@ class StoreValidationService {
   static async parseGpgId(
     storePath: string
   ): Promise<Result<ParsedRecipient[]>> {
-    const path = `${storePath}/.gpg-id`;
+    const path = await fs.join(storePath, ".gpg-id");
     const fileExists = await fs.isFile(path);
     if (fileExists.isError()) return Err(fileExists.error);
 

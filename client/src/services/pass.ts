@@ -28,10 +28,9 @@ class PassService {
    * and checking if it's properly initialized with a .gpg-id file.
    */
   async init(): Promise<Result<boolean>> {
-    this.storeDirectory = await neu.getEnv(
-      "PASSWORD_STORE_DIR",
-      `${neu.HOME_DIR}/.password-store`
-    );
+    const envStoreDir = await neu.getEnv("PASSWORD_STORE_DIR");
+    this.storeDirectory =
+      envStoreDir || (await fs.join(neu.HOME_DIR, ".password-store"));
 
     const result = await this.checkInitialized(this.storeDirectory);
     if (result.isError()) {
@@ -48,7 +47,7 @@ class PassService {
    * Checks if a password store is properly initialized by looking for .gpg-id.
    */
   private async checkInitialized(storePath: string): Promise<Result<boolean>> {
-    const gpgIdPath = `${storePath}/.gpg-id`;
+    const gpgIdPath = await fs.join(storePath, ".gpg-id");
     return await fs.exists(gpgIdPath);
   }
 
@@ -105,17 +104,30 @@ class PassService {
 
   /**
    * Checks if pass is available on the system.
+   * On Windows, falls back to checking pass.cmd and pass.ps1 explicitly
+   * in case PATHEXT does not resolve them via the bare "pass" name.
    */
   async passExists(): Promise<Result<boolean>> {
     const existsResult = await neu.commandExists("pass");
-    if (existsResult.isError() || !existsResult.ok) return Ok(false);
-
-    const validateResult = await this.validatePassBinary();
-    if (validateResult.isError()) {
-      debug.log(`Warning: ${validateResult.error.message}`);
+    if (existsResult.isOk() && existsResult.ok) {
+      const validateResult = await this.validatePassBinary();
+      if (validateResult.isError()) {
+        debug.log(`Warning: ${validateResult.error.message}`);
+      }
+      return Ok(true);
     }
 
-    return Ok(true);
+    if (neu.OS === "Windows") {
+      for (const name of ["pass.cmd", "pass.ps1"]) {
+        const fallback = await neu.commandExists(name);
+        if (fallback.isOk() && fallback.ok) {
+          debug.log(`Pass found as ${name}`);
+          return Ok(true);
+        }
+      }
+    }
+
+    return Ok(false);
   }
 
   /**

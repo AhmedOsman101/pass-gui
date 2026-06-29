@@ -112,13 +112,14 @@ function validateArgument(arg: string): Result<string> {
 /**
  * Checks if a path contains directory traversal patterns (../).
  * These could be used to escape the password store directory.
+ * Handles both POSIX (/) and Windows (\) path separators.
  */
 async function checkSneakyPath(path: string): Promise<boolean> {
   const normalizedResult = await fs.getNormalizedPath(path);
   if (normalizedResult.isError()) return false;
 
   const normalized = normalizedResult.ok
-    .replace(/\/+/g, "/")
+    .replace(/[/\\]+/g, "/")
     .replace(/\/+$/, "");
 
   return (

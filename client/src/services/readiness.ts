@@ -117,6 +117,8 @@ class ReadinessService {
    * Skipped on Windows (pass ls uses different mechanisms there).
    */
   private static async checkTree(): Promise<CheckResult> {
+    if (neu.OS === "Windows") return OK;
+
     const treeExists = await neu.commandExists("tree");
     if (treeExists.isError() || !treeExists.ok) {
       return {
@@ -190,7 +192,7 @@ class ReadinessService {
       };
     }
 
-    const gpgIdPath = `${storePath}/.gpg-id`;
+    const gpgIdPath = await fs.join(storePath, ".gpg-id");
     const gpgIdExists = await fs.exists(gpgIdPath);
     if (gpgIdExists.isError() || !gpgIdExists.ok) {
       return {

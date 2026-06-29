@@ -15,7 +15,12 @@ const GPG_MIN_VERSION: Version = { major: 2, minor: 1 };
  * Known system paths where pass is typically installed.
  * Used to distinguish system binaries from custom wrappers/scripts.
  */
-const SYSTEM_PASS_PATHS = ["/usr/bin/pass", "/bin/pass"];
+const SYSTEM_PASS_PATHS = [
+  "/usr/bin/pass",
+  "/bin/pass",
+  "C:\\Program Files\\Gpg4win\\bin",
+  "C:\\Program Files (x86)\\Gpg4win\\bin",
+];
 
 /**
  * Default application configuration.

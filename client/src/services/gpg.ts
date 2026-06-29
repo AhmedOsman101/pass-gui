@@ -57,6 +57,8 @@ class GpgService {
    * Checks if GPG is available on the system.
    * Tries `gpg2` first (for compatibility), then falls back to `gpg`.
    * Only resolves the binary name — does not parse version or home directory.
+   * On Windows, falls back to explicit .exe checks in case PATHEXT
+   * does not resolve them via the bare names.
    */
   async gpgExists(): Promise<Result<boolean>> {
     const gpg2Exists = await neu.commandExists("gpg2");
@@ -69,6 +71,17 @@ class GpgService {
     if (!gpgExists.isError() && gpgExists.ok) {
       this.command = "gpg";
       return Ok(true);
+    }
+
+    if (neu.OS === "Windows") {
+      for (const name of ["gpg2.exe", "gpg.exe"]) {
+        const fallback = await neu.commandExists(name);
+        if (!fallback.isError() && fallback.ok) {
+          this.command = name.replace(".exe", "") as AllowedCommand;
+          debug.log(`GPG found as ${name}`);
+          return Ok(true);
+        }
+      }
     }
 
     return Ok(false);
