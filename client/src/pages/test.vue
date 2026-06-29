@@ -11,31 +11,7 @@ const {
   error,
 } = useAsyncState(
   () =>
-    Promise.all([
-      neu.exec({
-        cmd: "./test.sh",
-        args: [1, 2, 3],
-        options: {
-          envs: { VAR1: "one", VAR2: "two", VAR3: "three" },
-        },
-      }),
-      neu.exec({
-        cmd: "echo",
-        args: [
-          "$(printf hi)",
-          "$USER",
-          "`echo hello`",
-          "hello",
-          "'hello'",
-          '"hello"',
-        ],
-      }),
-      Ok(
-        quoteForPosix(
-          "echo $(printf hi) $USER `echo hello` \"Hello\" 'hello' hello \\n \\0 \\t \\r",
-        ),
-      ),
-    ]),
+    Promise.all([ ]),
   [] as Result<unknown>[], // initial empty array
 );
 </script>
@@ -47,9 +23,10 @@ const {
     <div v-else-if="error">Error: {{ error }}</div>
 
     <template v-else>
-      <pre v-for="(test, index) in tests" :key="index">
-Test {{ index + 1 }}: {{ test?.ok ?? test?.error }}
-      </pre>
+      <div v-for="(test, index) in tests" :key="index" class="mb-10">
+        <p class="text-3xl">Test {{ index + 1 }}:</p>
+        <pre>{{ test?.ok ?? test?.error }}</pre>
+      </div>
     </template>
   </main>
 </template>

@@ -127,18 +127,21 @@ class StoreValidationService {
 
   /**
    * Checks whether a password store contains any `.gpg` entries.
-   * Scans the directory tree recursively using `fs.readDirectory`
-   * and looks for files ending in `.gpg`. Used to distinguish between
-   * `STORE_EMPTY` (info) and other blocking states.
+   * Uses flat directory output and `.some()` to short-circuit on the
+   * first match — no tree building, no recursion needed.
    */
   static async hasEntries(storePath: string): Promise<Result<boolean>> {
-    const result = await fs.readDirectory(storePath, { recursive: true });
+    const result = await fs.readDirectory(storePath, {
+      recursive: true,
+      flat: true,
+    });
     if (result.isError()) return Err(result.error);
 
-    const hasGpgFiles = result.ok.some(
-      entry => entry.type === "FILE" && entry.entry.endsWith(".gpg")
+    return Ok(
+      result.ok.some(
+        entry => entry.type === "FILE" && entry.entry.endsWith(".gpg")
+      )
     );
-    return Ok(hasGpgFiles);
   }
 }
 

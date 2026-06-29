@@ -26,7 +26,7 @@ Right now, `pass.ts` has `exec()` and `execScoped()` — low-level command runne
 
 We're building the middle layer: a filesystem walker that finds `.gpg` files in the store, a parser that turns `pass show` output into `EntryDetail`, an `EntriesService` that orchestrates CRUD, and a `ClipboardService` that wraps NeutralinoJS clipboard with config-backed clearing.
 
-**Why filesystem traversal instead of `pass ls`:** `pass ls` output uses Unicode box-drawing characters (`├──`, `└──`, `│`) with locale-dependent formatting. Parsing it is fragile and version-sensitive. The `.gpg` extension is the canonical marker for password entries — walking the store directory with `fs.readDirectory({ recursive: true })` is deterministic, cross-platform, and already proven in `StoreValidationService.hasEntries()`.
+**Why filesystem traversal instead of `pass ls`:** `pass ls` output uses Unicode box-drawing characters (`├──`, `└──`, `│`) with locale-dependent formatting. Parsing it is fragile and version-sensitive. The `.gpg` extension is the canonical marker for password entries — walking the store directory with `fs.readDirectory({ recursive: true })` is deterministic, cross-platform, and already proven in `StoreValidationService.hasEntries()` (which uses `flat: true` for fast short-circuit checking).
 
 **Key constraint:** `neu.execCmd()` throws `CommandFailedError` on non-zero exit. Services must handle this gracefully — "entry not found" (exit 1) is not a crash.
 
@@ -125,30 +125,27 @@ Each follows the same pattern as `StoreValidationError`: constructor takes `(cod
 
 **Reward:** A function that walks the password store directory and builds an `EntryNode[]` tree from `.gpg` files.
 
+**Prerequisite done:** `fs.readDirectory()` now returns nested `TreeDirectoryEntry[]` with `children` arrays (merged from the old `readDirectoryTree`). The tree hierarchy is derived from the `path` field by stripping the root prefix and splitting on `/`. Also supports `flat: true` for native flat output, and `ignore: string[]` for gitignore-style filtering (powered by the `ignore` npm package). `makeIgnoreFilter()` is exported for external callers needing async relative-path-based filtering with caching.
+
 Create `client/src/lib/store-walker.ts`.
 
 **Export:** `walkStore(storePath: string): Promise<Result<EntryTree, MutationError>>`
 
 **Logic:**
 
-1. Call `fs.readDirectory(storePath, { recursive: true })` to get all entries.
-2. Filter to only `type === "FILE"` entries whose `entry` ends with `.gpg`.
-3. For each `.gpg` file, strip the `.gpg` extension and split the relative path by `/` to get folder hierarchy.
-4. Build the `EntryNode` tree:
-   - The root is an array of top-level nodes.
-   - Folders are implicit — created on-demand when a path has multiple segments.
-   - Files become `EntryNode` with `type: "file"`.
-   - Directories become `EntryNode` with `type: "directory"` and `children: []`.
-5. Return the root array.
+1. Call `fs.readDirectory(storePath, { recursive: true })` to get nested `TreeDirectoryEntry[]`.
+2. Recursively filter: keep `.gpg` files and directories containing `.gpg` descendants.
+3. Map to `EntryNode` domain types (strip `.gpg` extension, set `type: "file"` or `"directory"`).
+4. Return the root array.
 
 **Edge cases:**
 
 - Empty store (no `.gpg` files) -> return `Ok([])`
-- Deeply nested paths (e.g. `A/B/C/D/pass.gpg`) -> build intermediate directory nodes
-- Single entry (no folders) -> return `[{ name: "pass", type: "file", path: "pass" }]`
+- Deeply nested paths -> handled by `readDirectory`'s tree building
+- Single entry (no folders) -> return `[{ name: "test", type: "file", path: "test" }]`
 - Names with spaces — filesystem returns them as-is, no special handling needed
 
-**Why this is better than parsing `pass ls`:** No Unicode parsing, no locale sensitivity, no version-dependent output format. The `.gpg` extension is the source of truth. This is the same approach `StoreValidationService.hasEntries()` already uses.
+**Why this is better than parsing `pass ls`:** No Unicode parsing, no locale sensitivity, no version-dependent output format. The `.gpg` extension is the source of truth. `fs.readDirectory()` gives us the hierarchy directly — no flat-array reconstruction needed.
 
 **Verify:** `pnpm typecheck` passes. Test mentally with:
 
