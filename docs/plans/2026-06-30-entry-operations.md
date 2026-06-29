@@ -6,7 +6,7 @@
 
 - [x] Quest 1: The Entry Codex
 - [ ] Quest 2: The Error Arsenal
-- [ ] Quest 3: The Pass Ls Decoder
+- [ ] Quest 3: The Store Walker
 - [ ] Quest 4: The Pass Show Decoder
 - [ ] Quest 5: The Entry Service
 - [ ] Quest 6: The Clipboard Ritual
@@ -22,27 +22,29 @@
 
 The readiness state machine from Phase 02 now tells us _whether_ the app can operate. Phase 03 answers the next question: _what can we do once it's ready?_
 
-Right now, `pass.ts` has `exec()` and `execScoped()` — low-level command runners. They can shell out to `pass ls`, `pass show`, `pass insert`, etc. But there's no parsing, no domain types, no error classes for entry operations. The frontend (Phase 04) needs structured data, not raw stdout.
+Right now, `pass.ts` has `exec()` and `execScoped()` — low-level command runners. They can shell out to `pass show`, `pass insert`, etc. But there's no domain types, no error classes for entry operations. The frontend (Phase 04) needs structured data, not raw stdout.
 
-We're building the middle layer: parsers that turn `pass ls` tree output into `EntryNode[]`, parsers that turn `pass show` output into `EntryDetail`, an `EntriesService` that orchestrates CRUD, and a `ClipboardService` that wraps NeutralinoJS clipboard with config-backed clearing.
+We're building the middle layer: a filesystem walker that finds `.gpg` files in the store, a parser that turns `pass show` output into `EntryDetail`, an `EntriesService` that orchestrates CRUD, and a `ClipboardService` that wraps NeutralinoJS clipboard with config-backed clearing.
 
-**Key constraint:** `neu.execCmd()` throws `CommandFailedError` on non-zero exit. The parsers and services must handle this gracefully — "entry not found" (exit 1) is not a crash.
+**Why filesystem traversal instead of `pass ls`:** `pass ls` output uses Unicode box-drawing characters (`├──`, `└──`, `│`) with locale-dependent formatting. Parsing it is fragile and version-sensitive. The `.gpg` extension is the canonical marker for password entries — walking the store directory with `fs.readDirectory({ recursive: true })` is deterministic, cross-platform, and already proven in `StoreValidationService.hasEntries()`.
+
+**Key constraint:** `neu.execCmd()` throws `CommandFailedError` on non-zero exit. Services must handle this gracefully — "entry not found" (exit 1) is not a crash.
 
 ---
 
 ## The Pipeline
 
-Execution order matters. Types first, then parsers, then services, then clipboard.
+Execution order matters. Types first, then walker + parser, then services, then clipboard.
 
 |  #  | Quest                     | What it builds                                                | Depends on |
 | :-: | ------------------------- | ------------------------------------------------------------- | ---------- |
 |  1  | The Entry Codex           | Domain types for entries, mutations, clipboard                | —          |
 |  2  | The Error Arsenal         | Error classes for entry operations                            | Quest 1    |
-|  3  | The Pass ls Decoder       | Parser: `pass ls` stdout -> `EntryNode[]`                     | Quest 1    |
-|  4  | The Pass show Decoder     | Parser: `pass show` stdout -> `EntryDetail`                   | Quest 1    |
+|  3  | The Store Walker          | Filesystem traversal: store dir -> `EntryNode[]`              | Quest 1    |
+|  4  | The Pass Show Decoder     | Parser: `pass show` stdout -> `EntryDetail`                   | Quest 1    |
 |  5  | The Entry Service         | `EntriesService` — list, show, insert, generate, rm, mv, edit | Quest 1-4  |
 |  6  | The Clipboard Ritual      | `ClipboardService` — write, clear                             | Quest 1    |
-|  7  | The Ledger Reconciliation | Wire into main.ts, update TODO.md                             | Quest 1-6  |
+|  7  | The Ledger Reconciliation | Wire into TODO.md, verify                                     | Quest 1-6  |
 
 ---
 
@@ -54,11 +56,11 @@ Complete these in order. Each quest unlocks the next.
 
 ### Quest 1: The Entry Codex
 
-**Reward:** Domain types that every future parser, service, and store consumes.
+**Reward:** Domain types that every future service and store consumes.
 
 Create `client/src/types/entries.ts` with these types:
 
-- **`EntryNode`** — `{ name: string; path: string; type: "folder" | "file"; children?: EntryNode[] }`. Folders have `children`, files don't. `path` is the full store-relative path (e.g. `Email/work`).
+- **`EntryNode`** — `{ name: string; path: string; type: "FILE" | "DIRECTORY"; children?: EntryNode[] }`. Directories have `children`, files don't. `path` is the full store-relative path without `.gpg` extension (e.g. `Email/work`).
 
 - **`EntryTree`** — `EntryNode[]`. The root is an array, not a single root node.
 
@@ -119,41 +121,40 @@ Each follows the same pattern as `StoreValidationError`: constructor takes `(cod
 
 ---
 
-### Quest 3: The Pass Ls Decoder
+### Quest 3: The Store Walker
 
-**Reward:** A parser that turns `pass ls` tree output into a structured `EntryNode[]`.
+**Reward:** A function that walks the password store directory and builds an `EntryNode[]` tree from `.gpg` files.
 
-Create `client/src/lib/parse-pass-ls.ts`.
+Create `client/src/lib/store-walker.ts`.
 
-**Export:** `parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>`
+**Export:** `walkStore(storePath: string): Promise<Result<EntryTree, MutationError>>`
 
 **Logic:**
 
-1. If stdout is empty or whitespace-only -> return `Ok([])` (empty store is not an error).
-2. Split output by newlines. The output uses Unicode box-drawing characters (`├──`, `└──`, `│   `) for tree structure. Each entry is on its own line with indentation.
-3. Use a depth stack: `{ node: EntryNode; depth: number }[]`.
-4. For each non-empty line:
-   - Strip the tree prefix: remove all leading `│`, `├`, `└`, `─`, and space characters. The regex `^[│├└─\s]+` handles this.
-   - The remaining text is the entry name. If it ends with `/`, it's a folder — strip the trailing `/` and set `type: "folder"`. Otherwise `type: "file"`.
-   - Determine depth by counting how many `│   ` or `    ` prefixes precede the `├──` or `└──`. Each `│   ` or `    ` block is one level deep.
-   - Build the `EntryNode` with `name`, `type`, and a `path` computed by walking the stack.
-   - If deeper than stack top -> push as child of stack top's node.
-   - If same depth -> pop stack top, then push as child of new stack top.
-   - If shallower -> pop stack until we reach the parent depth, then push.
-5. Return the root-level array (children of the implicit root).
+1. Call `fs.readDirectory(storePath, { recursive: true })` to get all entries.
+2. Filter to only `type === "FILE"` entries whose `entry` ends with `.gpg`.
+3. For each `.gpg` file, strip the `.gpg` extension and split the relative path by `/` to get folder hierarchy.
+4. Build the `EntryNode` tree:
+   - The root is an array of top-level nodes.
+   - Folders are implicit — created on-demand when a path has multiple segments.
+   - Files become `EntryNode` with `type: "file"`.
+   - Directories become `EntryNode` with `type: "directory"` and `children: []`.
+5. Return the root array.
 
-**Edge cases to handle:**
+**Edge cases:**
 
-- Names with spaces (e.g., `My Documents/`)
-- Deep nesting (cap at 10 levels to prevent stack overflow)
-- Empty store (returns `Ok([])`)
-- Single entry (no tree characters)
+- Empty store (no `.gpg` files) -> return `Ok([])`
+- Deeply nested paths (e.g. `A/B/C/D/pass.gpg`) -> build intermediate directory nodes
+- Single entry (no folders) -> return `[{ name: "pass", type: "file", path: "pass" }]`
+- Names with spaces — filesystem returns them as-is, no special handling needed
+
+**Why this is better than parsing `pass ls`:** No Unicode parsing, no locale sensitivity, no version-dependent output format. The `.gpg` extension is the source of truth. This is the same approach `StoreValidationService.hasEntries()` already uses.
 
 **Verify:** `pnpm typecheck` passes. Test mentally with:
 
-- Empty output -> `[]`
-- `├── Email/` -> `[{ name: "Email", type: "folder", path: "Email", children: [] }]`
-- `│   ├── work.gpg` inside Email -> nested child
+- Empty directory -> `Ok([])`
+- Single file `test.gpg` -> `Ok([{ name: "test", type: "file", path: "test" }])`
+- `Email/work.gpg` -> folder `Email` with child `work`
 
 ---
 
@@ -207,12 +208,10 @@ Create `client/src/services/entries.ts`.
 
 **Methods:**
 
-1. **`list()`** -> `Promise<Result<EntryTree, EntryParseError | MutationError>>`
+1. **`list()`** -> `Promise<Result<EntryTree, MutationError>>`
    - Calls `getActiveStorePath()`
-   - Calls `pass.execScoped(["ls"], { envs: { PASSWORD_STORE_DIR: storePath } })`
-   - Since `execCmd` throws `CommandFailedError` on non-zero exit, catch it: if the error message contains "password store is empty", return `Ok([])` (empty store is valid)
-   - Otherwise, parse stdout with `parsePassLsOutput()`
-   - Return parsed result
+   - Calls `walkStore(storePath)` from `@/lib/store-walker`
+   - Returns the result directly — `walkStore` handles empty store (returns `Ok([])`)
 
 2. **`show(path)`** -> `Promise<Result<EntryDetail, EntryNotFoundError | EntryParseError | MutationError>>`
    - Validates path via `validatePath()`
@@ -227,13 +226,17 @@ Create `client/src/services/entries.ts`.
    - `pass insert` needs stdin piping (content passed via stdin with `-m` flag). NeutralinoJS `os.execCommand` supports a `stdIn` option — pass content directly, no shell piping needed.
    - Calls `neu.execCmd()` with:
      ```ts
-     const args = input.force
-       ? ["insert", "-f", "-m", input.path]
+     const args =
+       input.force ?
+         ["insert", "-f", "-m", input.path]
        : ["insert", "-m", input.path];
      const result = await neu.execCmd({
        cmd: "pass",
        args,
-       options: { envs: { PASSWORD_STORE_DIR: storePath }, stdIn: input.content },
+       options: {
+         envs: { PASSWORD_STORE_DIR: storePath },
+         stdIn: input.content,
+       },
      });
      ```
    - No `quoteForPosix` needed — `stdIn` is passed as a string option, not shell-interpolated.
@@ -312,7 +315,7 @@ Create `client/src/services/clipboard.ts`.
 
 4. Verify no raw throws escape from `EntriesService` or `ClipboardService` — every method returns `Result`.
 
-5. Verify `parsePassLsOutput` handles empty store gracefully (returns `Ok([])`, not error).
+5. Verify `walkStore` handles empty store gracefully (returns `Ok([])`, not error).
 
 6. Verify `parsePassShowOutput` correctly separates secret from metadata.
 
@@ -324,13 +327,13 @@ After all quests are complete:
 
 1. `pnpm typecheck` — zero errors.
 2. `pnpm lint && pnpm format` — zero issues.
-3. `EntriesService.list()` returns `EntryTree` (array of `EntryNode`).
+3. `EntriesService.list()` returns `EntryTree` (array of `EntryNode`) via filesystem traversal.
 4. `EntriesService.show(path)` returns `EntryDetail` with separated secret and metadata.
 5. `EntriesService.insert()` creates entries, `remove()` deletes them, `move()` renames them.
 6. `ClipboardService.write()` returns `ClipboardAction` with timer info. No timer started.
 7. `ClipboardService.clear()` clears clipboard. No timer involved.
 8. All error classes are importable and have correct `code`/`type` fields.
-9. All parsers handle edge cases: empty store, missing entry, single-line entries.
+9. `walkStore` handles empty store, single entry, deeply nested paths.
 
 ---
 
@@ -340,7 +343,8 @@ This phase produces:
 
 - **Types:** `EntryNode`, `EntryTree`, `EntryDetail`, `MutationInput`, `MutationResult`, `ClipboardAction`, `ClipboardState`, `ClipboardSelection`
 - **Services:** `EntriesService` (list/show/insert/generate/remove/move/edit), `ClipboardService` (write/clear)
-- **Parsers:** `parsePassLsOutput`, `parsePassShowOutput`
+- **Parsers:** `parsePassShowOutput`
+- **Walker:** `walkStore` (filesystem-based entry listing)
 - **Errors:** `EntryNotFoundError`, `EntryAlreadyExistsError`, `EntryParseError`, `ClipboardError`, `MutationError`
 
 Phase 04 Pinia stores consume these directly — no re-interpretation needed.
@@ -349,8 +353,4 @@ Phase 04 Pinia stores consume these directly — no re-interpretation needed.
 
 ## Open Questions
 
-1. **`stdIn` type on `ExecCommandOptions`:** NeutralinoJS C++ source supports `stdIn` on `os.execCommand` (feeds data to child process stdin). The JS client types may not include it yet. If missing, add `stdIn?: string` to `ExecCommandOptions` in the NeutralinoJS type definitions (same pattern as the `envs` PR).
-
-2. **`pass ls` on empty store:** `pass` exits non-zero with "Error: password store is empty" on some versions. The `list()` method catches this specific error message and returns `Ok([])` instead of failing. Verify this behavior on the target `pass` version (1.7.4+).
-
-3. **`execCmd` throw behavior:** Currently throws `CommandFailedError` on non-zero exit. This is fine for now — the services catch it. If Phase 05 changes this to return `Ok(result)` with non-zero exit, the services need updating (add explicit `exitCode` checks).
+1. **`execCmd` behavior:** Currently throws `CommandFailedError` (wrapped in a Result type) on non-zero exit. This is fine for now — the services catch it. If Phase 05 changes this to return `Ok(result)` with non-zero exit, the services need updating (add explicit `exitCode` checks).

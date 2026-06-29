@@ -15,7 +15,7 @@
 type EntryNode = {
   name: string;
   path: string;
-  type: "file" | "directory";
+  type: "FILE" | "DIRECTORY"; // Matches fs.readDirectory() type field.
   children?: EntryNode[];
 };
 
