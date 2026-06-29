@@ -3,11 +3,12 @@ import {
   type ExecCommandOptions,
   type ExecCommandResult,
 } from "@neutralinojs/lib";
-import { ErrFromText, Ok, type Result } from "lib-result";
+import { ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
 import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
+import type { VersionCheck } from "@/types/readiness";
 import { fs } from "./filesystem";
 import { neu } from "./neutralino";
 
@@ -53,8 +54,28 @@ class PassService {
   /**
    * Checks if pass version meets the minimum supported version requirement.
    */
-  checkVersion(version: Version): boolean {
-    return compareVersions(version, PASS_MIN_VERSION) >= 0;
+  async checkVersion(): Promise<Result<VersionCheck>> {
+    const cmdResult = await neu.safeExec({ cmd: "pass", args: ["--version"] });
+    if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
+      return ErrFromObject({
+        error: cmdResult.error || new Error(cmdResult.ok.stdErr),
+        valid: false,
+        found: this.version,
+        expected: PASS_MIN_VERSION,
+      });
+    }
+    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
+    if (versionMatch) {
+      this.version.major = Number.parseInt(versionMatch[1] as string, 10);
+      this.version.minor = Number.parseInt(versionMatch[2] as string, 10);
+      this.version.patch = Number.parseInt(versionMatch[3] as string, 10);
+    }
+
+    return Ok({
+      valid: compareVersions(this.version, PASS_MIN_VERSION) >= 0,
+      found: this.version,
+      expected: PASS_MIN_VERSION,
+    });
   }
 
   /**
@@ -82,8 +103,7 @@ class PassService {
   }
 
   /**
-   * Checks if pass is available on the system and meets version requirements.
-   * Parses version from `pass --version` output.
+   * Checks if pass is available on the system.
    */
   async passExists(): Promise<Result<boolean>> {
     const existsResult = await neu.commandExists("pass");
@@ -94,17 +114,7 @@ class PassService {
       debug.log(`Warning: ${validateResult.error.message}`);
     }
 
-    const cmdResult = await neu.safeExec({ cmd: "pass", args: ["--version"] });
-    if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) return Ok(false);
-
-    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
-    if (versionMatch) {
-      this.version.major = Number.parseInt(versionMatch[1] as string, 10);
-      this.version.minor = Number.parseInt(versionMatch[2] as string, 10);
-      this.version.patch = Number.parseInt(versionMatch[3] as string, 10);
-    }
-
-    return Ok(this.checkVersion(this.version));
+    return Ok(true);
   }
 
   /**
@@ -143,7 +153,9 @@ class PassService {
 
   /**
    * Executes a pass command with custom environment variables.
-   * Used when running pass against a custom store path or GNUPGHOME.
+   * Passes environment variables through.
+   * Used when running pass against a
+   * custom store path or with a specific GNUPGHOME.
    */
   async execScoped(
     args: Stringifiable[] = [],

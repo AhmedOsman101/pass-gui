@@ -3,7 +3,7 @@ import {
   type ExecCommandOptions,
   type ExecCommandResult,
 } from "@neutralinojs/lib";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
 import { GPG_MIN_VERSION } from "@/lib/constants";
 import { compareVersions } from "@/lib/utils";
 import type {
@@ -13,11 +13,15 @@ import type {
   Stringifiable,
   Version,
 } from "@/types";
+import type { VersionCheck } from "@/types/readiness";
 import { neu } from "./neutralino";
 
 /**
  * Service for interacting with GPG (GNU Privacy Guard) for cryptographic operations.
- * Handles binary detection, version parsing, secret key listing, and command execution.
+ * Handles binary detection, version checking, secret key listing, and command execution.
+ * Binary detection (`gpgExists`) and version validation (`checkVersion`) are separate
+ * concerns — detection just resolves which binary is available, while version checking
+ * parses the output of `gpg --version` and validates against the minimum.
  */
 class GpgService {
   public command: AllowedCommand | "" = "";
@@ -32,8 +36,9 @@ class GpgService {
   }
 
   /**
-   * Initializes the GPG service by detecting the binary and parsing version info.
-   * Respects GNUPGHOME environment variable if set.
+   * Initializes the GPG service by detecting the GPG binary and reading
+   * the GNUPGHOME environment variable. Does not parse version info —
+   * call `checkVersion()` separately for version validation.
    */
   async init(): Promise<Result<boolean>> {
     const existsResult = await this.gpgExists();
@@ -49,37 +54,43 @@ class GpgService {
 
   /**
    * Checks if GPG is available on the system.
-   * Tries gpg2 first (for compatibility), then falls back to gpg.
-   * Parses version info on success.
+   * Tries `gpg2` first (for compatibility), then falls back to `gpg`.
+   * Only resolves the binary name — does not parse version or home directory.
    */
   async gpgExists(): Promise<Result<boolean>> {
     const gpg2Exists = await neu.commandExists("gpg2");
     if (!gpg2Exists.isError() && gpg2Exists.ok) {
       this.command = "gpg2";
-      const versionResult = await this.parseVersion();
-      if (!versionResult.isError()) return Ok(true);
+      return Ok(true);
     }
 
     const gpgExists = await neu.commandExists("gpg");
     if (!gpgExists.isError() && gpgExists.ok) {
       this.command = "gpg";
-      const versionResult = await this.parseVersion();
-      if (!versionResult.isError()) return Ok(true);
+      return Ok(true);
     }
 
     return Ok(false);
   }
 
   /**
-   * Parses GPG version and home directory from `gpg --version` output.
+   * Runs `gpg --version` and parses the output to extract version info
+   * and home directory. If `homeDir` was not already set (e.g. via `GNUPGHOME`
+   * env var in `init()`), falls back to parsing the `Home:` line from output.
+   * Returns a `VersionCheck` indicating whether the version meets `GPG_MIN_VERSION`.
    */
-  private async parseVersion(): Promise<Result<boolean>> {
+  async checkVersion(): Promise<Result<VersionCheck>> {
     const cmdResult = await neu.safeExec({
       cmd: this.getCommand(),
       args: ["--version"],
     });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
-      return ErrFromText("Failed to get GPG version");
+      return ErrFromObject({
+        error: cmdResult.error || new Error(cmdResult.ok.stdErr),
+        valid: false,
+        found: this.version,
+        expected: GPG_MIN_VERSION,
+      });
     }
 
     const output = cmdResult.ok.stdOut;
@@ -99,14 +110,11 @@ class GpgService {
       `GPG found: ${this.getCommand()} v${this.version.major}.${this.version.minor}.${this.version.patch}, Home: ${this.homeDir}`
     );
 
-    return Ok(true);
-  }
-
-  /**
-   * Checks if GPG version meets the minimum supported version requirement.
-   */
-  checkVersion(version: Version): boolean {
-    return compareVersions(version, GPG_MIN_VERSION) >= 0;
+    return Ok({
+      valid: compareVersions(this.version, GPG_MIN_VERSION) >= 0,
+      found: this.version,
+      expected: GPG_MIN_VERSION,
+    });
   }
 
   /**
