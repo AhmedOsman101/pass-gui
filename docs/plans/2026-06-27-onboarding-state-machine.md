@@ -9,7 +9,7 @@
 - [x] Quest 3: The Whitelist Amendment
 - [x] Quest 4: The Store Inspector
 - [x] Quest 5: The Orchestrator
-- [ ] Quest 6: The First Breath
+- [x] Quest 6: The First Breath
 - [ ] Quest 7: The Ledger Update
 
 **Goal:** Build a backend readiness state machine that tells the app exactly what's broken — missing binaries, no GPG keys, busted stores — so the UI (Phase 04) can show the right onboarding screen.

@@ -196,6 +196,7 @@ class GpgService {
     const lines = output.split("\n");
 
     let currentKey: Partial<SecretKey> | null = null;
+    let lastRecordType = "";
 
     for (const line of lines) {
       const fields = line.split(":");
@@ -213,6 +214,7 @@ class GpgService {
           userId: "",
           userIds: [],
         };
+        lastRecordType = "sec";
       } else if (fields[0] === "uid" && currentKey) {
         const userId = fields[9] || "";
         if (userId) {
@@ -221,7 +223,14 @@ class GpgService {
             currentKey.userId = userId;
           }
         }
-      } else if (fields[0] === "fpr" && currentKey && fields[9]) {
+      } else if (fields[0] === "ssb") {
+        lastRecordType = "ssb";
+      } else if (
+        fields[0] === "fpr" &&
+        currentKey &&
+        fields[9] &&
+        lastRecordType === "sec"
+      ) {
         currentKey.fingerprint = fields[9];
       }
     }
