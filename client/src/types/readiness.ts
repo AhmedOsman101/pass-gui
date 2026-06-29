@@ -1,5 +1,10 @@
 import type { Version } from ".";
 
+/**
+ * The 10 states of the onboarding state machine.
+ * Each state represents a blocking condition that must be resolved
+ * before the application can reach `READY`.
+ */
 type ReadinessState =
   | "NEED_PASS"
   | "NEED_TREE"
@@ -12,8 +17,19 @@ type ReadinessState =
   | "STORE_EMPTY"
   | "READY";
 
+/**
+ * Severity of a readiness issue.
+ * - `blocking`: prevents the application from proceeding
+ * - `info`: informational, does not block startup
+ */
 type ReadinessIssueSeverity = "blocking" | "info";
 
+/**
+ * Discriminated union of all readiness issues.
+ * Each variant has a unique `code` and `severity`, with optional
+ * context fields specific to that issue type. Use the `issue()`
+ * helper from `readiness-helper.ts` to construct instances.
+ */
 type ReadinessIssue =
   | { code: "GPG_BINARY_MISSING"; severity: "blocking" }
   | { code: "GPG_NO_SECRET_KEYS"; severity: "blocking" }
@@ -21,14 +37,14 @@ type ReadinessIssue =
       code: "GPG_VERSION_TOO_OLD";
       severity: "blocking";
       found: Version;
-      required: Version;
+      expected: Version;
     }
   | { code: "PASS_BINARY_MISSING"; severity: "blocking" }
   | {
       code: "PASS_VERSION_TOO_OLD";
       severity: "blocking";
       found: Version;
-      required: Version;
+      expected: Version;
     }
   | {
       code: "STORE_BEHAVIORAL_CHECK_FAILED";
@@ -56,7 +72,15 @@ type ReadinessIssue =
   | { code: "TREE_BINARY_MISSING"; severity: "blocking" };
 
 /**
+ * Union type of all possible issue codes, derived from `ReadinessIssue`.
+ * Use this when you need to reference a code without its context fields.
+ */
+type ReadinessIssueCode = ReadinessIssue["code"];
+
+/**
  * A point-in-time evaluation of the application's readiness state.
+ * Produced by the readiness orchestrator and consumed by the UI layer
+ * to display the appropriate onboarding screen or error state.
  */
 type ReadinessSnapshot = {
   state: ReadinessState;
@@ -64,9 +88,17 @@ type ReadinessSnapshot = {
   evaluatedAt: number;
 };
 
+/**
+ * Result of a version check against a minimum required version.
+ * Used by both `PassService.checkVersion()` and `GpgService.checkVersion()`.
+ */
+type VersionCheck = { valid: boolean; found: Version; expected: Version };
+
 export type {
   ReadinessIssue,
+  ReadinessIssueCode,
   ReadinessIssueSeverity,
   ReadinessSnapshot,
   ReadinessState,
+  VersionCheck,
 };

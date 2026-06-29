@@ -8,7 +8,7 @@
 - [x] Quest 2: The Error Ledger
 - [x] Quest 3: The Whitelist Amendment
 - [x] Quest 4: The Store Inspector
-- [ ] Quest 5: The Orchestrator
+- [x] Quest 5: The Orchestrator
 - [ ] Quest 6: The First Breath
 - [ ] Quest 7: The Ledger Update
 

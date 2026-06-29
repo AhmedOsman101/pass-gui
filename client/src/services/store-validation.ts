@@ -117,8 +117,7 @@ class StoreValidationService {
     storePath: string,
     gnupgHome?: string
   ): Promise<Result<undefined>> {
-    // biome-ignore lint/suspicious/noExplicitAny: Controlled behavior
-    const envs: any = { PASSWORD_STORE_DIR: storePath };
+    const envs: Record<string, string> = { PASSWORD_STORE_DIR: storePath };
     if (gnupgHome) envs.GNUPGHOME = gnupgHome;
 
     const output = await pass.execScoped(["ls"], { envs });
