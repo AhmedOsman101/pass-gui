@@ -5,6 +5,7 @@ import {
 } from "@neutralinojs/lib";
 import { ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
+import type { CommandFailedError } from "@/lib/errors";
 import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
@@ -124,7 +125,7 @@ class PassService {
   async exec(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
-  ): Promise<Result<ExecCommandResult>> {
+  ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
     const storeDirValidation = await validatePath(this.storeDirectory);
     if (storeDirValidation.isError()) {
       return ErrFromText(
@@ -160,7 +161,7 @@ class PassService {
   async execScoped(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
-  ): Promise<Result<ExecCommandResult>> {
+  ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
     const validatedArgs: Stringifiable[] = [];
     for (const arg of args) {
       const argValidation = await validatePath(arg);

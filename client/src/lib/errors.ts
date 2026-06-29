@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { Stringifiable } from "@/types";
 
 /**
  * Mapping of NeutralinoJS error codes to human-readable error types.
@@ -266,8 +267,48 @@ class StoreValidationError extends Error {
   }
 }
 
+/**
+ * Error thrown when a shell command exits with a non-zero exit code.
+ * Captures the full execution context for debugging and error reporting.
+ */
+class CommandFailedError extends Error {
+  public cmd: string;
+  public args?: Stringifiable[];
+  public exitCode: number;
+  public stdOut: string;
+  public stdErr: string;
+  public pid: number;
+
+  constructor(opts: {
+    cmd: string;
+    args?: Stringifiable[];
+    exitCode: number;
+    stdOut: string;
+    stdErr: string;
+    pid: number;
+    message?: string;
+    options?: ErrorOptions;
+  }) {
+    super(
+      opts.message ??
+        `Command failed: ${opts.cmd}${opts.args?.join(" ")} (exit code ${opts.exitCode})`,
+      opts.options
+    );
+    this.cmd = opts.cmd;
+    this.exitCode = opts.exitCode;
+    this.stdOut = opts.stdOut;
+    this.stdErr = opts.stdErr;
+    this.pid = opts.pid;
+
+    if (opts.args) {
+      this.args = opts.args.length === 0 ? [" "] : ["", ...opts.args];
+    }
+  }
+}
+
 export {
   CONFIG_ERROR_CODES,
+  CommandFailedError,
   type ConfigErrorCode,
   type ConfigErrorType,
   ConfigNotFoundError,

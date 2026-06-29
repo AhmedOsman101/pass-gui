@@ -7,6 +7,7 @@ import {
 } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import stripAnsi from "strip-ansi";
+import { CommandFailedError } from "@/lib/errors";
 import Path from "@/lib/path";
 import {
   buildShellCommand,
@@ -75,7 +76,9 @@ class NeutralinoService {
     cmd,
     args,
     options,
-  }: ExecCommandArgs): Promise<Result<ExecCommandResult>> {
+  }: ExecCommandArgs): Promise<
+    Result<ExecCommandResult, CommandFailedError | Error>
+  > {
     const cmdValidation = validateCommand(cmd);
     if (cmdValidation.isError()) return Err(cmdValidation.error);
 
@@ -93,9 +96,14 @@ class NeutralinoService {
       result.stdErr = stripAnsi(result.stdErr);
 
       if (result.exitCode !== 0) {
-        throw new Error(
-          `Command failed with exit code ${result.exitCode}${result.stdErr.length ? `\n${result.stdErr}` : ""}`
-        );
+        throw new CommandFailedError({
+          cmd,
+          args,
+          exitCode: result.exitCode,
+          stdOut: result.stdOut,
+          stdErr: result.stdErr,
+          pid: result.pid,
+        });
       }
 
       return result;

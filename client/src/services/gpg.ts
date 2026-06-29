@@ -5,6 +5,7 @@ import {
 } from "@neutralinojs/lib";
 import { Err, ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
 import { GPG_MIN_VERSION } from "@/lib/constants";
+import type { CommandFailedError } from "@/lib/errors";
 import { compareVersions } from "@/lib/utils";
 import type {
   AllowedCommand,
@@ -250,7 +251,7 @@ class GpgService {
   async exec(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
-  ): Promise<Result<ExecCommandResult>> {
+  ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
     if (!this.getCommand()) return ErrFromText("GPG binary not resolved");
 
     return await neu.execCmd({
