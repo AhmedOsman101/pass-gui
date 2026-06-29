@@ -27,6 +27,7 @@ Build the user interface that consumes the backend contracts. The app renders th
 ## Before Starting
 
 **Install missing shadcn-vue components** (dialog and card are NOT currently installed):
+
 ```bash
 cd client && npx shadcn-vue add dialog card
 ```
@@ -42,6 +43,7 @@ None — all types defined in Phase 02 (`client/src/types/index.ts`) and Phase 0
 **Responsibility**: Pinia store managing entry tree, selection, search, and mutation actions. Consumes `EntriesService`.
 
 **Exports**:
+
 ```ts
 function useEntriesStore(): {
   tree: Ref<EntryTree | null>;
@@ -55,7 +57,11 @@ function useEntriesStore(): {
   select: (path: string) => Promise<void>;
   search: (query: string) => void;
   insert: (input: MutationInput) => Promise<Result<MutationResult>>;
-  generate: (path: string, length?: number, noSymbols?: boolean) => Promise<Result<MutationResult>>;
+  generate: (
+    path: string,
+    length?: number,
+    noSymbols?: boolean
+  ) => Promise<Result<MutationResult>>;
   remove: (path: string) => Promise<Result<MutationResult>>;
   move: (oldPath: string, newPath: string) => Promise<Result<MutationResult>>;
 };
@@ -66,6 +72,7 @@ function useEntriesStore(): {
 **Responsibility**: Pinia store wrapping `ClipboardService` with reactive timer state. Timer logic lives here (not in the service).
 
 **Exports**:
+
 ```ts
 function useClipboardStore(): {
   lastAction: Ref<ClipboardAction | null>;
@@ -82,6 +89,7 @@ function useClipboardStore(): {
 **Responsibility**: Reactive holder of active store metadata. Pulls from readiness snapshot or ConfigService.
 
 **Exports**:
+
 ```ts
 function useStoreContextStore(): {
   activeStoreName: Ref<string | null>;
@@ -96,6 +104,7 @@ function useStoreContextStore(): {
 **Responsibility**: Reactive countdown timer used by clipboard store.
 
 **Exports**:
+
 ```ts
 function useClipboardTimer(): {
   remaining: Ref<number>;
@@ -156,12 +165,16 @@ function useClipboardTimer(): {
 **Replace**: Auto-routes with explicit route definitions and a navigation guard.
 
 **New routes**:
+
 ```ts
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/passwords" },
   { path: "/blocked", component: () => import("@/pages/blocked.vue") },
   { path: "/passwords", component: () => import("@/pages/passwords.vue") },
-  { path: "/passwords/:pathMatch(.*)*", component: () => import("@/pages/passwords.vue") },
+  {
+    path: "/passwords/:pathMatch(.*)*",
+    component: () => import("@/pages/passwords.vue"),
+  },
   { path: "/settings", component: () => import("@/pages/settings.vue") },
 ];
 ```
@@ -171,7 +184,7 @@ const routes: RouteRecordRaw[] = [
 **Navigation guard** (`beforeEach`):
 
 ```ts
-router.beforeEach(async (to) => {
+router.beforeEach(async to => {
   const readinessStore = useReadinessStore();
 
   if (to.path === "/settings") return true; // always accessible
@@ -183,10 +196,15 @@ router.beforeEach(async (to) => {
 
   if (readinessStore.loading) {
     // Wait for readiness check to complete before deciding route
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       const unwatch = watch(
         () => readinessStore.loading,
-        (val) => { if (!val) { unwatch(); resolve(); } },
+        val => {
+          if (!val) {
+            unwatch();
+            resolve();
+          }
+        },
         { immediate: true }
       );
     });
@@ -232,7 +250,9 @@ const router = useRouter();
         <SearchBar v-if="readinessStore.isReady" />
         <div class="ml-auto flex items-center gap-2">
           <ModeToggle />
-          <Button variant="ghost" @click="router.push('/settings')">Settings</Button>
+          <Button variant="ghost" @click="router.push('/settings')"
+            >Settings</Button
+          >
         </div>
       </header>
       <main class="flex-1 p-4">
@@ -294,6 +314,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **State**: `activeStoreName: Ref<string | null>`, `storePath: Ref<string | null>`, `gnupgHome: Ref<string | null>` — all null initially.
 
 **Actions**:
+
 - `refresh()`: reads from `ReadinessStore.snapshot` to populate state. If no snapshot, loads config via `ConfigService.load()` and resolves active store path.
 
 ### Step 5: Create useClipboardTimer composable
@@ -301,6 +322,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **File**: `client/src/composables/useClipboardTimer.ts`
 
 **Logic**:
+
 - `remaining` (ref 0), `isRunning` (ref false).
 - `start(durationMs)`: set `remaining = durationMs`, `isRunning = true`, start `setInterval` decrementing by 1000. When `remaining <= 0`, call `stop()`.
 - `stop()`: clear interval, set `isRunning = false`, `remaining = 0`.
@@ -318,6 +340,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **Computed**: `isActive = computed(() => lastAction.value !== null && remainingMs.value > 0)`.
 
 **Actions**:
+
 - `copy(path)`: get entry detail by calling `useEntriesStore().show(path)` but better to accept the secret directly to avoid re-fetching. Call `ClipboardService.write(detail.secret, path)`, store the returned `ClipboardAction`, start timer via `timer.start(action.timerSeconds * 1000)`. When timer hits 0, call `ClipboardService.clear()` automatically.
 - `clear()`: call `ClipboardService.clear()`, stop timer, reset state.
 - `abort()`: stop timer, reset state (no service call — clipboard retains value).
@@ -331,6 +354,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **Computed**: `filteredTree` — if `searchQuery` empty, return tree as-is. Otherwise recursively filter: keep folder if any descendant matches; keep file if name matches (case-insensitive `includes`).
 
 **Actions**:
+
 - `list()`: set `loading = true`, call `EntriesService.list()`, set `tree` or `error`. Set `loading = false`.
 - `select(path)`: set `selectedPath`, call `EntriesService.show(path)`, set `selectedDetail`. Handle `EntryNotFoundError` by clearing detail.
 - `search(query)`: set `searchQuery` (filteredTree computed updates reactively).
@@ -348,11 +372,12 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **Template**: shadcn-vue Card with icon per issue code (use lucide-vue-next icons — AlertTriangle for deps, ShieldAlert for GPG, FolderX for store, AlertCircle for invalid). Issue `message` as heading, `details` as secondary text. Optional retry button.
 
 **Mapping** (10-state model):
-- `PASS_BINARY_MISSING`/`PASS_VERSION_TOO_OLD` → "Missing Dependencies" icon
-- `TREE_BINARY_MISSING` → "Missing Dependencies" icon
-- `GPG_BINARY_MISSING`/`GPG_NO_SECRET_KEYS` → "GPG Not Initialized" icon
-- `STORE_DIR_NOT_FOUND`/`STORE_DIR_NOT_DIRECTORY` → "Store Not Found" icon
-- `STORE_GPG_ID_MISSING`/`STORE_GPG_ID_EMPTY`/`STORE_GPG_ID_PARSE_ERROR`/`STORE_RECIPIENT_UNKNOWN`/`STORE_BEHAVIORAL_CHECK_FAILED` → "Store Invalid" icon
+
+- `PASS_BINARY_MISSING`/`PASS_VERSION_TOO_OLD` -> "Missing Dependencies" icon
+- `TREE_BINARY_MISSING` -> "Missing Dependencies" icon
+- `GPG_BINARY_MISSING`/`GPG_NO_SECRET_KEYS` -> "GPG Not Initialized" icon
+- `STORE_DIR_NOT_FOUND`/`STORE_DIR_NOT_DIRECTORY` -> "Store Not Found" icon
+- `STORE_GPG_ID_MISSING`/`STORE_GPG_ID_EMPTY`/`STORE_GPG_ID_PARSE_ERROR`/`STORE_RECIPIENT_UNKNOWN`/`STORE_BEHAVIORAL_CHECK_FAILED` -> "Store Invalid" icon
 
 ### Step 9: Build blocked page
 
@@ -361,6 +386,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **Template**: Centered layout with app title "pass-gui", iterate `readinessStore.issues` rendering `BlockedState` per issue, "Check Again" button that calls `readinessStore.checkReadiness()`.
 
 **Logic**: On mount, if `snapshot` is null or older than 5 seconds, re-run `checkReadiness()`. Show `<Skeleton>` while loading. Show static recovery text per blocking state:
+
 - `NEED_PASS`: "Install pass: `apt install pass` / `brew install pass`"
 - `NEED_TREE`: "Install tree: `apt install tree` / `brew install tree`"
 - `NEED_GPG`: "Install GPG: `apt install gnupg` / `brew install gnupg`"
@@ -412,9 +438,9 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 
 **Props**: `detail: EntryDetail`
 
-**Template**: Breadcrumb path (split `detail.path` by `/`), masked password (show `••••••••` by default, toggle to reveal), copy button that calls `clipboardStore.copy(detail.path, detail.secret)`, `ClipboardIndicator`, metadata table (iterate `detail.metadata` entries), "Other fields" section for `detail.other` array, Remove button that opens `EntryRemoveDialog`.
+**Template**: Breadcrumb path (split `detail.path` by `/`), masked password (show `- - - - - - - - ` by default, toggle to reveal), copy button that calls `clipboardStore.copy(detail.path, detail.secret)`, `ClipboardIndicator`, metadata table (iterate `detail.metadata` entries), "Other fields" section for `detail.other` array, Remove button that opens `EntryRemoveDialog`.
 
-**Script**: Import `useClipboardStore`. Compute display secret: if hidden, show `••••••••` otherwise show `detail.secret`. Toggle button changes a `showSecret` ref.
+**Script**: Import `useClipboardStore`. Compute display secret: if hidden, show `- - - - - - - - ` otherwise show `detail.secret`. Toggle button changes a `showSecret` ref.
 
 ### Step 15: Build EntryRemoveDialog component
 
@@ -446,6 +472,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **File**: `client/src/components/ClipboardIndicator.vue`
 
 **Template**: Inline element next to copy button:
+
 - idle: copy icon (from lucide-vue-next `Copy`)
 - copying: spinner (`Loader2`)
 - active: countdown text (e.g., "12s remaining")
@@ -458,6 +485,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 **File**: `client/src/pages/settings.vue`
 
 **Template**: Sections:
+
 - **General**: Active store dropdown (from config `stores` keys), auto-refresh interval.
 - **Generation**: Default length, symbols toggle.
 - **Clipboard**: Clear timeout (seconds), selection (clipboard/primary/secondary dropdown, with note that NeutralinoJS only supports clipboard).
@@ -472,6 +500,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 ### 2. `client/src/stores/entries.ts`
 
 **State shape**:
+
 ```ts
 {
   tree: EntryTree | null;
@@ -490,6 +519,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 ### 3. `client/src/stores/clipboard.ts`
 
 **State shape**:
+
 ```ts
 {
   lastAction: ClipboardAction | null;
@@ -506,6 +536,7 @@ Replace template with sidebar layout. Import shadcn-vue sidebar components, `Sea
 ### 4. `client/src/stores/store-context.ts`
 
 **State shape**:
+
 ```ts
 {
   activeStoreName: string | null;
@@ -535,7 +566,7 @@ Phase 05 (release) depends on all UI flows being functional from this phase.
 - [ ] shadcn-vue dialog and card components installed (check `client/src/components/ui/dialog/` and `card/`)
 - [ ] `pnpm typecheck`, `pnpm lint`, `pnpm format` all pass
 - [ ] `pnpm dev` starts without errors
-- [ ] App opens to readiness check → shows password list when ready
+- [ ] App opens to readiness check -> shows password list when ready
 - [ ] When `pass` is missing, app shows blocked screen with `DEPENDENCIES_MISSING` and actionable guidance
 - [ ] When GPG has no keys, app shows `GPG_NOT_INITIALIZED` with guidance and retry button
 - [ ] When store path does not exist, app shows `STORE_NOT_FOUND` with guidance
@@ -543,7 +574,7 @@ Phase 05 (release) depends on all UI flows being functional from this phase.
 - [ ] Password list shows entries from the active store with folder structure
 - [ ] Empty store shows "No passwords yet" (not an error)
 - [ ] Clicking a file in the tree selects it and shows detail panel on the right
-- [ ] Detail panel shows masked password (••••••••), toggle reveals it
+- [ ] Detail panel shows masked password (- - - - - - - - ), toggle reveals it
 - [ ] Copy button writes to clipboard and shows countdown indicator
 - [ ] Timer counts down in clipboard indicator; clipboard auto-clears at 0
 - [ ] Manual clear button aborts timer immediately

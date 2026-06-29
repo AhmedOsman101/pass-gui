@@ -5,6 +5,7 @@
 
 > **⚠️ This plan is outdated.** The readiness layer was implemented via the onboarding state machine plan.
 > Key differences from what was built:
+>
 > - **10-state model** (NEED_PASS, NEED_TREE, NEED_GPG, GPG_NO_KEYS, STORE_NOT_FOUND, STORE_NO_GPG_ID, STORE_GPG_ID_EMPTY, STORE_GPG_ID_KEY_MISSING, STORE_EMPTY, READY) — not the 5-state model described here
 > - **File**: `client/src/services/readiness.ts` (not `app-readiness.ts`)
 > - **No Pinia store** — readiness check logs to debug console; Phase 04 will add the store
@@ -22,21 +23,25 @@ pass-gui is a desktop GUI for the standard Unix password manager `pass`. It wrap
 What does not exist is a single answer to "Can this app operate right now, and if not, why not?"
 
 Currently the app starts by awaiting three module-level promises:
+
 ```ts
-await neuInitialized;  // Neutralino runtime ready
-await gpgInitialized;  // GPG binary detected
+await neuInitialized; // Neutralino runtime ready
+await gpgInitialized; // GPG binary detected
 await passInitialized; // pass binary detected
 ```
+
 If any of these fail, the app never renders. There is no graceful degradation — no screen that says "pass is not installed, here is how to fix it." The service init also runs at import time (side-effect promises), which makes it hard to control the sequence.
 
 The spec for this phase defines a 10-step validation pipeline that runs in fixed order and produces a `ReadinessSnapshot` — a data object that says either "everything is ready" or "here is exactly what is wrong." Once built, the app startup will call the readiness pipeline once, and future frontend code will react to the snapshot.
 
 **Files you will create:**
+
 - `client/src/services/store-validation.ts` — validates one password store's structure, .gpg-id, recipients, and runs a safe `pass ls`
 - `client/src/services/app-readiness.ts` — orchestrates the full pipeline, returns `ReadinessSnapshot`
 - `client/src/stores/readiness.ts` — reactive Pinia store wrapping the orchestrator
 
 **Files you will modify:**
+
 - `client/src/types/index.ts` — add 5 new types
 - `client/src/lib/errors.ts` — add `StoreValidationError` class and error codes
 - `client/src/services/neutralino.ts` — fix `execCmd()` to stop throwing on non-zero exit
@@ -84,6 +89,7 @@ The alternative of growing `PassService.init()` into an orchestrator was rejecte
 **Why**: The readiness orchestrator needs to run `pass ls` and check the exit code. Phase 03 entry operations will need to distinguish "entry not found" (exit 1) from a crash. Currently, non-zero exit causes a throw that `wrapAsyncThrowable` converts into `Err(...)`, making every non-zero exit indistinguishable from a NeutralinoJS runtime failure.
 
 **Watch for**: Every existing caller must be checked to ensure this change doesn't break them. The callers are:
+
 - `commandExists()` — checks `exitCode === 0` explicitly (lines ~154, 162). Safe.
 - `resolveBinaryPath()` — checks `exitCode !== 0` explicitly (lines ~187, 201). Safe.
 - `safeExec()` — delegates to `execCmd()`, just passes the result through. The caller must check exitCode. Safe.
@@ -143,12 +149,13 @@ The types are:
 **What**: Add a new error class and a constant map following the same pattern as the existing `ConfigValidationError`.
 
 Add:
+
 - `STORE_VALIDATION_ERROR_CODES` — a frozen object mapping error code strings to a shared type value `"StoreValidationError"`. The keys are: `GPG_ID_MISSING`, `GPG_ID_EMPTY`, `GPG_ID_PARSE_FAILED`, `RECIPIENT_NOT_IN_KEYRING`, `STORE_PATH_NOT_DIRECTORY`, `STORE_PATH_MISSING`.
 - `type StoreValidationErrorCode` — derived from the keys of the constant above.
 - `class StoreValidationError extends Error` — has two extra properties:
   - `code: StoreValidationErrorCode`
   - `storePath: string`
-  Constructor takes `(code, storePath, message)` and calls `super(message)`.
+    Constructor takes `(code, storePath, message)` and calls `super(message)`.
 
 **Why**: The store-validation service needs typed errors for .gpg-id failures and path issues. Using a dedicated error class (rather than generic `Error`) follows the existing pattern where `ConfigValidationError` has its own `code` and `zodError` fields. This lets the orchestrator switch on `error.code` to build the right `ReadinessIssue`.
 
@@ -168,8 +175,8 @@ Write four functions:
    - Whether the store path exists as a directory (`fs.isDirectory()`)
    - Whether `.gpg-id` exists at `<storePath>/.gpg-id` (`fs.exists()`)
    - Whether `.gpg-id` is empty or has only whitespace (`fs.readFile()` then trim + check length)
-   If `.gpg-id` read fails for a reason other than "not found" (e.g., permissions), return `Err`.
-   These checks are the "structural validation" steps 6a-6d from the spec.
+     If `.gpg-id` read fails for a reason other than "not found" (e.g., permissions), return `Err`.
+     These checks are the "structural validation" steps 6a-6d from the spec.
 
 2. **`parseGpgId(storePath)`** — Returns a `Result` containing parsed recipients:
    - Read `<storePath>/.gpg-id` via `fs.readFile()`
@@ -223,11 +230,11 @@ The pipeline runs in this fixed order:
 5. **Resolve store path and GNUPGHOME**: From the store definition, get `path` and `gnupg_home` (optional). Expand tilde in the path using `Path.resolveUserPath()`. Build the `activeStore` info object for the snapshot.
 
 6. **Structural store validation**: Call `validateStoreStructure(path)` from the store-validation service. Map failures:
-   - Path doesn't exist → `STORE_NOT_FOUND` with `"STORE_PATH_MISSING"`
-   - Path not directory → `STORE_INVALID` with `"STORE_PATH_NOT_DIRECTORY"`
-   - `.gpg-id` missing → `STORE_INVALID` with `"GPG_ID_MISSING"`
-   - `.gpg-id` empty → `STORE_INVALID` with `"GPG_ID_EMPTY"`
-   Collect all issues found (don't stop at the first one), but if path doesn't exist, skip the rest (can't validate .gpg-id or run pass ls on a nonexistent path).
+   - Path doesn't exist -> `STORE_NOT_FOUND` with `"STORE_PATH_MISSING"`
+   - Path not directory -> `STORE_INVALID` with `"STORE_PATH_NOT_DIRECTORY"`
+   - `.gpg-id` missing -> `STORE_INVALID` with `"GPG_ID_MISSING"`
+   - `.gpg-id` empty -> `STORE_INVALID` with `"GPG_ID_EMPTY"`
+     Collect all issues found (don't stop at the first one), but if path doesn't exist, skip the rest (can't validate .gpg-id or run pass ls on a nonexistent path).
 
 7. **Parse recipients**: Call `parseGpgId(path)`. If it errors with `GPG_ID_EMPTY` or `GPG_ID_PARSE_FAILED`, add appropriate issue and continue (other issues may still be relevant).
 
@@ -236,13 +243,14 @@ The pipeline runs in this fixed order:
 9. **Behavioral check**: Call `validateStoreBehaviorally(path)`. If it fails (non-zero exit), add `"BEHAVIORAL_CHECK_FAILED"` issue with the exit code and stderr in details.
 
 10. **Build snapshot**: Collect all issues accumulated through steps 6-9. Determine the final state:
-    - If no issues at all → `"READY"`
-    - If pass/GPG failed → `"DEPENDENCIES_MISSING"`
-    - If no secret keys → `"GPG_NOT_INITIALIZED"`
-    - If store path missing → `"STORE_NOT_FOUND"`
-    - Any other store issue → `"STORE_INVALID"`
+    - If no issues at all -> `"READY"`
+    - If pass/GPG failed -> `"DEPENDENCIES_MISSING"`
+    - If no secret keys -> `"GPG_NOT_INITIALIZED"`
+    - If store path missing -> `"STORE_NOT_FOUND"`
+    - Any other store issue -> `"STORE_INVALID"`
 
 The snapshot must include:
+
 - The final determined `state`
 - All issues collected (in order encountered)
 - `passInfo` with `found`, `version` (from `pass.version`), and `path` (from `pass.validatePassBinary()`)
@@ -292,22 +300,27 @@ The store must have:
 **What**: Replace the two blocking service-init awaits with a single non-blocking readiness check.
 
 Remove:
+
 ```ts
 import { passInitialized } from "@/services/pass";
 import { gpgInitialized } from "./services/gpg";
 ```
+
 and the lines:
+
 ```ts
 await gpgInitialized;
 await passInitialized;
 ```
 
 Add:
+
 ```ts
 import { useReadinessStore } from "@/stores/readiness";
 ```
 
 After `await neuInitialized;`, add:
+
 ```ts
 const readinessStore = useReadinessStore();
 readinessStore.checkReadiness(); // non-blocking — store updates reactively
@@ -355,12 +368,12 @@ After all steps are implemented, run these checks:
 5. Review `errors.ts` — `StoreValidationError` and `STORE_VALIDATION_ERROR_CODES` should follow the same pattern as `ConfigValidationError`.
 6. Review `store-validation.ts` — all four functions should handle their edge cases (empty .gpg-id, missing .gpg-id, unknown recipients, non-zero pass ls exit).
 7. Review `app-readiness.ts` — the pipeline should produce the correct state for each scenario:
-   - Pass missing → `DEPENDENCIES_MISSING` with `PASS_NOT_FOUND`
-   - GPG missing → `DEPENDENCIES_MISSING` with `GPG_NOT_FOUND`
-   - No secret keys → `GPG_NOT_INITIALIZED` with `NO_SECRET_KEYS`
-   - Store path does not exist → `STORE_NOT_FOUND`
-   - .gpg-id missing or invalid recipients → `STORE_INVALID`
-   - Everything valid → `READY`
+   - Pass missing -> `DEPENDENCIES_MISSING` with `PASS_NOT_FOUND`
+   - GPG missing -> `DEPENDENCIES_MISSING` with `GPG_NOT_FOUND`
+   - No secret keys -> `GPG_NOT_INITIALIZED` with `NO_SECRET_KEYS`
+   - Store path does not exist -> `STORE_NOT_FOUND`
+   - .gpg-id missing or invalid recipients -> `STORE_INVALID`
+   - Everything valid -> `READY`
 8. Review `main.ts` — no `await gpgInitialized` or `await passInitialized`. The readiness store is created but not awaited.
 9. Review `stores/readiness.ts` — matches the Pinia setup store pattern from `counter.ts`.
 

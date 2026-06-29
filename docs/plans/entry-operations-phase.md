@@ -98,8 +98,9 @@ type ClipboardStoreState = {
 **Responsibility**: Parse `pass ls` stdout into an `EntryTree` (recursive folder/file structure with indentation-based nesting).
 
 **Exports**:
+
 ```ts
-function parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>
+function parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>;
 ```
 
 ### 2. `client/src/lib/parse-pass-show.ts`
@@ -107,8 +108,11 @@ function parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>
 **Responsibility**: Parse `pass show <path>` stdout into `EntryDetail` (first line = secret, remaining lines = metadata key:value pairs).
 
 **Exports**:
+
 ```ts
-function parsePassShowOutput(stdout: string): Result<EntryDetail, EntryParseError>
+function parsePassShowOutput(
+  stdout: string
+): Result<EntryDetail, EntryParseError>;
 ```
 
 ### 3. `client/src/services/entries.ts`
@@ -116,15 +120,36 @@ function parsePassShowOutput(stdout: string): Result<EntryDetail, EntryParseErro
 **Responsibility**: Orchestrate all entry CRUD commands via `PassService` and `neu.execCmd()`. Wraps `pass` CLI calls and returns typed domain results.
 
 **Exports**:
+
 ```ts
 class EntriesService {
-  static async list(): Promise<Result<EntryTree, EntryParseError | MutationError>>
-  static async show(path: string): Promise<Result<EntryDetail, EntryNotFoundError | EntryParseError | MutationError>>
-  static async insert(input: MutationInput): Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>
-  static async generate(path: string, length?: number, noSymbols?: boolean): Promise<Result<MutationResult, MutationError>>
-  static async remove(path: string): Promise<Result<MutationResult, MutationError>>
-  static async move(oldPath: string, newPath: string): Promise<Result<MutationResult, MutationError>>
-  static async edit(path: string, content: string): Promise<Result<MutationResult, MutationError>>
+  static async list(): Promise<
+    Result<EntryTree, EntryParseError | MutationError>
+  >;
+  static async show(
+    path: string
+  ): Promise<
+    Result<EntryDetail, EntryNotFoundError | EntryParseError | MutationError>
+  >;
+  static async insert(
+    input: MutationInput
+  ): Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>;
+  static async generate(
+    path: string,
+    length?: number,
+    noSymbols?: boolean
+  ): Promise<Result<MutationResult, MutationError>>;
+  static async remove(
+    path: string
+  ): Promise<Result<MutationResult, MutationError>>;
+  static async move(
+    oldPath: string,
+    newPath: string
+  ): Promise<Result<MutationResult, MutationError>>;
+  static async edit(
+    path: string,
+    content: string
+  ): Promise<Result<MutationResult, MutationError>>;
 }
 ```
 
@@ -133,10 +158,14 @@ class EntriesService {
 **Responsibility**: Writes entry secrets to system clipboard via NeutralinoJS clipboard API and clears on demand. Does NOT manage timer logic — that belongs in Phase 04 clipboard store.
 
 **Exports**:
+
 ```ts
 class ClipboardService {
-  static async write(text: string, path: string): Promise<Result<ClipboardAction, ClipboardError>>
-  static async clear(): Promise<Result<void, ClipboardError>>
+  static async write(
+    text: string,
+    path: string
+  ): Promise<Result<ClipboardAction, ClipboardError>>;
+  static async clear(): Promise<Result<void, ClipboardError>>;
 }
 ```
 
@@ -174,6 +203,7 @@ Five classes, each extending `Error`:
 **Critical fix**: Remove the throw on non-zero exit code (lines 95-98).
 
 **Current**:
+
 ```ts
 if (result.exitCode !== 0) {
   throw new Error(
@@ -189,6 +219,7 @@ if (result.exitCode !== 0) {
 **Must fix after Step 0**: Update `validateBehavior()` to also check `result.ok.exitCode !== 0`. After the execCmd change, non-zero exit codes are no longer thrown, so the function must inspect `exitCode` explicitly.
 
 **Current** (lines 181-191):
+
 ```ts
 if (result.isError()) {
   return Err(
@@ -199,6 +230,7 @@ return Ok(undefined);
 ```
 
 **New**:
+
 ```ts
 if (result.isError()) {
   return Err(
@@ -219,6 +251,7 @@ return Ok(undefined);
 ### 4. Add re-export to `client/src/types/index.ts`
 
 Add to the export block:
+
 ```ts
 export type * from "./entries";
 ```
@@ -246,6 +279,7 @@ export type * from "./entries";
 **File**: `client/src/types/entries.ts` (new file)
 
 Define all types listed in "New Types Required" above:
+
 - `EntryNode`, `EntryTree`, `EntryDetail`, `MutationInput`, `MutationResult`
 - `ClipboardSelection`, `ClipboardAction`, `ClipboardState`
 - `EntriesStoreState`, `ClipboardStoreState` (contract types for Phase 04)
@@ -267,7 +301,8 @@ Export all new types and classes.
 **`parsePassLsOutput(stdout: string): Result<EntryTree, EntryParseError>`**
 
 **Logic**:
-1. If stdout is empty or whitespace-only → return `Ok([])` (empty store is not an error).
+
+1. If stdout is empty or whitespace-only -> return `Ok([])` (empty store is not an error).
 2. Split output by newlines. Use a depth stack: `{ node: EntryNode, depth: number }[]`.
 3. For each non-empty line:
    a. Count leading spaces to determine depth (2 spaces per level).
@@ -277,7 +312,7 @@ Export all new types and classes.
    e. Compute `path` by concatenating names from root to current node with `/`.
 4. Handle edge cases: names with spaces, deep nesting (cap at 10 levels), special chars.
 5. Return root-level children array with fully populated tree.
-6. If parsing fails unexpectedly → `Err(new EntryParseError({ raw: stdout }))`.
+6. If parsing fails unexpectedly -> `Err(new EntryParseError({ raw: stdout }))`.
 
 ### Step 4: Create parse-pass-show.ts
 
@@ -286,7 +321,8 @@ Export all new types and classes.
 **`parsePassShowOutput(stdout: string): Result<EntryDetail, EntryParseError>`**
 
 **Logic**:
-1. If stdout is empty → `Err(new EntryParseError({ raw: stdout }, "Empty pass show output"))`.
+
+1. If stdout is empty -> `Err(new EntryParseError({ raw: stdout }, "Empty pass show output"))`.
 2. Split by newlines. Skip leading empty lines.
 3. First non-empty line is the `secret` (password value).
 4. For each remaining line: split on first `:` — if both sides are non-empty after trim, it's a key/value metadata pair. Store in `metadata[ key.trim() ] = value.trim()`.
@@ -306,10 +342,11 @@ static async write(text: string, path: string): Promise<Result<ClipboardAction, 
 ```
 
 **Logic**:
+
 1. Read config: `ConfigService.getValue("clipboard", "clear_after_seconds")` and `ConfigService.getValue("clipboard", "selection")`.
 2. Defaults: `clearAfterSeconds: 45`, `selection: "clipboard"`.
 3. NeutralinoJS only supports `"clipboard"` selection. If config says primary/secondary, silently fall back to `"clipboard"`. Do NOT error.
-4. Call `await clipboard.writeText(text)`. If throws → `Err(new ClipboardError(resolvedSelection, "Clipboard write failed"))`.
+4. Call `await clipboard.writeText(text)`. If throws -> `Err(new ClipboardError(resolvedSelection, "Clipboard write failed"))`.
 5. Calculate `expiresAt = Date.now() + (clearAfterSeconds * 1000)`.
 6. Return `Ok({ path, selection: resolvedSelection, timerSeconds: clearAfterSeconds, expiresAt })`.
 
@@ -322,7 +359,8 @@ static async clear(): Promise<Result<void, ClipboardError>>
 ```
 
 **Logic**:
-1. Call `await clipboard.writeText("")`. If throws → `Err(new ClipboardError("clipboard", "Clipboard clear failed"))`.
+
+1. Call `await clipboard.writeText("")`. If throws -> `Err(new ClipboardError("clipboard", "Clipboard clear failed"))`.
 2. Return `Ok(undefined)`.
 
 ### Step 6: Create EntriesService
@@ -340,10 +378,11 @@ private static async getActiveStorePath(): Promise<Result<string>>
 ```
 
 **Logic**:
-1. Load config via `ConfigService.load()`. If `Err` → `ErrFromText("Failed to load config")`.
-2. Get `core.active_store`. If undefined → `ErrFromText("No active store configured")`.
-3. Look up `stores[activeStore]`. If not found → `ErrFromText('Store "X" not found in config')`.
-4. Get store path. Expand tilde via `Path.resolveUserPath(storePath)`. If fails → `ErrFromText(...)`.
+
+1. Load config via `ConfigService.load()`. If `Err` -> `ErrFromText("Failed to load config")`.
+2. Get `core.active_store`. If undefined -> `ErrFromText("No active store configured")`.
+3. Look up `stores[activeStore]`. If not found -> `ErrFromText('Store "X" not found in config')`.
+4. Get store path. Expand tilde via `Path.resolveUserPath(storePath)`. If fails -> `ErrFromText(...)`.
 5. Return resolved absolute path.
 
 This returns `Result<string>` (default Error type). Callers can map to `MutationError` if needed.
@@ -355,10 +394,11 @@ static async list(): Promise<Result<EntryTree, EntryParseError | MutationError>>
 ```
 
 **Logic**:
-1. Call `getActiveStorePath()`. If `Err` → return `Err(new MutationError(1, error.message))`.
+
+1. Call `getActiveStorePath()`. If `Err` -> return `Err(new MutationError(1, error.message))`.
 2. Call `pass.execScoped(["ls"], { envs: { PASSWORD_STORE_DIR: storePath } })`.
-3. If `Err` → `Err(new MutationError(1, "pass ls runtime error"))`.
-4. If `result.ok.exitCode !== 0` → `Err(new MutationError(result.ok.exitCode, result.ok.stdErr))`.
+3. If `Err` -> `Err(new MutationError(1, "pass ls runtime error"))`.
+4. If `result.ok.exitCode !== 0` -> `Err(new MutationError(result.ok.exitCode, result.ok.stdErr))`.
 5. Parse stdout with `parsePassLsOutput(result.ok.stdOut)`.
 6. Return parsed result.
 
@@ -369,11 +409,12 @@ static async show(path: string): Promise<Result<EntryDetail, EntryNotFoundError 
 ```
 
 **Logic**:
-1. Validate path with `validatePath()`. If `Err` → `Err(new MutationError(1, "Invalid path"))`.
-2. Call `getActiveStorePath()`. If `Err` → `Err(new MutationError(1, error.message))`.
+
+1. Validate path with `validatePath()`. If `Err` -> `Err(new MutationError(1, "Invalid path"))`.
+2. Call `getActiveStorePath()`. If `Err` -> `Err(new MutationError(1, error.message))`.
 3. Call `pass.execScoped(["show", path], { envs: { PASSWORD_STORE_DIR: storePath } })`.
-4. If `Err` → `Err(new MutationError(1, "pass show runtime error"))`.
-5. If `result.ok.exitCode !== 0`: check stderr for "is not in the password store" → `Err(new EntryNotFoundError(path))`. Otherwise → `Err(new MutationError(exitCode, stderr))`.
+4. If `Err` -> `Err(new MutationError(1, "pass show runtime error"))`.
+5. If `result.ok.exitCode !== 0`: check stderr for "is not in the password store" -> `Err(new EntryNotFoundError(path))`. Otherwise -> `Err(new MutationError(exitCode, stderr))`.
 6. Parse stdout with `parsePassShowOutput(result.ok.stdOut)`.
 7. If parse succeeds, set `entry.path = path`.
 8. Return result.
@@ -385,8 +426,9 @@ static async insert(input: MutationInput): Promise<Result<MutationResult, EntryA
 ```
 
 **Logic**:
-1. Validate `input.path` with `validatePath()`. If `Err` → `Err(new MutationError(1, "Invalid path"))`.
-2. Call `getActiveStorePath()`. If `Err` → `Err(new MutationError(1, error.message))`.
+
+1. Validate `input.path` with `validatePath()`. If `Err` -> `Err(new MutationError(1, "Invalid path"))`.
+2. Call `getActiveStorePath()`. If `Err` -> `Err(new MutationError(1, error.message))`.
 3. **Stdin piping**: `pass.execScoped()` cannot pipe stdin. Use `neu.execCmd()` directly with a shell pipe string:
    ```
    PASSWORD_STORE_DIR=<quoted_storePath> echo <quoted_content> | pass insert -m <quoted_path>
@@ -401,9 +443,9 @@ static async insert(input: MutationInput): Promise<Result<MutationResult, EntryA
    const cmd = `${envStr} echo ${contentStr} | pass insert ${forceFlag}-m ${pathStr}`;
    const result = await neu.execCmd({ cmd, args: [] });
    ```
-5. If `result.isError()` → `Err(new MutationError(1, "pass insert runtime error"))`.
-6. If `result.ok.exitCode !== 0`: check stderr for "already exists" → `Err(new EntryAlreadyExistsError(input.path))`. Otherwise → `Err(new MutationError(exitCode, stderr))`.
-7. On success → `Ok({ success: true, path: input.path })`.
+5. If `result.isError()` -> `Err(new MutationError(1, "pass insert runtime error"))`.
+6. If `result.ok.exitCode !== 0`: check stderr for "already exists" -> `Err(new EntryAlreadyExistsError(input.path))`. Otherwise -> `Err(new MutationError(exitCode, stderr))`.
+7. On success -> `Ok({ success: true, path: input.path })`.
 
 **Security note**: The password content appears briefly in the process list. This is acceptable for the initial version. Future improvement: use a temp file approach (write secret to temp file with restricted permissions, pass via redirect `< tempfile`).
 
@@ -414,13 +456,14 @@ static async generate(path: string, length?: number, noSymbols?: boolean): Promi
 ```
 
 **Logic**:
-1. Validate path. If `Err` → `Err(new MutationError(1, "Invalid path"))`.
+
+1. Validate path. If `Err` -> `Err(new MutationError(1, "Invalid path"))`.
 2. Call `getActiveStorePath()`.
 3. Read generation defaults from config: `ConfigService.getValue("generation", "default_length")` and `ConfigService.getValue("generation", "symbols")`.
 4. Build args: `["generate", path, String(length ?? config.default_length ?? 25)]`. If `noSymbols ?? !config.symbols`, insert `"-n"` before the path.
 5. Execute via `pass.execScoped(args, { envs: { PASSWORD_STORE_DIR: storePath } })`.
-6. If `Err` → `Err(new MutationError(1, "pass generate runtime error"))`.
-7. If `result.ok.exitCode !== 0` → `Err(new MutationError(exitCode, stderr))`.
+6. If `Err` -> `Err(new MutationError(1, "pass generate runtime error"))`.
+7. If `result.ok.exitCode !== 0` -> `Err(new MutationError(exitCode, stderr))`.
 8. Return `Ok({ success: true, path })`.
 
 #### Step 6f: `remove(path)`
@@ -430,12 +473,13 @@ static async remove(path: string): Promise<Result<MutationResult, MutationError>
 ```
 
 **Logic**:
-1. Validate path. If `Err` → `Err(new MutationError(1, "Invalid path"))`.
+
+1. Validate path. If `Err` -> `Err(new MutationError(1, "Invalid path"))`.
 2. Call `getActiveStorePath()`.
 3. Build args: `["rm", "-f", path]` (force skips interactive confirmation; UI handles confirmation).
 4. Execute via `pass.execScoped(args, { envs: { PASSWORD_STORE_DIR: storePath } })`.
-5. If `Err` → `Err(new MutationError(1, "pass rm runtime error"))`.
-6. If `result.ok.exitCode !== 0` → `Err(new MutationError(exitCode, stderr))`.
+5. If `Err` -> `Err(new MutationError(1, "pass rm runtime error"))`.
+6. If `result.ok.exitCode !== 0` -> `Err(new MutationError(exitCode, stderr))`.
 7. Return `Ok({ success: true, path })`.
 
 #### Step 6g: `move(oldPath, newPath)`
@@ -445,12 +489,13 @@ static async move(oldPath: string, newPath: string): Promise<Result<MutationResu
 ```
 
 **Logic**:
-1. Validate both paths. If any fails → `Err(new MutationError(1, "Invalid path"))`.
+
+1. Validate both paths. If any fails -> `Err(new MutationError(1, "Invalid path"))`.
 2. Call `getActiveStorePath()`.
 3. Build args: `["mv", oldPath, newPath]`.
 4. Execute via `pass.execScoped(args, { envs: { PASSWORD_STORE_DIR: storePath } })`.
-5. If `Err` → `Err(new MutationError(1, "pass mv runtime error"))`.
-6. If `result.ok.exitCode !== 0` → `Err(new MutationError(exitCode, stderr))`.
+5. If `Err` -> `Err(new MutationError(1, "pass mv runtime error"))`.
+6. If `result.ok.exitCode !== 0` -> `Err(new MutationError(exitCode, stderr))`.
 7. Return `Ok({ success: true, path: newPath, oldPath })`.
 
 #### Step 6h: `edit(path, content)`
@@ -460,8 +505,9 @@ static async edit(path: string, content: string): Promise<Result<MutationResult,
 ```
 
 **Logic**:
-1. Validate path. If `Err` → `Err(new MutationError(1, "Invalid path"))`.
-2. Call `getActiveStorePath()`. If `Err` → `Err(new MutationError(1, error.message))`.
+
+1. Validate path. If `Err` -> `Err(new MutationError(1, "Invalid path"))`.
+2. Call `getActiveStorePath()`. If `Err` -> `Err(new MutationError(1, error.message))`.
 3. Implementation approach: read-show-reinsert (NOT `pass edit`, which spawns terminal editor and cannot work in NeutralinoJS):
    a. Call `this.show(path)` to get current content. This verifies the entry exists.
    b. The caller (Phase 04 UI) provides the modified content as the `content` parameter.
@@ -474,6 +520,7 @@ static async edit(path: string, content: string): Promise<Result<MutationResult,
 **File**: `client/src/types/index.ts`
 
 Add to the export block:
+
 ```ts
 export type * from "./entries";
 ```

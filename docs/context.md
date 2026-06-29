@@ -80,15 +80,15 @@ Six service singletons, all in `client/src/services/`:
 
 **⚠️ Module-level init promises** — `gpgInitialized` and `passInitialized` are imported and awaited in `main.ts` (lines 22-23). If any service init fails, the app never renders. The readiness orchestrator runs after init but does not replace the blocking behavior yet.
 
-| Service        | File            | Purpose                                                   |
-| -------------- | --------------- | --------------------------------------------------------- |
-| `neu`          | `neutralino.ts` | NeutralinoJS command exec, binary resolution, env vars    |
-| `fs`           | `filesystem.ts` | mkdir, exists, readFile, writeFile, isDirectory, getStats, join, readDirectory |
-| `config`       | `config.ts`     | Load/save/ensure config, generic getValue/setValue        |
-| `pass`         | `pass.ts`       | pass binary validation, version check, exec, execScoped  |
-| `gpg`          | `gpg.ts`        | gpg2/gpg detection, version parsing, secret key listing, exec, listSecretKeysWithHome |
-| `StoreService` | `store.ts`      | get/set/validatePath for stores from config               |
-| `StoreValidationService` | `store-validation.ts` | .gpg-id parsing, recipient verification, behavioral check |
+| Service                  | File                  | Purpose                                                                               |
+| ------------------------ | --------------------- | ------------------------------------------------------------------------------------- |
+| `neu`                    | `neutralino.ts`       | NeutralinoJS command exec, binary resolution, env vars                                |
+| `fs`                     | `filesystem.ts`       | mkdir, exists, readFile, writeFile, isDirectory, getStats, join, readDirectory        |
+| `config`                 | `config.ts`           | Load/save/ensure config, generic getValue/setValue                                    |
+| `pass`                   | `pass.ts`             | pass binary validation, version check, exec, execScoped                               |
+| `gpg`                    | `gpg.ts`              | gpg2/gpg detection, version parsing, secret key listing, exec, listSecretKeysWithHome |
+| `StoreService`           | `store.ts`            | get/set/validatePath for stores from config                                           |
+| `StoreValidationService` | `store-validation.ts` | .gpg-id parsing, recipient verification, behavioral check                             |
 
 ### Init Flow (main.ts)
 

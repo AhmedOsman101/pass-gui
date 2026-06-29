@@ -52,6 +52,7 @@ None. This phase adds no new TypeScript types.
 ### 1. `client/src/services/gpg.ts`
 
 **Remove** (lines 265-267):
+
 - Remove `const gpgInitialized = gpg.init();` module-level side effect.
 - Remove `gpgInitialized` from the export statement.
 - Export becomes: `export { gpg, GpgService };`
@@ -75,6 +76,7 @@ The readiness orchestrator calls `gpg.gpgExists()` as its first GPG step, which 
 ### 2. `client/src/services/pass.ts`
 
 **Remove** (lines 172-174):
+
 - Remove `const passInitialized = pass.init();` module-level side effect.
 - Remove `passInitialized` from the export statement.
 - Export becomes: `export { pass, PassService };`
@@ -96,6 +98,7 @@ if (!this.storeDirectory) {
 ### 3. `client/src/main.ts`
 
 **Already clean** (no changes needed). Verify:
+
 - Only `import { neuInitialized } from "@/services/neutralino"` imports
 - Only `await neuInitialized` remains
 - `Neutralino.init()` and `app.mount("#app")` in correct order
@@ -103,7 +106,8 @@ if (!this.storeDirectory) {
 ### 4. `neutralino.config.json`
 
 **Changes**:
-- `"version"`: `"0.0.1"` → `"1.0.0"` (line 9)
+
+- `"version"`: `"0.0.1"` -> `"1.0.0"` (line 9)
 - Verify `"applicationName"` is `"Pass GUI"` (correct, line 4)
 - Verify `cli.binaryName` is `"pass-gui"` (correct, line 51)
 - Verify `"enableNativeAPI"` is `true` (correct, line 19)
@@ -111,6 +115,7 @@ if (!this.storeDirectory) {
 ### 5. `TODO.md`
 
 **Changes**:
+
 - Mark all Phase 02, 03, 04 items as `[x]`.
 - Add a `## Future / Post-Release` section at the bottom with deferred items.
 - Consolidate redundant entries.
@@ -122,10 +127,11 @@ if (!this.storeDirectory) {
 ### 7. `docs/README.md`
 
 **Changes**: Update phase statuses:
-- Phase 02: "📋 Ready to implement" → "✅ Done"
-- Phase 03: "📋 Planned" → "✅ Done"
-- Phase 04: "📋 Planned" → "✅ Done"
-- Phase 05: "📋 Planned" → "✅ Done"
+
+- Phase 02: "📋 Ready to implement" -> "✅ Done"
+- Phase 03: "📋 Planned" -> "✅ Done"
+- Phase 04: "📋 Planned" -> "✅ Done"
+- Phase 05: "📋 Planned" -> "✅ Done"
 
 ### 8. `AGENTS.md`
 
@@ -138,6 +144,7 @@ if (!this.storeDirectory) {
 **File**: `client/src/services/gpg.ts`
 
 **Changes**:
+
 1. Remove `const gpgInitialized = gpg.init();` (line 265).
 2. Remove `gpgInitialized` from the export (line 267).
 3. Export becomes: `export { gpg, GpgService };`
@@ -151,6 +158,7 @@ if (!this.storeDirectory) {
 **File**: `client/src/services/pass.ts`
 
 **Changes**:
+
 1. Remove `const passInitialized = pass.init();` (line 172).
 2. Remove `passInitialized` from the export (line 174).
 3. Export becomes: `export { pass, PassService };`
@@ -164,6 +172,7 @@ if (!this.storeDirectory) {
 **File**: `client/src/main.ts`
 
 **Changes**:
+
 1. Remove `import { passInitialized } from "@/services/pass";`
 2. Remove `import { gpgInitialized } from "./services/gpg";`
 3. Remove `await gpgInitialized;` and `await passInitialized;`
@@ -180,7 +189,7 @@ Walk through every critical path systematically:
 2. **Missing GPG keys**: Ensure pass exists but GPG has no secret keys. Verify `GPG_NOT_INITIALIZED` screen.
 3. **Missing store**: Ensure pass and GPG are fine but store path doesn't exist. Verify `STORE_NOT_FOUND` screen.
 4. **Invalid store**: Create store without `.gpg-id`. Verify `STORE_INVALID` screen.
-5. **Full journey**: With a real store, verify: open → readiness passes → load list → select entry → view detail → copy → clipboard countdown → clear → create entry → generate entry → remove entry.
+5. **Full journey**: With a real store, verify: open -> readiness passes -> load list -> select entry -> view detail -> copy -> clipboard countdown -> clear -> create entry -> generate entry -> remove entry.
 6. **Config round-trip**: Change config via settings, save, reload app, verify value persists.
 7. **Config creation**: Delete config file, launch app, verify config file is auto-generated with defaults.
 8. **Clipboard**: Verify auto-clear after timeout. Verify abort button. Verify manual clear.
@@ -210,6 +219,7 @@ Walk through every critical path systematically:
 Create 5 files under `docs/wiki/`:
 
 **`docs/wiki/system-requirements.md`**:
+
 - Minimum: `pass` >= 1.7.0, `gpg` or `gpg2` (from GnuPG), at least one GPG key pair.
 - Linux: primary target, install via `apt install pass` (Debian/Ubuntu), `pacman -S pass` (Arch), etc.
 - macOS: pass via Homebrew (`brew install pass`), GPG via GPG Suite or Homebrew.
@@ -217,6 +227,7 @@ Create 5 files under `docs/wiki/`:
 - Optional: custom `GNUPGHOME`, pass extensions.
 
 **`docs/wiki/installation.md`**:
+
 - Download binary from releases page (or build from source).
 - Build from source: `git clone`, `cd pass-gui`, `pnpm install`, `pnpm build`.
 - First launch: config auto-generated at platform-specific config path.
@@ -224,6 +235,7 @@ Create 5 files under `docs/wiki/`:
 - Platform-specific notes (Linux .desktop shortcut, macOS .app bundle).
 
 **`docs/wiki/configuration.md`**:
+
 - Config file location: Linux `~/.config/pass-gui/config.toml`, macOS `~/Library/Application Support/pass-gui/config.toml`, Windows `%APPDATA%/pass-gui/config.toml`.
 - All sections in a table: `[core]` (active_store), `[preferences]` (auto_refresh_interval_ms), `[generation]` (default_length, symbols, character_set), `[clipboard]` (clear_after_seconds, selection), `[gpg]` (opts, signing_key, key), `[extensions]` (enabled), `[stores.<name>]` (path, gnupg_home).
 - For each key: description, type, default value.
@@ -231,14 +243,16 @@ Create 5 files under `docs/wiki/`:
 - Comment preservation behavior: full-line comments may be lost, inline comments preserved.
 
 **`docs/wiki/troubleshooting.md`**:
-- "pass not found" → install pass from your package manager.
-- "No GPG keys found" → generate keys: `gpg --full-generate-key`.
-- "Store not found" → create a store: `pass init <key-id>`.
-- "Invalid .gpg-id" → check `.gpg-id` content, verify recipients match GPG keyring.
-- "Clipboard not working" → platform limitations (NeutralinoJS only supports system clipboard).
-- "App shows blocked screen after setup" → click "Check Again" button.
+
+- "pass not found" -> install pass from your package manager.
+- "No GPG keys found" -> generate keys: `gpg --full-generate-key`.
+- "Store not found" -> create a store: `pass init <key-id>`.
+- "Invalid .gpg-id" -> check `.gpg-id` content, verify recipients match GPG keyring.
+- "Clipboard not working" -> platform limitations (NeutralinoJS only supports system clipboard).
+- "App shows blocked screen after setup" -> click "Check Again" button.
 
 **`docs/wiki/keyboard-shortcuts.md`**:
+
 - List all implemented keyboard shortcuts (based on actual Phase 04 implementation).
 
 ### Step 8: Update project documentation
@@ -246,10 +260,10 @@ Create 5 files under `docs/wiki/`:
 1. **`TODO.md`**: Mark all Phase 02/03/04 items as `[x]`. Add `## Future / Post-Release` section with deferred items.
 2. **`docs/roadmap/README.md`**: Add note at top: "All 5 roadmap phases are complete as of the 1.0.0 release. Future work is tracked in `TODO.md`."
 3. **`docs/README.md`**: Update the phase status table:
-   - Phase 02: "📋 Ready to implement" → "✅ Done"
-   - Phase 03: "📋 Planned" → "✅ Done"
-   - Phase 04: "📋 Planned" → "✅ Done"
-   - Phase 05: "📋 Planned" → "✅ Done"
+   - Phase 02: "📋 Ready to implement" -> "✅ Done"
+   - Phase 03: "📋 Planned" -> "✅ Done"
+   - Phase 04: "📋 Planned" -> "✅ Done"
+   - Phase 05: "📋 Planned" -> "✅ Done"
 4. **`AGENTS.md`**: In the "Current Project Reality" section, update the bullet list to reflect all phases complete. Remove references to planned/gap items. Keep architecture patterns, code style rules, service descriptions, and security guidance intact.
 
 ## Integration Points
@@ -270,14 +284,14 @@ Post-release future work is tracked in `TODO.md` but not implemented.
 - [ ] `pnpm typecheck`, `pnpm lint`, `pnpm format` all pass with zero errors/warnings
 - [ ] `pnpm build` completes successfully and produces a binary at `build/`
 - [ ] Built binary runs outside the development environment
-- [ ] Delete config → launch app → config regenerates with defaults on first save
-- [ ] App detects pass/GPG/store → shows ready state → loads password list
-- [ ] List entries → view detail → copy password → clipboard indicator shows countdown
-- [ ] Wait for clipboard clear → clipboard is empty (verify with external tool)
-- [ ] Create entry via UI → appears in tree
-- [ ] Generate entry via UI → appears in tree
-- [ ] Remove entry → disappears from tree, detail panel clears
-- [ ] Change config value in settings → relaunch → value persists
+- [ ] Delete config -> launch app -> config regenerates with defaults on first save
+- [ ] App detects pass/GPG/store -> shows ready state -> loads password list
+- [ ] List entries -> view detail -> copy password -> clipboard indicator shows countdown
+- [ ] Wait for clipboard clear -> clipboard is empty (verify with external tool)
+- [ ] Create entry via UI -> appears in tree
+- [ ] Generate entry via UI -> appears in tree
+- [ ] Remove entry -> disappears from tree, detail panel clears
+- [ ] Change config value in settings -> relaunch -> value persists
 - [ ] No plaintext passwords in console logs, error messages, or page state
 - [ ] Readiness blocked states each show actionable guidance:
   - `DEPENDENCIES_MISSING`: install pass message
