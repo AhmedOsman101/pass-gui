@@ -158,6 +158,9 @@ class fs {
 
   /**
    * Reads a directory's contents, optionally recursive.
+   * When `recursive` is set, traverses all subdirectories and returns
+   * entries from the entire tree. Each entry includes its relative
+   * path, type (FILE or DIRECTORY), and entry name.
    */
   static async readDirectory(
     path: string,
