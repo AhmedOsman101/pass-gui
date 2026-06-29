@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { quoteForPosix } from "@/lib/shell";
-import { neu } from "@/services/neutralino";
 import { useAsyncState } from "@vueuse/core";
-import { Ok, type Result } from "lib-result";
+import { type Result } from "lib-result";
 
 // Run all async operations in parallel
 const {

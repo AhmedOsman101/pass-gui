@@ -5,7 +5,7 @@
 ## Progress
 
 - [x] Quest 1: The Entry Codex
-- [ ] Quest 2: The Error Arsenal
+- [x] Quest 2: The Error Arsenal
 - [ ] Quest 3: The Store Walker
 - [ ] Quest 4: The Pass Show Decoder
 - [ ] Quest 5: The Entry Service
