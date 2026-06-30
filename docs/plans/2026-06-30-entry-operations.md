@@ -7,8 +7,8 @@
 - [x] Quest 1: The Entry Codex
 - [x] Quest 2: The Error Arsenal
 - [x] Quest 3: The Store Walker
-- [ ] Quest 4: The Pass Show Decoder
-- [ ] Quest 5: The Entry Service
+- [x] Quest 4: The Pass Show Decoder
+- [x] Quest 5: The Entry Service
 - [ ] Quest 6: The Clipboard Ritual
 - [ ] Quest 7: The Ledger Reconciliation
 
@@ -192,76 +192,25 @@ Create `client/src/lib/parse-pass-show.ts`.
 
 **Reward:** A service that orchestrates all entry CRUD via `pass` CLI.
 
-Create `client/src/services/entries.ts`.
+**Completed:** `client/src/services/entries.ts` with `EntriesService` instance class.
 
-**Class:** `EntriesService` (static methods, matching `ReadinessService` and `StoreValidationService` patterns).
+**Architectural changes from plan:**
 
-**Private helper — `getActiveStorePath()`:**
-
-- Loads config via `ConfigService.load()`
-- Gets `core.active_store`, looks up in `stores`
-- Expands tilde via `Path.resolveUserPath()`
-- Returns `Result<string>`
+- `pass.execScoped()` was deleted — `pass.exec()` now sets both `PASSWORD_STORE_DIR` and `GNUPGHOME` automatically (reads `gpg.homeDir`). Caller-provided `envs` merge on top.
+- `EntriesService` is an instance class (matching `pass`, `gpg` singletons), not static.
+- `getActiveStorePath()` reads from `pass.storeDirectory` directly (not ConfigService) — config overrides via `pass.setStorePath()`.
+- `generate()` supports memorable passwords via `generateMemorablePassword()` from `lib/generate-password.ts`.
+- `mapPassError()` helper maps `CommandFailedError` to domain errors (not found, already exists, mutation failed).
 
 **Methods:**
 
-1. **`list()`** -> `Promise<Result<EntryTree, MutationError>>`
-   - Calls `getActiveStorePath()`
-   - Calls `walkStore(storePath)` from `@/lib/store-walker`
-   - Returns the result directly — `walkStore` handles empty store (returns `Ok([])`)
-
-2. **`show(path)`** -> `Promise<Result<EntryDetail, EntryNotFoundError | EntryParseError | MutationError>>`
-   - Validates path via `validatePath()`
-   - Calls `pass.execScoped(["show", path], { envs: { PASSWORD_STORE_DIR: storePath } })`
-   - Catch `CommandFailedError`: if stderr contains "is not in the password store" -> `Err(new EntryNotFoundError(path))`
-   - Parse stdout with `parsePassShowOutput()`
-   - Set `entry.path = path` on the result
-   - Return
-
-3. **`insert(input)`** -> `Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>`
-   - Validates `input.path`
-   - `pass insert` needs stdin piping (content passed via stdin with `-m` flag). NeutralinoJS `os.execCommand` supports a `stdIn` option — pass content directly, no shell piping needed.
-   - Calls `neu.execCmd()` with:
-     ```ts
-     const args =
-       input.force ?
-         ["insert", "-f", "-m", input.path]
-       : ["insert", "-m", input.path];
-     const result = await neu.execCmd({
-       cmd: "pass",
-       args,
-       options: {
-         envs: { PASSWORD_STORE_DIR: storePath },
-         stdIn: input.content,
-       },
-     });
-     ```
-   - No `quoteForPosix` needed — `stdIn` is passed as a string option, not shell-interpolated.
-   - Catch `CommandFailedError`: if stderr contains "already exists" -> `Err(new EntryAlreadyExistsError(input.path))`
-   - On success -> `Ok({ success: true, path: input.path })`
-
-   **Note:** Verify `stdIn` is typed on `ExecCommandOptions`. If not, add it to the type definition (same pattern as the `envs` PR — the C++ source supports it but JS client types may lag).
-
-4. **`generate(path, length?, noSymbols?)`** -> `Promise<Result<MutationResult, MutationError>>`
-   - Reads generation defaults from config: `ConfigService.getValue("generation", "default_length")` and `ConfigService.getValue("generation", "symbols")`
-   - Builds args: `["generate", path, String(length ?? defaultLength ?? 25)]`. If `noSymbols`, insert `-n` before path.
-   - Calls `pass.execScoped(args, { envs: { PASSWORD_STORE_DIR: storePath } })`
-   - Returns `Ok({ success: true, path })`
-
-5. **`remove(path)`** -> `Promise<Result<MutationResult, MutationError>>`
-   - Calls `pass.execScoped(["rm", "-f", path], { envs: { PASSWORD_STORE_DIR: storePath } })`
-   - Returns `Ok({ success: true, path })`
-
-6. **`move(oldPath, newPath)`** -> `Promise<Result<MutationResult, MutationError>>`
-   - Calls `pass.execScoped(["mv", oldPath, newPath], { envs: { PASSWORD_STORE_DIR: storePath } })`
-   - Returns `Ok({ success: true, path: newPath, oldPath })`
-
-7. **`edit(path, content)`** -> `Promise<Result<MutationResult, MutationError>>`
-   - Does NOT use `pass edit` (spawns `$EDITOR` in terminal, impossible in NeutralinoJS)
-   - Uses read-show-reinsert pattern: calls `this.show(path)` to verify entry exists, then calls `this.insert({ path, content, force: true })` to overwrite
-   - Returns the insert result
-
-**Important:** `neu.execCmd()` throws `CommandFailedError` on non-zero exit. Every method must wrap calls in try/catch or use `wrapAsyncThrowable` to convert throws into `Result` errors. The `CommandFailedError` has `exitCode`, `stdOut`, `stdErr` fields for inspecting what went wrong.
+1. **`list()`** -> `Promise<Result<EntryTree, MutationError | Error>>` — calls `walkStore(storePath)`
+2. **`show(path)`** -> `Promise<Result<EntryDetail, EntryNotFoundError | MutationError | CommandFailedError>>` — `pass.exec(["show", path])` → `parsePassShowOutput(stdout, path)`
+3. **`insert(input)`** -> `Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>` — `pass.exec(["insert", "-f", "-m", path], { stdIn: content })`
+4. **`generate(path, options?)`** -> `Promise<Result<MutationResult, MutationError | EntryNotFoundError | EntryAlreadyExistsError>>` — local generate if memorable, else `pass generate`
+5. **`remove(path)`** -> `Promise<Result<MutationResult, MutationError | EntryNotFoundError | EntryAlreadyExistsError>>` — `pass.exec(["rm", "-f", path])`
+6. **`move(oldPath, newPath)`** -> `Promise<Result<MutationResult, MutationError | EntryNotFoundError | EntryAlreadyExistsError>>` — `pass.exec(["mv", oldPath, newPath])`
+7. **`edit(path, content)`** -> `Promise<Result<MutationResult, EntryNotFoundError | MutationError | CommandFailedError>>` — verify via `show()`, then `insert({ force: true })`
 
 **Verify:** `pnpm typecheck` passes. All methods return `Result` types. No raw throws escape.
 

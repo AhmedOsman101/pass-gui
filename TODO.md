@@ -70,13 +70,13 @@ Also:
 
 ## 5. Listing Passwords
 
+- [x] Handle empty store (walkStore returns `Ok([])`)
 - [ ] Use `pass ls` as canonical source
 - [ ] Parse tree output safely
-- [ ] Handle empty store
 - [ ] Cache results in memory
 - [ ] Implement refresh mechanism
 - [ ] Watch filesystem for changes
-- [ ] Avoid manual filesystem traversal
+- [x] ~~Avoid manual filesystem traversal~~ Replaced with filesystem traversal (deterministic, no Unicode parsing)
 
 ## 6. Multiple Store Support
 
@@ -106,7 +106,9 @@ You need this even if it's not obvious yet.
 
 - [x] Central wrapper for executing `pass`
 - [x] Central wrapper for executing `gpg` (GpgService)
-- [x] Scoped environment injection (`pass.execScoped()`, `gpg.listSecretKeysWithHome()`)
+- [x] Scoped environment injection — `pass.exec()` sets both `PASSWORD_STORE_DIR` + `GNUPGHOME` (reads `gpg.homeDir`). Caller envs merge on top.
+- [x] `pass.setStorePath(path)` — override store at runtime
+- [x] `gpg.setHome(home)` — override GNUPGHOME at runtime
 - [ ] Timeout handling
 - [x] Structured error parsing
 - [x] Log stdout/stderr safely
@@ -114,13 +116,13 @@ You need this even if it's not obvious yet.
 
 ## 8. Entry Operations (Core Features)
 
-- [ ] Show entry (`pass show`)
-- [ ] Insert entry (`pass insert`)
-- [ ] Generate entry (`pass generate`)
-- [ ] Edit entry (`pass edit`)
-- [ ] Remove entry (`pass rm`)
-- [ ] Rename entry (`pass mv`)
-- [ ] Copy password to clipboard (securely, timed clear)
+- [x] Show entry (`pass show`) — via `EntriesService.show()` → `parsePassShowOutput()`
+- [x] Insert entry (`pass insert`) — via `EntriesService.insert()` with `-m` flag + stdin
+- [x] Generate entry (`pass generate`) — via `EntriesService.generate()`, supports memorable (EFF wordlist) and standard (pass generate)
+- [x] Edit entry — via show-then-reinsert pattern (pass edit spawns $EDITOR, incompatible with NeutralinoJS)
+- [x] Remove entry (`pass rm`) — via `EntriesService.remove()` with `-f` flag
+- [x] Rename entry (`pass mv`) — via `EntriesService.move()`
+- [ ] Copy password to clipboard (securely, timed clear) — Quest 6
 - [ ] Generate QR code image for password (future feature - display as image in UI)
 
 ## 9. Security Hardening

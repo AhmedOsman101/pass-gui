@@ -11,6 +11,7 @@ import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
 import { fs } from "./filesystem";
+import { gpg } from "./gpg";
 import { neu } from "./neutralino";
 
 /**
@@ -24,8 +25,18 @@ class PassService {
   public version: Version = { major: 0, minor: 0, patch: 0 };
 
   /**
-   * Initializes the pass service by resolving the store directory
-   * and checking if it's properly initialized with a .gpg-id file.
+   * Overrides the password store directory at runtime.
+   * The value is used by `exec()` to set `PASSWORD_STORE_DIR` for all
+   * subsequent calls.
+   */
+  setStorePath(path: string): void {
+    this.storeDirectory = path;
+  }
+
+  /**
+   * Initializes the pass service by reading `PASSWORD_STORE_DIR` as a
+   * fallback and checking if the store has a `.gpg-id` file. Config
+   * should override this via `setStorePath()` when available.
    */
   async init(): Promise<Result<boolean>> {
     const envStoreDir = await neu.getEnv("PASSWORD_STORE_DIR");
@@ -131,8 +142,9 @@ class PassService {
   }
 
   /**
-   * Executes a pass command with PASSWORD_STORE_DIR environment variable set.
-   * All arguments are validated against path traversal attacks before execution.
+   * Executes a pass command with `PASSWORD_STORE_DIR` and `GNUPGHOME`
+   * environment variables set. Caller-provided envs merge on top of
+   * the defaults. All arguments are validated against path traversal.
    */
   async exec(
     args: Stringifiable[] = [],
@@ -154,39 +166,18 @@ class PassService {
       validatedArgs.push(argValidation.ok);
     }
 
+    const defaultEnvs: Record<string, string> = {
+      PASSWORD_STORE_DIR: this.storeDirectory,
+    };
+    if (gpg.homeDir) defaultEnvs.GNUPGHOME = gpg.homeDir;
+
     return await neu.exec({
       cmd: "pass",
       args: validatedArgs,
       options: {
         ...options,
-        envs: { PASSWORD_STORE_DIR: this.storeDirectory },
+        envs: { ...defaultEnvs, ...options?.envs },
       },
-    });
-  }
-
-  /**
-   * Executes a pass command with custom environment variables.
-   * Passes environment variables through.
-   * Used when running pass against a
-   * custom store path or with a specific GNUPGHOME.
-   */
-  async execScoped(
-    args: Stringifiable[] = [],
-    options?: ExecCommandOptions
-  ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
-    const validatedArgs: Stringifiable[] = [];
-    for (const arg of args) {
-      const argValidation = await validatePath(arg);
-      if (argValidation.isError()) {
-        return ErrFromText(`Invalid argument: ${argValidation.error.message}`);
-      }
-      validatedArgs.push(argValidation.ok);
-    }
-
-    return await neu.exec({
-      cmd: "pass",
-      args: validatedArgs,
-      options,
     });
   }
 }

@@ -246,7 +246,7 @@ class ReadinessService {
     const envs: Record<string, string> = { PASSWORD_STORE_DIR: storePath };
     if (gnupgHome) envs.GNUPGHOME = gnupgHome;
 
-    const behavioral = await pass.execScoped(["ls"], { envs });
+    const behavioral = await pass.exec(["ls"], { envs });
     if (behavioral.isError()) {
       let stderr: string;
       if (behavioral.error instanceof CommandFailedError) {

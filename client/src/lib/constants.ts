@@ -34,6 +34,7 @@ const DEFAULT_CONFIG: AppConfig = {
     auto_refresh_interval_ms: 5000,
   },
   generation: {
+    memorable: false,
     default_length: 25,
     symbols: true,
     character_set: "[:punct:][:alnum:]",

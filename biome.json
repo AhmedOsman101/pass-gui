@@ -11,31 +11,21 @@
     "includes": [
       "**",
       "**/*.js",
-      "**/*.jsx",
       "**/*.ts",
-      "**/*.tsx",
       "**/*.json",
       "**/*.jsonc",
       "**/*.css",
       "**/*.html",
       "**/*.html",
-      "**/*.graphql",
-      "**/*.gql",
-      "**/*.graphqls",
-      "**/*.gqls",
       "!**/*.vue",
       "!**/node_modules",
-      "!**/prisma",
       "!**/public",
       "!**/dist",
       "!**/build",
       "!**/.git",
-      "!**/*.svelte",
       "!**/route-map.d.ts",
-      "!**/.next",
-      "!**/.nuxt",
-      "!**/.obsidian",
-      "!**/vendor"
+      "!**/wordlist.ts",
+      "!**/.nuxt"
     ]
   },
   "assist": {

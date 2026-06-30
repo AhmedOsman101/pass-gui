@@ -37,9 +37,17 @@ class GpgService {
   }
 
   /**
+   * Overrides the GPG home directory at runtime.
+   * The value is used by `exec()` to set `GNUPGHOME` for all subsequent calls.
+   */
+  setHome(home: string): void {
+    this.homeDir = home;
+  }
+
+  /**
    * Initializes the GPG service by detecting the GPG binary and reading
-   * the GNUPGHOME environment variable. Does not parse version info —
-   * call `checkVersion()` separately for version validation.
+   * the GNUPGHOME environment variable as a fallback. Does not parse
+   * version info — call `checkVersion()` separately for version validation.
    */
   async init(): Promise<Result<boolean>> {
     const existsResult = await this.gpgExists();

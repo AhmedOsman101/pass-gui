@@ -119,7 +119,7 @@ class StoreValidationService {
     const envs: Record<string, string> = { PASSWORD_STORE_DIR: storePath };
     if (gnupgHome) envs.GNUPGHOME = gnupgHome;
 
-    const output = await pass.execScoped(["ls"], { envs });
+    const output = await pass.exec(["ls"], { envs });
     if (output.isError()) return Err(output.error);
     return Ok(undefined);
   }

@@ -24,6 +24,7 @@ const PreferencesConfigSchema = z.object({
 });
 
 const GenerationConfigSchema = z.object({
+  memorable: z.boolean(),
   default_length: z
     .number()
     .int()

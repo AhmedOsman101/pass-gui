@@ -16,6 +16,7 @@ type PreferencesConfig = {
  * Password generation configuration.
  */
 type GenerationConfig = {
+  memorable: boolean;
   default_length: number;
   symbols: boolean;
   character_set: string;
