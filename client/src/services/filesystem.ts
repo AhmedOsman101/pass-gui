@@ -21,11 +21,16 @@ import type { NeuErrorObj } from "@/types";
 /**
  * A directory entry with nested children — the tree form of NeutralinoJS's
  * flat `DirectoryEntry[]`. Directories have `children`; files do not.
- * `entry` is the basename (e.g. `"work.gpg"`), not a relative path.
+ *
+ * - `entry` is the basename (e.g. `"work.gpg"`).
+ * - `path` is the store-relative path (e.g. `"Email/work.gpg"`).
+ * - `type` is `"FILE"` or `"DIRECTORY"`.
  */
 type TreeDirectoryEntry = {
   type: "FILE" | "DIRECTORY";
   entry: string;
+  /** Store-relative path — computed by stripping the root prefix. */
+  path: string;
   children?: TreeDirectoryEntry[];
 };
 
@@ -36,15 +41,18 @@ type TreeDirectoryEntry = {
  * each entry has `entry` (basename), `path` (full absolute path), and `type`.
  * Hierarchy is derived by stripping the root path prefix and splitting on `/`.
  *
+ * Each node gets a `path` field — the store-relative path computed from the
+ * full absolute path minus the root prefix.
+ *
  * @example
  * ```ts
- * // Input:
+ * // Input (rootPath = "/store"):
  * // [{ entry: "Email", path: "/store/Email", type: "DIRECTORY" },
  * //  { entry: "work.gpg", path: "/store/Email/work.gpg", type: "FILE" }]
  * //
- * // With rootPath "/store":
- * // [{ entry: "Email", type: "DIRECTORY", children: [
- * //    { entry: "work.gpg", type: "FILE" }
+ * // Output:
+ * // [{ entry: "Email", path: "Email", type: "DIRECTORY", children: [
+ * //    { entry: "work.gpg", path: "Email/work.gpg", type: "FILE" }
  * // ]}]
  * ```
  */
@@ -74,6 +82,11 @@ function buildTree(
         const node: TreeDirectoryEntry = {
           type: isLast ? (item.type as "FILE" | "DIRECTORY") : "DIRECTORY",
           entry: name,
+          path: relativePath
+            .split("/")
+            .filter(Boolean)
+            .slice(0, i + 1)
+            .join("/"),
           children: isLast && item.type === "FILE" ? undefined : [],
         };
         current.push(node);

@@ -9,7 +9,7 @@
 
 /**
  * A single node in the password store tree.
- * Folders have `children`; files do not.
+ * Directories have `children`; files do not.
  * `path` is the full store-relative path (e.g. `Email/work`).
  */
 type EntryNode = {
