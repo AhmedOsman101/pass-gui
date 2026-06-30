@@ -69,4 +69,19 @@ function brand(brandOrValue: unknown, value?: unknown): unknown {
   return value ?? brandOrValue;
 }
 
-export { brand, cn, compareVersions };
+/**
+ * Strips an inline `# comment` from a string value.
+ * Matches ` #` (space + hash) — won't strip hex colors like `#ff0000`
+ * or `#` at the start of a string.
+ *
+ * @example
+ * stripInlineComment("test@mail.com # my email") // "test@mail.com"
+ * stripInlineComment("#ff0000")                   // "#ff0000"
+ * stripInlineComment("no comment here")           // "no comment here"
+ */
+function stripInlineComment(value: string): string {
+  const idx = value.indexOf(" #");
+  return idx >= 0 ? value.slice(0, idx).trim() : value;
+}
+
+export { brand, cn, compareVersions, stripInlineComment };

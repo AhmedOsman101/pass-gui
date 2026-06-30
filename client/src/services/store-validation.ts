@@ -1,4 +1,5 @@
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { stripInlineComment } from "@/lib/utils";
 import { fs } from "./filesystem";
 import { gpg } from "./gpg";
 import { pass } from "./pass";
@@ -53,9 +54,7 @@ class StoreValidationService {
     const recipients: ParsedRecipient[] = [];
 
     for (const line of lines) {
-      const commentIdx = line.indexOf("#");
-      const keyId =
-        commentIdx === -1 ? line : line.substring(0, commentIdx).trim();
+      const keyId = stripInlineComment(line);
 
       if (keyId.length === 0) continue;
 
