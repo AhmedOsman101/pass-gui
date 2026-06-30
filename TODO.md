@@ -71,8 +71,8 @@ Also:
 ## 5. Listing Passwords
 
 - [x] Handle empty store (walkStore returns `Ok([])`)
-- [ ] Use `pass ls` as canonical source
-- [ ] Parse tree output safely
+- [x] ~~Use `pass ls` as canonical source~~ Replaced with filesystem traversal (deterministic, no Unicode parsing)
+- [x] ~~Parse tree output safely~~ Replaced with filesystem traversal
 - [ ] Cache results in memory
 - [ ] Implement refresh mechanism
 - [ ] Watch filesystem for changes
@@ -122,7 +122,7 @@ You need this even if it's not obvious yet.
 - [x] Edit entry — via show-then-reinsert pattern (pass edit spawns $EDITOR, incompatible with NeutralinoJS)
 - [x] Remove entry (`pass rm`) — via `EntriesService.remove()` with `-f` flag
 - [x] Rename entry (`pass mv`) — via `EntriesService.move()`
-- [ ] Copy password to clipboard (securely, timed clear) — Quest 6
+- [x] Copy password to clipboard (securely, timed clear) — via `ClipboardService.writeText()` + `ClipboardService.clear()`
 - [ ] Generate QR code image for password (future feature - display as image in UI)
 
 ## 9. Security Hardening
@@ -131,7 +131,7 @@ This is missing entirely from your list and it matters.
 
 - [ ] Clear sensitive data from memory after use
 - [ ] Avoid logging passwords accidentally
-- [ ] Secure clipboard handling
+- [x] Secure clipboard handling — via `ClipboardService` with config-backed clear timeout
 - [x] Prevent command injection
 - [x] Disable shell interpolation
 - [x] Validate user input paths

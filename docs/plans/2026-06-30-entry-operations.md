@@ -9,8 +9,8 @@
 - [x] Quest 3: The Store Walker
 - [x] Quest 4: The Pass Show Decoder
 - [x] Quest 5: The Entry Service
-- [ ] Quest 6: The Clipboard Ritual
-- [ ] Quest 7: The Ledger Reconciliation
+- [x] Quest 6: The Clipboard Ritual
+- [x] Quest 7: The Ledger Reconciliation
 
 **Goal:** Build the backend password-management operations — entry listing, detail retrieval, mutations, clipboard — so Phase 04 frontend stores can consume stable service contracts.
 
@@ -205,7 +205,7 @@ Create `client/src/lib/parse-pass-show.ts`.
 **Methods:**
 
 1. **`list()`** -> `Promise<Result<EntryTree, MutationError | Error>>` — calls `walkStore(storePath)`
-2. **`show(path)`** -> `Promise<Result<EntryDetail, EntryNotFoundError | MutationError | CommandFailedError>>` — `pass.exec(["show", path])` → `parsePassShowOutput(stdout, path)`
+2. **`show(path)`** -> `Promise<Result<EntryDetail, EntryNotFoundError | MutationError | CommandFailedError>>` — `pass.exec(["show", path])` -> `parsePassShowOutput(stdout, path)`
 3. **`insert(input)`** -> `Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>>` — `pass.exec(["insert", "-f", "-m", path], { stdIn: content })`
 4. **`generate(path, options?)`** -> `Promise<Result<MutationResult, MutationError | EntryNotFoundError | EntryAlreadyExistsError>>` — local generate if memorable, else `pass generate`
 5. **`remove(path)`** -> `Promise<Result<MutationResult, MutationError | EntryNotFoundError | EntryAlreadyExistsError>>` — `pass.exec(["rm", "-f", path])`
@@ -292,5 +292,3 @@ This phase produces:
 - **Errors:** `EntryNotFoundError`, `EntryAlreadyExistsError`, `EntryParseError`, `ClipboardError`, `MutationError`
 
 Phase 04 Pinia stores consume these directly — no re-interpretation needed.
-
-
