@@ -250,20 +250,18 @@ Create `client/src/services/clipboard.ts`.
 
 **Reward:** Everything wired together, TODO updated, ready for Phase 04.
 
-1. Add `export type * from "./entries"` to `client/src/types/index.ts` (if not already done in Quest 1).
-
-2. Update `TODO.md`:
+1. Update `TODO.md`:
    - Section 5 (Listing Passwords): check off items that are now implemented
    - Section 8 (Entry Operations): check off `pass show`, `pass insert`, `pass generate`, `pass edit`, `pass rm`, `pass mv`, clipboard copy
    - Leave unchecked: QR code (future), search/filter (Phase 04)
 
-3. Run `pnpm typecheck && pnpm lint && pnpm format` — must pass clean.
+2. Run `pnpm typecheck && pnpm lint && pnpm format` — must pass clean.
 
-4. Verify no raw throws escape from `EntriesService` or `ClipboardService` — every method returns `Result`.
+3. Verify no raw throws escape from `EntriesService` or `ClipboardService` — every method returns `Result`.
 
-5. Verify `walkStore` handles empty store gracefully (returns `Ok([])`, not error).
+4. Verify `walkStore` handles empty store gracefully (returns `Ok([])`, not error).
 
-6. Verify `parsePassShowOutput` correctly separates secret from metadata.
+5. Verify `parsePassShowOutput` correctly separates secret from metadata.
 
 ---
 
@@ -273,11 +271,11 @@ After all quests are complete:
 
 1. `pnpm typecheck` — zero errors.
 2. `pnpm lint && pnpm format` — zero issues.
-3. `EntriesService.list()` returns `EntryTree` (array of `EntryNode`) via filesystem traversal.
-4. `EntriesService.show(path)` returns `EntryDetail` with separated secret and metadata.
-5. `EntriesService.insert()` creates entries, `remove()` deletes them, `move()` renames them.
-6. `ClipboardService.write()` returns `ClipboardAction` with timer info. No timer started.
-7. `ClipboardService.clear()` clears clipboard. No timer involved.
+3. `Entries.list()` returns `EntryTree` (array of `EntryNode`) via filesystem traversal.
+4. `Entries.show(path)` returns `EntryDetail` with separated secret and metadata.
+5. `Entries.insert()` creates entries, `remove()` deletes them, `move()` renames them.
+6. `Clipboard.write()` returns `ClipboardAction` with timer info. No timer started.
+7. `Clipboard.clear()` clears clipboard. No timer involved.
 8. All error classes are importable and have correct `code`/`type` fields.
 9. `walkStore` handles empty store, single entry, deeply nested paths.
 
@@ -295,8 +293,4 @@ This phase produces:
 
 Phase 04 Pinia stores consume these directly — no re-interpretation needed.
 
----
 
-## Open Questions
-
-1. **`execCmd` behavior:** Currently throws `CommandFailedError` (wrapped in a Result type) on non-zero exit. This is fine for now — the services catch it. If Phase 05 changes this to return `Ok(result)` with non-zero exit, the services need updating (add explicit `exitCode` checks).
