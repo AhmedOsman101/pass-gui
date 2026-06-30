@@ -128,7 +128,7 @@ function makeIgnoreFilter(
   return async (absolutePath: string): Promise<boolean> => {
     let rel = cache.get(absolutePath);
     if (rel === undefined) {
-      rel = await fs.relativePath(absolutePath, baseDir);
+      rel = await Filesystem.relativePath(absolutePath, baseDir);
       cache.set(absolutePath, rel);
     }
     const normalized = rel.startsWith("/") ? rel.slice(1) : rel;
@@ -140,7 +140,7 @@ function makeIgnoreFilter(
  * Filesystem abstraction layer wrapping NeutralinoJS filesystem operations.
  * All methods return Result types for safe error handling.
  */
-class fs {
+class Filesystem {
   private static async resolvePath(path: string): Promise<Result<string>> {
     return await Path.resolveUserPath(path);
   }
@@ -152,7 +152,7 @@ class fs {
   static async mkdir(
     path: string
   ): Promise<Result<boolean, DirectoryCreationError | Error>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     try {
@@ -180,10 +180,10 @@ class fs {
    * Checks if a file or directory exists at the given path.
    */
   static async exists(path: string): Promise<Result<boolean>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    const res = await fs.getStats(resolvedPath.ok);
+    const res = await Filesystem.getStats(resolvedPath.ok);
     if (res.isOk()) return Ok(res.ok.isFile || res.ok.isDirectory);
     return Err(res.error);
   }
@@ -192,10 +192,10 @@ class fs {
    * Checks if the path points to a regular file.
    */
   static async isFile(path: string): Promise<Result<boolean>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    const res = await fs.getStats(resolvedPath.ok);
+    const res = await Filesystem.getStats(resolvedPath.ok);
     // Everything that's not a directory is a file.
     // NOTE: isFile property checks only for regular files.
     if (res.isOk()) return Ok(!res.ok.isDirectory);
@@ -206,10 +206,10 @@ class fs {
    * Checks if the path points to a directory.
    */
   static async isDirectory(path: string): Promise<Result<boolean>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    const res = await fs.getStats(resolvedPath.ok);
+    const res = await Filesystem.getStats(resolvedPath.ok);
     if (res.isOk()) return Ok(res.ok.isDirectory);
     return Err(res.error);
   }
@@ -218,7 +218,7 @@ class fs {
    * Gets file/directory statistics (size, dates, type, etc.).
    */
   static async getStats(path: string): Promise<Result<Stats>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     return await wrapAsync(
@@ -234,7 +234,7 @@ class fs {
     path: string,
     options?: FileReaderOptions
   ): Promise<Result<string>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     return await wrapAsync(
@@ -246,7 +246,7 @@ class fs {
    * Normalizes a path, resolving . and .. segments and symlinks.
    */
   static async getNormalizedPath(path: string): Promise<Result<string>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     return await wrapAsync(
@@ -267,7 +267,7 @@ class fs {
    * Includes root, relative path, filename, extension, etc.
    */
   static async getPathParts(path: string): Promise<Result<PathParts>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     return await wrapAsync(
@@ -326,7 +326,7 @@ class fs {
       flat?: boolean;
     }
   ): Promise<Result<TreeDirectoryEntry[] | DirectoryEntry[]>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     const flatResult = await wrapAsync(
@@ -368,7 +368,7 @@ class fs {
     path: string,
     data: string
   ): Promise<Result<boolean, FileWriteError | Error>> {
-    const resolvedPath = await fs.resolvePath(path);
+    const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     try {
@@ -392,4 +392,6 @@ class fs {
   }
 }
 
-export { fs, makeIgnoreFilter, type TreeDirectoryEntry };
+const Fs = Filesystem;
+
+export { Filesystem, Fs, makeIgnoreFilter, type TreeDirectoryEntry };

@@ -236,7 +236,7 @@ class NeutralinoService {
   }
 }
 
-const neu = new NeutralinoService();
-const neuInitialized = neu.init();
+const Neu = new NeutralinoService();
+const neuInitialized = Neu.init();
 
-export { NeutralinoService, neu, neuInitialized };
+export { Neu, NeutralinoService, neuInitialized };

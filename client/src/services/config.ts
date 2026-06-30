@@ -15,7 +15,7 @@ import type {
 } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
-import { fs } from "./filesystem";
+import { Fs } from "./filesystem";
 
 /**
  * Configuration service for managing application settings.
@@ -25,7 +25,7 @@ import { fs } from "./filesystem";
  * Provides both generic typed get/set methods and convenience methods
  * for common operations.
  */
-class ConfigService {
+class Config {
   /**
    * Resolves the path to the configuration file.
    * Uses platform-specific config directory:
@@ -39,7 +39,7 @@ class ConfigService {
     const configDir = await Path.getKnownPath("config");
     if (configDir.isError()) return Err(configDir.error);
 
-    return Ok(await fs.join(configDir.ok, "pass-gui", "config.toml"));
+    return Ok(await Fs.join(configDir.ok, "pass-gui", "config.toml"));
   }
 
   /**
@@ -48,10 +48,10 @@ class ConfigService {
    * @returns Result containing boolean or an error
    */
   static async exists(): Promise<Result<boolean>> {
-    const configPath = await ConfigService.getPath();
+    const configPath = await Config.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
-    return await fs.exists(configPath.ok);
+    return await Fs.exists(configPath.ok);
   }
 
   /**
@@ -61,14 +61,14 @@ class ConfigService {
    * @returns Result containing the AppConfig or an error
    */
   static async load(): Promise<Result<ParsedToml<AppConfig>>> {
-    const ensureResult = await ConfigService.ensure();
+    const ensureResult = await Config.ensure();
     if (ensureResult.isError()) return Err(ensureResult.error);
 
-    const configPath = await ConfigService.getPath();
+    const configPath = await Config.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
     // Read and parse the config file
-    const readResult = await fs.readFile(configPath.ok);
+    const readResult = await Fs.readFile(configPath.ok);
     if (readResult.isError()) return Err(readResult.error);
 
     const configResult = toml.parse<AppConfig>(readResult.ok);
@@ -108,10 +108,10 @@ class ConfigService {
    */
   static async save(content: ParsedToml<AppConfig>): Promise<Result<void>> {
     // Ensure the config exists
-    const ensureResult = await ConfigService.ensure();
+    const ensureResult = await Config.ensure();
     if (ensureResult.isError()) return Err(ensureResult.error);
 
-    const configPath = await ConfigService.getPath();
+    const configPath = await Config.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
     // Validate before saving
@@ -130,7 +130,7 @@ class ConfigService {
     if (tomlContent.isError()) return Err(tomlContent.error);
 
     // Write to file
-    const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
+    const writeResult = await Fs.writeFile(configPath.ok, tomlContent.ok);
     if (writeResult.isError()) {
       return Err(
         new ConfigWriteError(
@@ -148,21 +148,21 @@ class ConfigService {
    * For initial creation, uses DEFAULT_CONFIG.
    */
   static async ensure(): Promise<Result<void>> {
-    const existsResult = await ConfigService.exists();
+    const existsResult = await Config.exists();
 
     // Create default config if it doesn't exist
     if (existsResult.isError() || !existsResult.ok) {
-      const configPath = await ConfigService.getPath();
+      const configPath = await Config.getPath();
       if (configPath.isError()) return Err(configPath.error);
 
       // Ensure directory exists
-      const parts = await fs.getPathParts(configPath.ok);
+      const parts = await Fs.getPathParts(configPath.ok);
       if (parts.isError()) return Err(parts.error);
       const dirPath = parts.ok.parentPath;
 
-      const dirExists = await fs.isDirectory(dirPath);
+      const dirExists = await Fs.isDirectory(dirPath);
       if (!dirExists.ok || dirExists.isError()) {
-        const mkdirResult = await fs.mkdir(dirPath);
+        const mkdirResult = await Fs.mkdir(dirPath);
         if (mkdirResult.isError()) return Err(mkdirResult.error);
       }
 
@@ -182,7 +182,7 @@ class ConfigService {
       const tomlContent = toml.stringify<AppConfig>(defaultConfigTable);
       if (tomlContent.isError()) return Err(tomlContent.error);
 
-      const writeResult = await fs.writeFile(configPath.ok, tomlContent.ok);
+      const writeResult = await Fs.writeFile(configPath.ok, tomlContent.ok);
       if (writeResult.isError()) {
         return Err(
           new ConfigWriteError(
@@ -208,7 +208,7 @@ class ConfigService {
     section: S,
     key: K
   ): Promise<Result<ConfigValue<S, K>>> {
-    const configResult = await ConfigService.load();
+    const configResult = await Config.load();
     if (configResult.isError()) return Err(configResult.error);
 
     const config = configResult.ok.data;
@@ -238,7 +238,7 @@ class ConfigService {
     key: K,
     value: ConfigValue<S, K>
   ): Promise<Result<void>> {
-    const configResult = await ConfigService.load();
+    const configResult = await Config.load();
     if (configResult.isError()) return Err(configResult.error);
 
     const parsed = configResult.ok;
@@ -248,10 +248,8 @@ class ConfigService {
     const raw = parsed._raw as AppConfig;
     (raw[section] as Record<string, unknown>)[key as string] = value;
 
-    return await ConfigService.save(parsed);
+    return await Config.save(parsed);
   }
 }
 
-const config = ConfigService;
-
-export { ConfigService, config };
+export { Config };

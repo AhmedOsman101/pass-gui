@@ -5,12 +5,12 @@ import type {
   ReadinessSnapshot,
   ReadinessState,
 } from "@/types/readiness";
-import { ConfigService } from "./config";
-import { fs } from "./filesystem";
-import { gpg } from "./gpg";
-import { neu } from "./neutralino";
-import { pass } from "./pass";
-import { StoreValidationService } from "./store-validation";
+import { Config } from "./config";
+import { Fs } from "./filesystem";
+import { Gpg } from "./gpg";
+import { Neu } from "./neutralino";
+import { Pass } from "./pass";
+import { StoreValidation } from "./store-validation";
 
 /**
  * Result of an individual readiness check.
@@ -33,18 +33,18 @@ const OK: CheckResult = { state: "READY", issues: [], stop: false };
  * Evaluation order is fixed. First blocking match wins
  * if pass is missing, we don't bother checking GPG keys.
  */
-class ReadinessService {
+class Readiness {
   /**
    * Runs all readiness checks in strict order and returns a snapshot.
    * @param storePath - Absolute path to the password store directory.
    */
   static async check(storePath: string): Promise<ReadinessSnapshot> {
     const checks = [
-      ReadinessService.checkPass(),
-      ReadinessService.checkTree(),
-      ReadinessService.checkGpg(),
-      ReadinessService.checkGpgKeys(),
-      ReadinessService.checkStore(storePath),
+      Readiness.checkPass(),
+      Readiness.checkTree(),
+      Readiness.checkGpg(),
+      Readiness.checkGpgKeys(),
+      Readiness.checkStore(storePath),
     ];
 
     const issues: ReadinessIssue[] = [];
@@ -60,7 +60,7 @@ class ReadinessService {
     }
 
     if (state === "READY") {
-      const emptyResult = await ReadinessService.checkStoreEmpty(storePath);
+      const emptyResult = await Readiness.checkStoreEmpty(storePath);
       issues.push(...emptyResult.issues);
       state = emptyResult.state;
     }
@@ -76,7 +76,7 @@ class ReadinessService {
    * - `checkVersion()` returns `valid: false` → version too old
    */
   private static async checkPass(): Promise<CheckResult> {
-    const passExists = await pass.passExists();
+    const passExists = await Pass.passExists();
     if (passExists.isError() || !passExists.ok) {
       return {
         ...OK,
@@ -86,7 +86,7 @@ class ReadinessService {
       };
     }
 
-    const passVersion = await pass.checkVersion();
+    const passVersion = await Pass.checkVersion();
     if (passVersion.isError()) {
       return {
         ...OK,
@@ -117,9 +117,9 @@ class ReadinessService {
    * Skipped on Windows (pass ls uses different mechanisms there).
    */
   private static async checkTree(): Promise<CheckResult> {
-    if (neu.OS === "Windows") return OK;
+    if (Neu.OS === "Windows") return OK;
 
-    const treeExists = await neu.commandExists("tree");
+    const treeExists = await Neu.commandExists("tree");
     if (treeExists.isError() || !treeExists.ok) {
       return {
         ...OK,
@@ -136,7 +136,7 @@ class ReadinessService {
    * Checks GPG binary existence (gpg2 or gpg).
    */
   private static async checkGpg(): Promise<CheckResult> {
-    const gpgExists = await gpg.gpgExists();
+    const gpgExists = await Gpg.gpgExists();
     if (gpgExists.isError() || !gpgExists.ok) {
       return {
         ...OK,
@@ -153,7 +153,7 @@ class ReadinessService {
    * Checks that at least one secret key exists in the GPG keyring.
    */
   private static async checkGpgKeys(): Promise<CheckResult> {
-    const keys = await gpg.listSecretKeys();
+    const keys = await Gpg.listSecretKeys();
     if (keys.isError() || keys.ok.length === 0) {
       return {
         ...OK,
@@ -172,7 +172,7 @@ class ReadinessService {
    * First blocking issue wins.
    */
   private static async checkStore(storePath: string): Promise<CheckResult> {
-    const exists = await fs.exists(storePath);
+    const exists = await Fs.exists(storePath);
     if (exists.isError() || !exists.ok) {
       return {
         ...OK,
@@ -182,7 +182,7 @@ class ReadinessService {
       };
     }
 
-    const isDir = await fs.isDirectory(storePath);
+    const isDir = await Fs.isDirectory(storePath);
     if (isDir.isError() || !isDir.ok) {
       return {
         ...OK,
@@ -192,8 +192,8 @@ class ReadinessService {
       };
     }
 
-    const gpgIdPath = await fs.join(storePath, ".gpg-id");
-    const gpgIdExists = await fs.exists(gpgIdPath);
+    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
+    const gpgIdExists = await Fs.exists(gpgIdPath);
     if (gpgIdExists.isError() || !gpgIdExists.ok) {
       return {
         ...OK,
@@ -203,7 +203,7 @@ class ReadinessService {
       };
     }
 
-    const recipients = await StoreValidationService.parseGpgId(storePath);
+    const recipients = await StoreValidation.parseGpgId(storePath);
     if (recipients.isError() || recipients.ok.length === 0) {
       return {
         ...OK,
@@ -213,9 +213,9 @@ class ReadinessService {
       };
     }
 
-    const gnupgHome = await ReadinessService.resolveGnupgHome(storePath);
+    const gnupgHome = await Readiness.resolveGnupgHome(storePath);
 
-    const verification = await StoreValidationService.verifyRecipients(
+    const verification = await StoreValidation.verifyRecipients(
       recipients.ok,
       gnupgHome
     );
@@ -246,7 +246,7 @@ class ReadinessService {
     const envs: Record<string, string> = { PASSWORD_STORE_DIR: storePath };
     if (gnupgHome) envs.GNUPGHOME = gnupgHome;
 
-    const behavioral = await pass.exec(["ls"], { envs });
+    const behavioral = await Pass.exec(["ls"], { envs });
     if (behavioral.isError()) {
       let stderr: string;
       if (behavioral.error instanceof CommandFailedError) {
@@ -274,7 +274,7 @@ class ReadinessService {
   private static async checkStoreEmpty(
     storePath: string
   ): Promise<CheckResult> {
-    const hasEntries = await StoreValidationService.hasEntries(storePath);
+    const hasEntries = await StoreValidation.hasEntries(storePath);
     if (hasEntries.isOk() && !hasEntries.ok) {
       return {
         ...OK,
@@ -296,7 +296,7 @@ class ReadinessService {
     storePath: string
   ): Promise<string | undefined> {
     try {
-      const config = await ConfigService.load();
+      const config = await Config.load();
       if (config.isError()) return;
 
       const stores = config.ok.data.stores;
@@ -312,4 +312,4 @@ class ReadinessService {
   }
 }
 
-export { ReadinessService };
+export { Readiness };

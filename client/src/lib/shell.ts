@@ -1,5 +1,5 @@
 import { ErrFromText, Ok, type Result } from "lib-result";
-import { fs } from "@/services/filesystem";
+import { Fs } from "@/services/filesystem";
 import type { Stringifiable } from "@/types";
 
 type OsType = "posix" | "windows";
@@ -115,7 +115,7 @@ function validateArgument(arg: string): Result<string> {
  * Handles both POSIX (/) and Windows (\) path separators.
  */
 async function checkSneakyPath(path: string): Promise<boolean> {
-  const normalizedResult = await fs.getNormalizedPath(path);
+  const normalizedResult = await Fs.getNormalizedPath(path);
   if (normalizedResult.isError()) return false;
 
   const normalized = normalizedResult.ok

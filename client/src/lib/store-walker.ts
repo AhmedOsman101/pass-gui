@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "lib-result";
 import type { TreeDirectoryEntry } from "@/services/filesystem";
-import { fs } from "@/services/filesystem";
+import { Fs } from "@/services/filesystem";
 import type { EntryNode, EntryTree } from "@/types/entries";
 import type { MutationError } from "./errors";
 
@@ -73,7 +73,7 @@ function toEntryNodes(nodes: TreeDirectoryEntry[]): EntryNode[] {
 async function walkStore(
   storePath: string
 ): Promise<Result<EntryTree, MutationError | Error>> {
-  const tree = await fs.readDirectory(storePath, { recursive: true });
+  const tree = await Fs.readDirectory(storePath, { recursive: true });
   if (tree.isError()) return Err(tree.error);
 
   const filtered = filterGpgNodes(tree.ok);

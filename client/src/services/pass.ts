@@ -10,9 +10,9 @@ import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
-import { fs } from "./filesystem";
-import { gpg } from "./gpg";
-import { neu } from "./neutralino";
+import { Fs } from "./filesystem";
+import { Gpg } from "./gpg";
+import { Neu } from "./neutralino";
 
 /**
  * Service for interacting with the `pass` password manager.
@@ -39,9 +39,9 @@ class PassService {
    * should override this via `setStorePath()` when available.
    */
   async init(): Promise<Result<boolean>> {
-    const envStoreDir = await neu.getEnv("PASSWORD_STORE_DIR");
+    const envStoreDir = await Neu.getEnv("PASSWORD_STORE_DIR");
     this.storeDirectory =
-      envStoreDir || (await fs.join(neu.HOME_DIR, ".password-store"));
+      envStoreDir || (await Fs.join(Neu.HOME_DIR, ".password-store"));
 
     const result = await this.checkInitialized(this.storeDirectory);
     if (result.isError()) {
@@ -58,15 +58,15 @@ class PassService {
    * Checks if a password store is properly initialized by looking for .gpg-id.
    */
   private async checkInitialized(storePath: string): Promise<Result<boolean>> {
-    const gpgIdPath = await fs.join(storePath, ".gpg-id");
-    return await fs.exists(gpgIdPath);
+    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
+    return await Fs.exists(gpgIdPath);
   }
 
   /**
    * Checks if pass version meets the minimum supported version requirement.
    */
   async checkVersion(): Promise<Result<VersionCheck>> {
-    const cmdResult = await neu.safeExec({ cmd: "pass", args: ["--version"] });
+    const cmdResult = await Neu.safeExec({ cmd: "pass", args: ["--version"] });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
       return ErrFromObject({
         error: cmdResult.error || new Error(cmdResult.ok.stdErr),
@@ -94,7 +94,7 @@ class PassService {
    * if it's a system binary or a custom wrapper/script.
    */
   async validatePassBinary(): Promise<Result<PassBinaryInfo>> {
-    const resolveResult = await neu.resolveBinaryPath("pass");
+    const resolveResult = await Neu.resolveBinaryPath("pass");
     if (resolveResult.isError()) {
       return ErrFromText(
         `Could not resolve pass binary: ${resolveResult.error.message}`
@@ -119,7 +119,7 @@ class PassService {
    * in case PATHEXT does not resolve them via the bare "pass" name.
    */
   async passExists(): Promise<Result<boolean>> {
-    const existsResult = await neu.commandExists("pass");
+    const existsResult = await Neu.commandExists("pass");
     if (existsResult.isOk() && existsResult.ok) {
       const validateResult = await this.validatePassBinary();
       if (validateResult.isError()) {
@@ -128,9 +128,9 @@ class PassService {
       return Ok(true);
     }
 
-    if (neu.OS === "Windows") {
+    if (Neu.OS === "Windows") {
       for (const name of ["pass.cmd", "pass.ps1"]) {
-        const fallback = await neu.commandExists(name);
+        const fallback = await Neu.commandExists(name);
         if (fallback.isOk() && fallback.ok) {
           debug.log(`Pass found as ${name}`);
           return Ok(true);
@@ -169,9 +169,9 @@ class PassService {
     const defaultEnvs: Record<string, string> = {
       PASSWORD_STORE_DIR: this.storeDirectory,
     };
-    if (gpg.homeDir) defaultEnvs.GNUPGHOME = gpg.homeDir;
+    if (Gpg.homeDir) defaultEnvs.GNUPGHOME = Gpg.homeDir;
 
-    return await neu.exec({
+    return await Neu.exec({
       cmd: "pass",
       args: validatedArgs,
       options: {
@@ -182,7 +182,7 @@ class PassService {
   }
 }
 
-const pass = new PassService();
-const passInitialized = pass.init();
+const Pass = new PassService();
+const passInitialized = Pass.init();
 
-export { PassService, pass, passInitialized };
+export { Pass, PassService, passInitialized };

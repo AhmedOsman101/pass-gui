@@ -15,7 +15,7 @@ import type {
   Version,
 } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
-import { neu } from "./neutralino";
+import { Neu } from "./neutralino";
 
 /**
  * Service for interacting with GPG (GNU Privacy Guard) for cryptographic operations.
@@ -55,7 +55,7 @@ class GpgService {
     if (existsResult.isError()) return Err(existsResult.error);
     if (!existsResult.ok) return Ok(false);
 
-    const homeDir = await neu.getEnv("GNUPGHOME");
+    const homeDir = await Neu.getEnv("GNUPGHOME");
     if (homeDir) this.homeDir = homeDir;
 
     return Ok(true);
@@ -69,21 +69,21 @@ class GpgService {
    * does not resolve them via the bare names.
    */
   async gpgExists(): Promise<Result<boolean>> {
-    const gpg2Exists = await neu.commandExists("gpg2");
+    const gpg2Exists = await Neu.commandExists("gpg2");
     if (!gpg2Exists.isError() && gpg2Exists.ok) {
       this.command = "gpg2";
       return Ok(true);
     }
 
-    const gpgExists = await neu.commandExists("gpg");
+    const gpgExists = await Neu.commandExists("gpg");
     if (!gpgExists.isError() && gpgExists.ok) {
       this.command = "gpg";
       return Ok(true);
     }
 
-    if (neu.OS === "Windows") {
+    if (Neu.OS === "Windows") {
       for (const name of ["gpg2.exe", "gpg.exe"]) {
-        const fallback = await neu.commandExists(name);
+        const fallback = await Neu.commandExists(name);
         if (!fallback.isError() && fallback.ok) {
           this.command = name.replace(".exe", "") as AllowedCommand;
           debug.log(`GPG found as ${name}`);
@@ -102,7 +102,7 @@ class GpgService {
    * Returns a `VersionCheck` indicating whether the version meets `GPG_MIN_VERSION`.
    */
   async checkVersion(): Promise<Result<VersionCheck>> {
-    const cmdResult = await neu.safeExec({
+    const cmdResult = await Neu.safeExec({
       cmd: this.getCommand(),
       args: ["--version"],
     });
@@ -146,7 +146,7 @@ class GpgService {
   async validateGpgBinary(): Promise<Result<GpgBinaryInfo>> {
     if (!this.getCommand()) return ErrFromText("GPG binary not resolved");
 
-    const resolveResult = await neu.resolveBinaryPath(this.getCommand());
+    const resolveResult = await Neu.resolveBinaryPath(this.getCommand());
     if (resolveResult.isError()) {
       return ErrFromText(
         `Could not resolve GPG binary: ${resolveResult.error.message}`
@@ -170,7 +170,7 @@ class GpgService {
       return ErrFromText("GPG binary not resolved");
     }
 
-    const cmdResult = await neu.safeExec({
+    const cmdResult = await Neu.safeExec({
       cmd: this.getCommand(),
       args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
     });
@@ -192,7 +192,7 @@ class GpgService {
   async listSecretKeysWithHome(
     gnupgHome: string
   ): Promise<Result<SecretKey[]>> {
-    const cmdResult = await neu.exec({
+    const cmdResult = await Neu.exec({
       cmd: this.getCommand(),
       args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
       options: { envs: { GNUPGHOME: gnupgHome } },
@@ -284,7 +284,7 @@ class GpgService {
   ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
     if (!this.getCommand()) return ErrFromText("GPG binary not resolved");
 
-    return await neu.exec({
+    return await Neu.exec({
       cmd: this.getCommand(),
       args,
       options: this.homeDir
@@ -294,7 +294,7 @@ class GpgService {
   }
 }
 
-const gpg = new GpgService();
-const gpgInitialized = gpg.init();
+const Gpg = new GpgService();
+const gpgInitialized = Gpg.init();
 
-export { GpgService, gpg, gpgInitialized };
+export { Gpg, GpgService, gpgInitialized };

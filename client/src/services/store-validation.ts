@@ -1,8 +1,8 @@
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { stripInlineComment } from "@/lib/utils";
-import { fs } from "./filesystem";
-import { gpg } from "./gpg";
-import { pass } from "./pass";
+import { Fs } from "./filesystem";
+import { Gpg } from "./gpg";
+import { Pass } from "./pass";
 
 /**
  * A parsed recipient entry from a `.gpg-id` file.
@@ -29,7 +29,7 @@ type RecipientValidation = {
  *
  * All methods are static and return `Result` types.
  */
-class StoreValidationService {
+class StoreValidation {
   /**
    * Parses a `.gpg-id` file and extracts recipient key IDs.
    * Strips end-of-line comments (pass uses `${gpg_id%%#*}` style),
@@ -39,11 +39,11 @@ class StoreValidationService {
   static async parseGpgId(
     storePath: string
   ): Promise<Result<ParsedRecipient[]>> {
-    const path = await fs.join(storePath, ".gpg-id");
-    const fileExists = await fs.isFile(path);
+    const path = await Fs.join(storePath, ".gpg-id");
+    const fileExists = await Fs.isFile(path);
     if (fileExists.isError()) return Err(fileExists.error);
 
-    const readResult = await fs.readFile(path);
+    const readResult = await Fs.readFile(path);
     if (readResult.isError()) return Err(readResult.error);
 
     const lines = readResult.ok
@@ -81,8 +81,8 @@ class StoreValidationService {
   ): Promise<Result<RecipientValidation>> {
     const secretKeys =
       gnupgHome && gnupgHome.length > 0
-        ? await gpg.listSecretKeysWithHome(gnupgHome)
-        : await gpg.listSecretKeys();
+        ? await Gpg.listSecretKeysWithHome(gnupgHome)
+        : await Gpg.listSecretKeys();
 
     if (secretKeys.isError()) return Err(secretKeys.error);
 
@@ -119,7 +119,7 @@ class StoreValidationService {
     const envs: Record<string, string> = { PASSWORD_STORE_DIR: storePath };
     if (gnupgHome) envs.GNUPGHOME = gnupgHome;
 
-    const output = await pass.exec(["ls"], { envs });
+    const output = await Pass.exec(["ls"], { envs });
     if (output.isError()) return Err(output.error);
     return Ok(undefined);
   }
@@ -130,7 +130,7 @@ class StoreValidationService {
    * first match — no tree building, no recursion needed.
    */
   static async hasEntries(storePath: string): Promise<Result<boolean>> {
-    const result = await fs.readDirectory(storePath, {
+    const result = await Fs.readDirectory(storePath, {
       recursive: true,
       flat: true,
     });
@@ -144,4 +144,4 @@ class StoreValidationService {
   }
 }
 
-export { StoreValidationService };
+export { StoreValidation };

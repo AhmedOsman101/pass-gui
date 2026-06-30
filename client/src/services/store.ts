@@ -1,13 +1,13 @@
 import { Err, Ok, type Result } from "lib-result";
 import type { StoreConfig } from "@/types/config";
-import { ConfigService } from "./config";
-import { fs } from "./filesystem";
+import { Config } from "./config";
+import { Fs } from "./filesystem";
 
 type StoreDetails = StoreConfig & { name: string };
 
-class StoreService {
+class Store {
   static async get(name: string): Promise<Result<StoreDetails>> {
-    return (await ConfigService.getValue("stores", name)).map(store => ({
+    return (await Config.getValue("stores", name)).map(store => ({
       ...store,
       name,
     }));
@@ -17,24 +17,24 @@ class StoreService {
     name: string,
     data: Partial<StoreConfig>
   ): Promise<Result<void>> {
-    const store = await StoreService.get(name);
+    const store = await Store.get(name);
     if (store.isError()) return Err(store.error);
 
-    return await ConfigService.setValue("stores", name, {
+    return await Config.setValue("stores", name, {
       path: data.path ?? store.ok.path,
       gnupg_home: data.gnupg_home ?? store.ok.gnupg_home,
     });
   }
 
   static async validatePath(name: string): Promise<Result<void>> {
-    const store = await StoreService.get(name);
+    const store = await Store.get(name);
     if (store.isError()) return Err(store.error);
 
-    const existsResult = await fs.isDirectory(store.ok.path);
+    const existsResult = await Fs.isDirectory(store.ok.path);
 
     if (existsResult.isError()) return Err(existsResult.error);
     return Ok(undefined);
   }
 }
 
-export { StoreService };
+export { Store };

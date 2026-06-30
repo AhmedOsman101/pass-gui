@@ -17,7 +17,7 @@ import type {
   MutationInput,
   MutationResult,
 } from "@/types/entries";
-import { pass } from "./pass";
+import { Pass } from "./pass";
 
 /**
  * Maps a `pass.exec()` error to a domain-specific error.
@@ -47,13 +47,13 @@ function mapPassError(
  * All methods delegate to `pass.exec()` which sets `PASSWORD_STORE_DIR`
  * and `GNUPGHOME` automatically. Returns `Result` types — never throws.
  */
-class EntriesService {
+class Entries {
   /**
    * Returns the active store path, with tilde resolved.
    * Falls back to `pass.storeDirectory` if config doesn't have one yet.
    */
-  private getActiveStorePath(): Result<string> {
-    const storePath = pass.storeDirectory;
+  private static getActiveStorePath(): Result<string> {
+    const storePath = Pass.storeDirectory;
     if (!storePath) {
       return ErrFromText("No active store configured");
     }
@@ -64,8 +64,8 @@ class EntriesService {
    * Lists all entries in the password store as a nested tree.
    * Uses `walkStore()` which reads the filesystem directly — no `pass ls` parsing.
    */
-  async list(): Promise<Result<EntryTree, MutationError | Error>> {
-    const storePath = await this.getActiveStorePath();
+  static async list(): Promise<Result<EntryTree, MutationError | Error>> {
+    const storePath = Entries.getActiveStorePath();
     if (storePath.isError()) return Err(storePath.error);
 
     return await walkStore(storePath.ok);
@@ -75,12 +75,12 @@ class EntriesService {
    * Shows the contents of a password entry.
    * Runs `pass show <path>` and parses the output into structured fields.
    */
-  async show(
+  static async show(
     path: string
   ): Promise<
     Result<EntryDetail, EntryNotFoundError | MutationError | CommandFailedError>
   > {
-    const result = await pass.exec(["show", path]);
+    const result = await Pass.exec(["show", path]);
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);
@@ -98,14 +98,14 @@ class EntriesService {
    * Creates a new password entry. Fails with `EntryAlreadyExistsError`
    * if the entry already exists (unless `force: true`).
    */
-  async insert(
+  static async insert(
     input: MutationInput
   ): Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>> {
     const args = ["insert"];
     if (input.force) args.push("-f");
     args.push("-m", input.path);
 
-    const result = await pass.exec(args, { stdIn: input.content });
+    const result = await Pass.exec(args, { stdIn: input.content });
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);
@@ -121,7 +121,7 @@ class EntriesService {
    * (format: `NNNN-word-word-word`) and inserts via `pass insert -f`.
    * Otherwise, delegates to `pass generate` with the configured length.
    */
-  async generate(
+  static async generate(
     path: string,
     options?: {
       length?: number;
@@ -144,7 +144,7 @@ class EntriesService {
       content = generatePassword(length, charset);
     }
 
-    const result = await pass.exec(["generate", "-f", "-p", path], {
+    const result = await Pass.exec(["generate", "-f", "-p", path], {
       stdIn: content,
     });
     if (result.isError()) {
@@ -159,7 +159,7 @@ class EntriesService {
    * Removes a password entry from the store.
    * Uses `pass rm -f` to skip confirmation prompts.
    */
-  async remove(
+  static async remove(
     path: string
   ): Promise<
     Result<
@@ -167,7 +167,7 @@ class EntriesService {
       MutationError | EntryNotFoundError | EntryAlreadyExistsError
     >
   > {
-    const result = await pass.exec(["rm", "-f", path]);
+    const result = await Pass.exec(["rm", "-f", path]);
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);
@@ -180,7 +180,7 @@ class EntriesService {
    * Moves or renames a password entry.
    * Both oldPath and newPath are store-relative.
    */
-  async move(
+  static async move(
     oldPath: string,
     newPath: string
   ): Promise<
@@ -189,7 +189,7 @@ class EntriesService {
       MutationError | EntryNotFoundError | EntryAlreadyExistsError
     >
   > {
-    const result = await pass.exec(["mv", oldPath, newPath]);
+    const result = await Pass.exec(["mv", oldPath, newPath]);
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);
@@ -201,7 +201,7 @@ class EntriesService {
   /**
    * Edits an existing entry by verifying it exists, then reinserting.
    */
-  async edit(
+  static async edit(
     path: string,
     content: string
   ): Promise<
@@ -210,16 +210,14 @@ class EntriesService {
       EntryNotFoundError | MutationError | CommandFailedError
     >
   > {
-    const exists = await this.show(path);
+    const exists = await Entries.show(path);
     if (exists.isError()) return Err(exists.error);
 
-    const result = await this.insert({ path, content, force: true });
+    const result = await Entries.insert({ path, content, force: true });
     if (result.isError()) return Err(result.error);
 
     return Ok({ success: true, path });
   }
 }
 
-const entries = new EntriesService();
-
-export { EntriesService, entries };
+export { Entries };
