@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { File } from "@lucide/vue";
-import Tree from "@/components/Tree.vue";
-import type { SidebarProps } from "@/components/ui/sidebar";
+import type { SidebarProps } from '@/components/ui/sidebar'
+import { File } from "@lucide/vue"
+import Tree from '@/components/Tree.vue'
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +13,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
-import type { FileSystemTree } from "@/types";
+} from '@/components/ui/sidebar'
 
-const props = defineProps<SidebarProps>();
+const props = defineProps<SidebarProps>()
 
 // This is sample data.
-const data: {
-  changes: { file: string; state: string }[];
-  tree: FileSystemTree;
-} = {
+const data = {
   changes: [
     {
       file: "README.md",
@@ -63,7 +59,7 @@ const data: {
     "package.json",
     "README.md",
   ],
-};
+}
 </script>
 
 <template>
@@ -87,11 +83,7 @@ const data: {
         <SidebarGroupLabel>Files</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <Tree
-              v-for="(item, index) in data.tree"
-              :key="index"
-              :item="item"
-            />
+            <Tree v-for="(item, index) in data.tree" :key="index" :item="item" />
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

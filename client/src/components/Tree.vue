@@ -1,25 +1,22 @@
 <script setup lang="ts">
-import { ChevronRight, File, Folder } from "@lucide/vue";
+import { ChevronRight, File, Folder } from "@lucide/vue"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '@/components/ui/collapsible'
 
 import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-} from "@/components/ui/sidebar";
-import type { FileSystemTree } from "@/types";
+} from '@/components/ui/sidebar'
 
 const props = defineProps<{
-  item: FileSystemTree | string;
-}>();
+  item: string | any[]
+}>()
 
-const [name, ...items] = Array.isArray(props.item)
-  ? props.item.map(String)
-  : [props.item];
+const [name, ...items] = Array.isArray(props.item) ? props.item : [props.item]
 </script>
 
 <template>
@@ -46,11 +43,7 @@ const [name, ...items] = Array.isArray(props.item)
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
-          <Tree
-            v-for="(subItem, index) in items"
-            :key="index"
-            :item="subItem"
-          />
+          <Tree v-for="(subItem, index) in items" :key="index" :item="subItem" />
         </SidebarMenuSub>
       </CollapsibleContent>
     </Collapsible>

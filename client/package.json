@@ -9,5 +9,10 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "typecheck": "vue-tsc --build"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.21.0",
+    "@vueuse/core": "^14.2.1",
+    "reka-ui": "^2.8.0"
   }
 }

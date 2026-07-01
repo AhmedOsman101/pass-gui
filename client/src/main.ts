@@ -3,11 +3,10 @@ import Neutralino from "@neutralinojs/lib";
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import { neuInitialized } from "@/services/neutralino";
-import { Pass, passInitialized } from "@/services/pass";
+import { passInitialized } from "@/services/pass";
 import App from "./App.vue";
 import router from "./router";
 import { gpgInitialized } from "./services/gpg";
-import { Readiness } from "./services/readiness.ts";
 
 const app = createApp(App);
 
@@ -21,5 +20,3 @@ Neutralino.init();
 await neuInitialized;
 await gpgInitialized;
 await passInitialized;
-const state = await Readiness.check(Pass.storeDirectory);
-Neutralino.debug.log(JSON.stringify(state, null, 2));

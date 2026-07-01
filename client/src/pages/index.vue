@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import AppSidebar from "@/components/AppSidebar.vue";
+import EntryDetail from "@/components/EntryDetail.vue";
+import { SidebarProvider } from "@/components/ui/sidebar";
 </script>
 
 <template>
-  <main>
-    <div class="mb-4">
-      <RouterLink to="/test" class="text-blue-500 hover:underline">
-        Go to Test Page
-      </RouterLink>
+  <SidebarProvider>
+    <div class="flex h-screen">
+      <AppSidebar />
+      <main class="flex-1 overflow-auto">
+        <EntryDetail />
+      </main>
     </div>
-  </main>
+  </SidebarProvider>
 </template>

@@ -65,8 +65,8 @@ Replace vague "states" with deterministic ones:
 Also:
 
 - [x] Centralized state manager (`checkReadiness()` orchestrator + `ReadinessStore`)
-- [ ] UI reacts strictly to state changes (Phase 04)
-- [ ] No UI logic outside state transitions (Phase 04)
+- [x] UI reacts strictly to state changes — `ReadinessGate` renders loading/blocked/ready based on store state
+- [x] No UI logic outside state transitions — all state lives in Pinia stores, components only render
 
 ## 5. Listing Passwords
 
@@ -74,7 +74,7 @@ Also:
 - [x] ~~Use `pass ls` as canonical source~~ Replaced with filesystem traversal (deterministic, no Unicode parsing)
 - [x] ~~Parse tree output safely~~ Replaced with filesystem traversal
 - [ ] Cache results in memory
-- [ ] Implement refresh mechanism
+- [x] Implement refresh mechanism — `entries.refresh()` reloads tree after mutations
 - [ ] Watch filesystem for changes
 - [x] ~~Avoid manual filesystem traversal~~ Replaced with filesystem traversal (deterministic, no Unicode parsing)
 
@@ -149,7 +149,7 @@ This is missing entirely from your list and it matters.
 ## 11. Error Handling & Diagnostics
 
 - [ ] Structured error categories
-- [ ] User-friendly error mapping
+- [x] User-friendly error mapping — IssueCard maps 14 readiness codes to titles/descriptions/recovery actions; stores display errors in UI
 - [ ] Developer debug mode
 - [ ] Logging system (without leaking secrets)
 

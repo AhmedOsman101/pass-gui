@@ -22,7 +22,7 @@
     "clean": "rm -rf client/dist && rm -rf dist/*",
     "update:neu": "neu update"
   },
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.9.0",
   "devDependencies": {
     "@biomejs/biome": "2.5.0",
     "@iconify-json/radix-icons": "^1.2.6",
