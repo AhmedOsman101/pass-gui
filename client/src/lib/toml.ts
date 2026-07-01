@@ -47,10 +47,7 @@ function addKeyComment(
   key: string,
   comment: string | undefined
 ): void {
-  if (!comment) {
-    return;
-  }
-
+  if (!comment) return;
   table[TOML.commentFor(key)] = comment;
 }
 
@@ -215,7 +212,7 @@ function parse<TData>(
   source: string | TomlStringified<TData>
 ): Result<ParsedToml<TData>> {
   const result = safeParse(source, {
-    bigint: true,
+    bigint: false,
     joiner: "\n",
     x: { comment: true, order: true, string: true },
   });
