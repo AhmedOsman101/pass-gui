@@ -177,6 +177,35 @@ class Entries {
   }
 
   /**
+   * Copies a password entry from one path to another.
+   * Both oldPath and newPath are store-relative.
+   */
+  static async copy(
+    oldPath: string,
+    newPath: string
+  ): Promise<
+    Result<
+      MutationResult,
+      | MutationError
+      | EntryNotFoundError
+      | EntryAlreadyExistsError
+      | CommandFailedError
+    >
+  > {
+    const showResult = await Entries.show(oldPath);
+    if (showResult.isError()) return Err(showResult.error);
+
+    const insertResult = await Entries.insert({
+      path: newPath,
+      content: showResult.ok.raw,
+      force: false,
+    });
+    if (insertResult.isError()) return Err(insertResult.error);
+
+    return Ok({ success: true, path: newPath, oldPath });
+  }
+
+  /**
    * Moves or renames a password entry.
    * Both oldPath and newPath are store-relative.
    */

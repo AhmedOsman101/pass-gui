@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
     <Skeleton class="h-8 w-48" />
     <Skeleton class="h-4 w-32" />
     <p class="text-sm text-muted-foreground animate-pulse">
-      Checking dependencies…
+      Checking dependencies...
     </p>
   </div>
 </template>

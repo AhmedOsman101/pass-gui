@@ -10,12 +10,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useEntriesStore } from "@/stores/entries";
 
 const props = defineProps<{
   entryPath: string;
+  open?: boolean;
+}>();
+
+const emit = defineEmits<{
+  "update:open": [value: boolean];
 }>();
 
 const entries = useEntriesStore();
@@ -25,12 +29,13 @@ async function handleDelete(): Promise<void> {
   isDeleting.value = true;
   await entries.removeEntry(props.entryPath);
   isDeleting.value = false;
+  emit("update:open", false);
 }
 </script>
 
 <template>
-  <AlertDialog>
-    <AlertDialogTrigger as-child>
+  <AlertDialog :open="open" @update:open="emit('update:open', $event)">
+    <AlertDialogTrigger v-if="!open" as-child>
       <slot />
     </AlertDialogTrigger>
     <AlertDialogContent>
@@ -48,7 +53,7 @@ async function handleDelete(): Promise<void> {
           class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           @click="handleDelete"
         >
-          {{ isDeleting ? "Deleting…" : "Delete" }}
+          {{ isDeleting ? "Deleting..." : "Delete" }}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

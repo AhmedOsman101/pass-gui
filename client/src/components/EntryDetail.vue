@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { Eye, EyeOff, Copy, ArrowRightLeft, Trash2 } from "@lucide/vue";
+import { Eye, EyeOff, Copy, ArrowRightLeft, Trash2, Pencil, SquarePen, Files } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
+import DuplicateEntryDialog from "@/components/DuplicateEntryDialog.vue";
+import EditEntryDialog from "@/components/EditEntryDialog.vue";
 import MoveEntryDialog from "@/components/MoveEntryDialog.vue";
+import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import { useClipboardStore } from "@/stores/clipboard";
 import { useEntriesStore } from "@/stores/entries";
 
@@ -13,7 +16,7 @@ const clipboard = useClipboardStore();
 const isSecretVisible = ref(false);
 
 const entry = computed(() => entries.currentEntry);
-const isLoading = computed(() => entries.isLoadingEntry);
+const showSkeleton = computed(() => entries.showEntrySkeleton);
 
 const metadataEntries = computed(() => {
   if (!entry.value) return [];
@@ -51,7 +54,7 @@ function copyValue(value: string): void {
 
 <template>
   <!-- Loading -->
-  <div v-if="isLoading" class="p-6 space-y-4">
+  <div v-if="showSkeleton" class="p-6 space-y-4">
     <div class="h-6 w-48 bg-muted animate-pulse rounded" />
     <div class="h-10 w-full bg-muted animate-pulse rounded" />
     <div class="h-20 w-full bg-muted animate-pulse rounded" />
@@ -77,7 +80,7 @@ function copyValue(value: string): void {
       <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Password
       </label>
-      <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+      <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 mt-5">
         <code class="flex-1 font-mono text-sm break-all">
           <template v-if="isSecretVisible">{{ entry.secret }}</template>
           <template v-else>••••••••••••••••</template>
@@ -107,7 +110,7 @@ function copyValue(value: string): void {
       <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Metadata
       </label>
-      <div class="rounded-lg border divide-y">
+      <div class="rounded-lg border divide-y my-5">
         <div
           v-for="[key, value] in metadataEntries"
           :key="key"
@@ -153,11 +156,29 @@ function copyValue(value: string): void {
     </div>
 
     <!-- Actions bar -->
-    <div class="flex items-center gap-2 pt-2 border-t">
-      <Button variant="outline" size="sm" @click="copySecret">
-        <Copy class="size-4 mr-1" />
-        Copy
-      </Button>
+    <div class="flex items-center gap-2 px-2 py-5 border-t">
+      <DuplicateEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
+        <Button variant="outline" size="sm">
+          <Files class="size-4 mr-1" />
+          Duplicate
+        </Button>
+      </DuplicateEntryDialog>
+      <EditEntryDialog
+        v-if="entries.currentPath && entry"
+        :current-path="entries.currentPath"
+        :current-content="entry.raw"
+      >
+        <Button variant="outline" size="sm">
+          <SquarePen class="size-4 mr-1" />
+          Edit
+        </Button>
+      </EditEntryDialog>
+      <RenameEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
+        <Button variant="outline" size="sm">
+          <Pencil class="size-4 mr-1" />
+          Rename
+        </Button>
+      </RenameEntryDialog>
       <MoveEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
         <Button variant="outline" size="sm">
           <ArrowRightLeft class="size-4 mr-1" />

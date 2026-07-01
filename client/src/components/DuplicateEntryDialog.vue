@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ChevronRight, Folder, FolderOpen } from "@lucide/vue";
+import { Folder, FolderOpen } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,7 +81,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.moveEntry(props.currentPath, fullPath);
+  const result = await entries.duplicateEntry(props.currentPath, fullPath);
 
   isSubmitting.value = false;
 
@@ -101,14 +101,13 @@ async function handleSubmit(): Promise<void> {
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Move Entry</DialogTitle>
+        <DialogTitle>Duplicate Entry</DialogTitle>
         <DialogDescription>
-          Move <code class="font-mono">{{ currentPath }}</code> to a new location
+          Copy <code class="font-mono">{{ currentPath }}</code> to a new location
         </DialogDescription>
       </DialogHeader>
 
       <form class="space-y-4" @submit.prevent="handleSubmit">
-        <!-- Destination folder picker -->
         <div class="space-y-2">
           <label class="text-sm font-medium">Destination folder</label>
           <div class="max-h-48 overflow-y-auto rounded-md border bg-muted/30 p-2 space-y-0.5">
@@ -129,11 +128,10 @@ async function handleSubmit(): Promise<void> {
           </div>
         </div>
 
-        <!-- New name -->
         <div class="space-y-2">
-          <label for="new-name" class="text-sm font-medium">New name</label>
+          <label for="dup-name" class="text-sm font-medium">New name</label>
           <input
-            id="new-name"
+            id="dup-name"
             v-model="newPath"
             type="text"
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -141,7 +139,6 @@ async function handleSubmit(): Promise<void> {
           />
         </div>
 
-        <!-- Preview -->
         <div class="text-xs text-muted-foreground">
           Destination: <code class="font-mono">{{ buildFullDestination() || "..." }}</code>
         </div>
@@ -159,7 +156,7 @@ async function handleSubmit(): Promise<void> {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Moving..." : "Move" }}
+            {{ isSubmitting ? "Copying..." : "Duplicate" }}
           </Button>
         </DialogFooter>
       </form>
