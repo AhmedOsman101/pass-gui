@@ -15,8 +15,10 @@ import {
   generatePassword,
 } from "@/lib/generate-password";
 import { useEntriesStore } from "@/stores/entries";
+import { useGenerationConfig } from "@/composables/use-generation-config";
 
 const entries = useEntriesStore();
+const gen = useGenerationConfig();
 
 const isEdit = computed(() => entries.formMode === "edit");
 const entry = computed(() => entries.currentEntry);
@@ -39,9 +41,20 @@ watch(
 const secret = ref("");
 const isSecretVisible = ref(false);
 const showGeneratorOptions = ref(false);
-const genMemorable = ref(false);
-const genLength = ref(25);
-const genSymbols = ref(false);
+const genMemorable = gen.memorable;
+const genLength = gen.length;
+const genSymbols = gen.symbols;
+
+// Load fresh config when form opens in create mode
+watch(
+  () => entries.formMode,
+  async (mode) => {
+    if (mode === "create") {
+      await gen.load();
+    }
+  },
+  { immediate: true }
+);
 
 // Initialize secret from entry or preset
 watch(

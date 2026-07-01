@@ -10,6 +10,7 @@ import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
+import { Config } from "./config";
 import { Fs } from "./filesystem";
 import { Gpg } from "./gpg";
 import { Neu } from "./neutralino";
@@ -170,6 +171,15 @@ class PassService {
       PASSWORD_STORE_DIR: this.storeDirectory,
     };
     if (Gpg.homeDir) defaultEnvs.GNUPGHOME = Gpg.homeDir;
+
+    // Wire gpg.opts from config into PASSWORD_STORE_GPG_OPTS
+    const configResult = await Config.load();
+    if (configResult.isOk()) {
+      const gpgOpts = configResult.ok.data.gpg?.opts;
+      if (gpgOpts && Array.isArray(gpgOpts) && gpgOpts.length > 0) {
+        defaultEnvs.PASSWORD_STORE_GPG_OPTS = (gpgOpts as string[]).join(" ");
+      }
+    }
 
     return await Neu.exec({
       cmd: "pass",

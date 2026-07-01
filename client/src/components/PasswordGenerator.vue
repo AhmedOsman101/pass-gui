@@ -15,18 +15,27 @@ import {
   generatePassword,
 } from "@/lib/generate-password";
 import { useClipboardStore } from "@/stores/clipboard";
+import { useGenerationConfig } from "@/composables/use-generation-config";
 
 const clipboard = useClipboardStore();
+const gen = useGenerationConfig();
 
 const emit = defineEmits<{
   (e: "save", password: string): void;
 }>();
 
 const isOpen = ref(false);
-const memorable = ref(false);
-const length = ref(25);
-const symbols = ref(false);
+const memorable = gen.memorable;
+const length = gen.length;
+const symbols = gen.symbols;
 const generated = ref("");
+
+// Load fresh config each time dialog opens
+watchEffect(async () => {
+  if (isOpen.value) {
+    await gen.load();
+  }
+});
 
 const charset = computed(() => {
   const alpha = "[[:alnum:]]";

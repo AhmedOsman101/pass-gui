@@ -15,6 +15,7 @@ import {
 } from "@/lib/generate-password";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntriesStore } from "@/stores/entries";
+import { useGenerationConfig } from "@/composables/use-generation-config";
 import { computed, ref, watchEffect } from "vue";
 
 const props = withDefaults(
@@ -34,6 +35,7 @@ const emit = defineEmits<{
 
 const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
+const gen = useGenerationConfig();
 
 const internalOpen = ref(false);
 const isOpen = computed({
@@ -44,9 +46,9 @@ const isOpen = computed({
   },
 });
 const path = ref("");
-const memorable = ref(false);
-const length = ref(25);
-const symbols = ref(false);
+const memorable = gen.memorable;
+const length = gen.length;
+const symbols = gen.symbols;
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
 const generated = ref("");
@@ -54,6 +56,13 @@ const generated = ref("");
 const charset = computed(() =>
   symbols.value ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]",
 );
+
+// Load fresh config each time dialog opens
+watchEffect(async () => {
+  if (isOpen.value) {
+    await gen.load();
+  }
+});
 
 // Auto-regenerate when any option changes
 watchEffect(() => {
