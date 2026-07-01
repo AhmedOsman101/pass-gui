@@ -1,51 +1,68 @@
 <script setup lang="ts">
-import { ChevronRight, File, Folder } from "@lucide/vue"
+import { ChevronRight, File, Folder } from "@lucide/vue";
+import { computed } from "vue";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-
+} from "@/components/ui/collapsible";
 import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-} from '@/components/ui/sidebar'
+} from "@/components/ui/sidebar";
+import { useEntriesStore } from "@/stores/entries";
+import type { EntryNode } from "@/types/entries";
 
 const props = defineProps<{
-  item: string | any[]
-}>()
+  node: EntryNode;
+}>();
 
-const [name, ...items] = Array.isArray(props.item) ? props.item : [props.item]
+const entries = useEntriesStore();
+
+const isDirectory = computed(() => props.node.type === "DIRECTORY");
+
+const isSelected = computed(() => entries.currentPath === props.node.path);
+
+function handleSelect(): void {
+  if (props.node.type === "FILE") {
+    entries.selectEntry(props.node.path);
+  }
+}
 </script>
 
 <template>
-  <SidebarMenuButton
-    v-if="!items.length"
-    :is-active="name === 'button.tsx'"
-    class="data-[active=true]:bg-transparent"
-  >
-    <File />
-    {{ name }}
-  </SidebarMenuButton>
-
-  <SidebarMenuItem v-else>
+  <SidebarMenuItem v-if="isDirectory">
     <Collapsible
       class="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-      :default-open="name === 'components' || name === 'ui'"
     >
       <CollapsibleTrigger as-child>
         <SidebarMenuButton>
           <ChevronRight class="transition-transform" />
           <Folder />
-          {{ name }}
+          {{ node.name }}
         </SidebarMenuButton>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
-          <Tree v-for="(subItem, index) in items" :key="index" :item="subItem" />
+          <Tree
+            v-for="child in node.children"
+            :key="child.path"
+            :node="child"
+          />
         </SidebarMenuSub>
       </CollapsibleContent>
     </Collapsible>
+  </SidebarMenuItem>
+
+  <SidebarMenuItem v-else>
+    <SidebarMenuButton
+      :is-active="isSelected"
+      class="data-[active=true]:bg-transparent"
+      @click="handleSelect"
+    >
+      <File />
+      {{ node.name }}
+    </SidebarMenuButton>
   </SidebarMenuItem>
 </template>
