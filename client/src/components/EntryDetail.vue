@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Eye, EyeOff, Copy, ArrowRightLeft, Trash2, Pencil, SquarePen, Files } from "@lucide/vue";
+import { Eye, EyeOff, Copy, ArrowRightLeft, Trash2, Pencil, SquarePen, Files, X, Plus, Sparkles } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
@@ -7,6 +7,7 @@ import DuplicateEntryDialog from "@/components/DuplicateEntryDialog.vue";
 import EntryForm from "@/components/EntryForm.vue";
 import MoveEntryDialog from "@/components/MoveEntryDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
+import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import { useClipboardStore } from "@/stores/clipboard";
 import { useEntriesStore } from "@/stores/entries";
 
@@ -66,16 +67,39 @@ function copyValue(value: string): void {
   <!-- Empty state -->
   <div
     v-else-if="!entry"
-    class="flex items-center justify-center h-full text-muted-foreground"
+    class="flex flex-col items-center justify-center h-full text-muted-foreground space-y-6"
   >
-    <p class="text-sm">Select an entry from the sidebar</p>
+    <div class="text-center space-y-2">
+      <p class="text-sm">No entry selected</p>
+      <p class="text-xs">Choose an entry from the sidebar or create a new one.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <Button variant="outline" size="sm" @click="entries.openCreateForm()">
+        <Plus class="size-4 mr-1" />
+        New Entry
+      </Button>
+      <PasswordGenerator @save="(pw: string) => entries.openCreateForm(pw)">
+        <Button variant="outline" size="sm">
+          <Sparkles class="size-4 mr-1" />
+          Generate
+        </Button>
+      </PasswordGenerator>
+    </div>
   </div>
 
   <!-- Entry detail -->
   <div v-else class="p-6 space-y-6">
     <!-- Header -->
-    <div>
+    <div class="flex items-start justify-between">
       <h2 class="text-lg font-semibold font-mono">{{ entry.path }}</h2>
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-8 shrink-0"
+        @click="entries.clearSelection()"
+      >
+        <X class="size-4" />
+      </Button>
     </div>
 
     <!-- Secret field -->

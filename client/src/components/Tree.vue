@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronRight, Copy, File, Folder, Pencil, Trash2, ArrowRightLeft } from "@lucide/vue";
+import { ChevronRight, Copy, File, Folder, Pencil, Trash2, ArrowRightLeft, FolderPlus } from "@lucide/vue";
 import { ref, computed } from "vue";
 import {
   Collapsible,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useEntriesStore } from "@/stores/entries";
 import type { EntryNode } from "@/types/entries";
+import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 
@@ -36,6 +37,7 @@ const isSelected = computed(() => entries.currentPath === props.node.path);
 
 const isRenameOpen = ref(false);
 const isDeleteOpen = ref(false);
+const isCreateFolderOpen = ref(false);
 
 function handleSelect(): void {
   if (props.node.type === "FILE") {
@@ -100,6 +102,10 @@ function openDelete(): void {
           Paste
           <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
         </ContextMenuItem>
+        <ContextMenuItem @click="isCreateFolderOpen = true">
+          <FolderPlus class="size-4 mr-2" />
+          New Folder
+        </ContextMenuItem>
         <ContextMenuItem @click="openRename">
           <Pencil class="size-4 mr-2" />
           Rename
@@ -114,6 +120,11 @@ function openDelete(): void {
       </ContextMenuContent>
     </ContextMenu>
 
+    <CreateFolderDialog
+      v-if="isCreateFolderOpen"
+      :parent-path="node.path"
+      v-model:open="isCreateFolderOpen"
+    />
     <RenameEntryDialog
       v-if="isRenameOpen"
       :current-path="node.path"

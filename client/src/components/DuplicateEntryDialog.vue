@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Folder, FolderOpen } from "@lucide/vue";
+import { Folder, FolderOpen, FolderPlus } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,11 @@ const newPath = ref("");
 const selectedFolder = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
+
+// New folder creation
+const newFolderName = ref("");
+const isCreatingFolder = ref(false);
+const folderError = ref<string | null>(null);
 
 const currentName = computed(() => {
   const parts = props.currentPath.split("/");
@@ -62,8 +67,36 @@ watch(isOpen, (open) => {
     selectedFolder.value = parts.join("/");
     newPath.value = name;
     formError.value = null;
+    newFolderName.value = "";
+    folderError.value = null;
   }
 });
+
+async function createNewFolder(): Promise<void> {
+  const name = newFolderName.value.trim();
+  if (!name) {
+    folderError.value = "Folder name is required";
+    return;
+  }
+
+  const parentPath = selectedFolder.value;
+  const fullPath = parentPath ? `${parentPath}/${name}` : name;
+
+  isCreatingFolder.value = true;
+  folderError.value = null;
+
+  const result = await entries.createFolder(fullPath);
+
+  isCreatingFolder.value = false;
+
+  if (result) {
+    folderError.value = result;
+    return;
+  }
+
+  selectedFolder.value = fullPath;
+  newFolderName.value = "";
+}
 
 async function handleSubmit(): Promise<void> {
   const dest = newPath.value.trim();
@@ -127,6 +160,31 @@ async function handleSubmit(): Promise<void> {
             </button>
           </div>
         </div>
+
+        <!-- Create new folder -->
+        <div class="flex items-center gap-2">
+          <input
+            v-model="newFolderName"
+            type="text"
+            placeholder="New folder name"
+            class="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            @keydown.enter.prevent="createNewFolder"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="shrink-0"
+            :disabled="isCreatingFolder || !newFolderName.trim()"
+            @click="createNewFolder"
+          >
+            <FolderPlus class="size-4 mr-1" />
+            {{ isCreatingFolder ? "Creating..." : "New" }}
+          </Button>
+        </div>
+        <p v-if="folderError" class="text-xs text-destructive">
+          {{ folderError }}
+        </p>
 
         <div class="space-y-2">
           <label for="dup-name" class="text-sm font-medium">New name</label>

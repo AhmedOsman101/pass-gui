@@ -39,18 +39,26 @@ watch(
 
 // Password
 const secret = ref("");
-const isSecretVisible = ref(false);
+const isSecretVisible = ref(true);
 const showGeneratorOptions = ref(false);
 const genMemorable = gen.memorable;
 const genLength = gen.length;
 const genSymbols = gen.symbols;
 
-// Load fresh config when form opens in create mode
+// Load config + auto-generate when form opens in create mode
+let configLoaded = false;
 watch(
   () => entries.formMode,
   async (mode) => {
     if (mode === "create") {
       await gen.load();
+      configLoaded = true;
+      // Auto-generate if no preset password was provided
+      if (!entries.formPresetPassword) {
+        regeneratePassword();
+      }
+    } else {
+      configLoaded = false;
     }
   },
   { immediate: true }
@@ -62,11 +70,12 @@ watch(
   () => {
     if (entries.formMode === "create" && entries.formPresetPassword) {
       secret.value = entries.formPresetPassword;
+      isSecretVisible.value = true;
     } else if (entries.formMode === "edit" && entry.value) {
       secret.value = entry.value.secret;
-    } else if (entries.formMode === "create") {
-      secret.value = "";
+      isSecretVisible.value = false;
     }
+    // create-without-preset is handled by the config load watcher above
   },
   { immediate: true }
 );
@@ -101,6 +110,22 @@ function removeMetadata(index: number): void {
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
 
+// Duplicate key validation
+const duplicateKeys = computed(() => {
+  const keys = metadata.value
+    .map(m => m.key.trim())
+    .filter(k => k.length > 0);
+  const seen = new Set<string>();
+  const dupes = new Set<string>();
+  for (const k of keys) {
+    if (seen.has(k)) dupes.add(k);
+    seen.add(k);
+  }
+  return dupes;
+});
+
+const hasDuplicateKeys = computed(() => duplicateKeys.value.size > 0);
+
 // Generate password with current options
 function regeneratePassword(): void {
   if (genMemorable.value) {
@@ -111,6 +136,7 @@ function regeneratePassword(): void {
       : "[[:alnum:]]";
     secret.value = generatePassword(genLength.value, charset);
   }
+  isSecretVisible.value = true;
 }
 
 // Build content string from form fields
@@ -133,6 +159,11 @@ async function handleSubmit(): Promise<void> {
 
   if (!secret.value) {
     formError.value = "Password is required";
+    return;
+  }
+
+  if (hasDuplicateKeys.value) {
+    formError.value = `Duplicate metadata keys: ${[...duplicateKeys.value].join(", ")}`;
     return;
   }
 
@@ -323,7 +354,8 @@ async function handleSubmit(): Promise<void> {
               v-model="meta.key"
               type="text"
               placeholder="Key"
-              class="w-1/3 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              class="w-1/3 rounded-md border bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              :class="duplicateKeys.has(meta.key.trim()) ? 'border-destructive' : 'border-input'"
             />
             <textarea
               v-model="meta.value"
@@ -342,6 +374,10 @@ async function handleSubmit(): Promise<void> {
             </Button>
           </div>
         </div>
+
+        <p v-if="hasDuplicateKeys" class="text-xs text-destructive">
+          Duplicate keys: {{ [...duplicateKeys].join(", ") }} — last value wins on save.
+        </p>
 
         <Button
           type="button"

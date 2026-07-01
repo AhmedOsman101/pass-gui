@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { Plus, Sparkles, Search } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { Plus, Sparkles, Search, FolderPlus } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import Tree from "@/components/Tree.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
+import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {
   Sidebar,
@@ -25,6 +32,7 @@ const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!entries.currentPath);
+const isCreateFolderOpen = ref(false);
 
 function onPasswordSave(password: string): void {
   entries.openCreateForm(password);
@@ -85,60 +93,76 @@ useHotkey("Delete", () => {
     <SidebarHeader class="border-b px-3 py-2">
       <span class="text-sm font-semibold">pass-gui</span>
     </SidebarHeader>
-    <SidebarContent>
-      <SidebarGroup>
-        <SidebarGroupLabel class="flex items-center justify-start mb-2">
-          <div class="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-7 px-2 text-xs"
-              @click="entries.openCreateForm()"
-            >
-              <Plus class="size-3 mr-1" />
-              New
-            </Button>
-            <PasswordGenerator @save="onPasswordSave">
-              <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
-                <Sparkles class="size-3 mr-1" />
-                Generate
-              </Button>
-            </PasswordGenerator>
-          </div>
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <div class="px-2 pb-2">
-            <div class="relative">
-              <Search
-                class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-              />
-              <input
-                v-model="entries.searchQuery"
-                type="text"
-                placeholder="Search..."
-                class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              />
-            </div>
-          </div>
-          <SidebarMenu v-if="entries.hasEntries">
-            <Tree
-              v-for="node in entries.filteredTree"
-              :key="node.path"
-              :node="node"
-            />
-          </SidebarMenu>
-          <div
-            v-else-if="!entries.isLoadingTree"
-            class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"
-          >
-            <p>No entries yet.</p>
-            <Button variant="outline" size="sm" @click="entries.openCreateForm()">
-              <Plus class="size-4 mr-1" />
-              Create your first entry
-            </Button>
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    </SidebarContent>
+    <ContextMenu>
+      <ContextMenuTrigger as-child>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel class="flex items-center justify-start mb-2">
+              <div class="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 px-2 text-xs"
+                  @click="entries.openCreateForm()"
+                >
+                  <Plus class="size-3 mr-1" />
+                  New
+                </Button>
+                <PasswordGenerator @save="onPasswordSave">
+                  <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
+                    <Sparkles class="size-3 mr-1" />
+                    Generate
+                  </Button>
+                </PasswordGenerator>
+              </div>
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div class="px-2 pb-2">
+                <div class="relative">
+                  <Search
+                    class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+                  />
+                  <input
+                    v-model="entries.searchQuery"
+                    type="text"
+                    placeholder="Search..."
+                    class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                </div>
+              </div>
+              <SidebarMenu v-if="entries.hasEntries">
+                <Tree
+                  v-for="node in entries.filteredTree"
+                  :key="node.path"
+                  :node="node"
+                />
+              </SidebarMenu>
+              <div
+                v-else-if="!entries.isLoadingTree"
+                class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"
+              >
+                <p>No entries yet.</p>
+                <Button variant="outline" size="sm" @click="entries.openCreateForm()">
+                  <Plus class="size-4 mr-1" />
+                  Create your first entry
+                </Button>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </ContextMenuTrigger>
+      <ContextMenuContent class="min-w-48 p-2">
+        <ContextMenuItem @click="entries.openCreateForm()">
+          <Plus class="size-4 mr-2" />
+          New Entry
+        </ContextMenuItem>
+        <ContextMenuItem @click="isCreateFolderOpen = true">
+          <FolderPlus class="size-4 mr-2" />
+          New Folder
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+
+    <CreateFolderDialog v-if="isCreateFolderOpen" v-model:open="isCreateFolderOpen" />
   </Sidebar>
 </template>

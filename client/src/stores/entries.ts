@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { Entries } from "@/services/entries";
+import { Fs } from "@/services/filesystem";
+import { Pass } from "@/services/pass";
 import type { EntryDetail, EntryTree } from "@/types/entries";
 
 type FormMode = "create" | "edit";
@@ -272,6 +274,29 @@ const useEntriesStore = defineStore("entries", () => {
     return null;
   }
 
+  async function createFolder(folderPath: string): Promise<string | null> {
+    error.value = null;
+    const storeDir = Pass.storeDirectory;
+    if (!storeDir) {
+      error.value = "No active store";
+      return error.value;
+    }
+
+    const fullPath = folderPath
+      ? await Fs.join(storeDir, folderPath)
+      : storeDir;
+
+    const result = await Fs.mkdir(fullPath);
+    if (result.isError()) {
+      const msg = result.error.message;
+      error.value = msg;
+      return msg;
+    }
+
+    await refresh();
+    return null;
+  }
+
   return {
     tree,
     currentPath,
@@ -307,6 +332,7 @@ const useEntriesStore = defineStore("entries", () => {
     copyEntry,
     cutEntry,
     pasteEntry,
+    createFolder,
   };
 });
 

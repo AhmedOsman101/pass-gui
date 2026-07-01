@@ -5,9 +5,12 @@ import type { EntryNode, EntryTree } from "@/types/entries";
 import type { MutationError } from "./errors";
 
 /**
- * Recursively filters a TreeDirectoryEntry[] to keep only .gpg files
- * and directories that contain .gpg descendants. Returns null if a
- * directory has no .gpg descendants (prune it from the tree).
+ * Recursively filters a TreeDirectoryEntry[] to keep:
+ * - .gpg files
+ * - Directories that contain .gpg descendants
+ * - Empty directories (newly created, no children yet)
+ *
+ * Prunes directories like .git that have children but none are .gpg.
  */
 function filterGpgNodes(
   nodes: TreeDirectoryEntry[]
@@ -22,12 +25,15 @@ function filterGpgNodes(
       continue;
     }
 
-    // Directory — recurse and keep only if it has .gpg descendants
-    if (node.children) {
+    // Directory — keep if empty or if it has .gpg descendants
+    if (node.children && node.children.length > 0) {
       const filtered = filterGpgNodes(node.children);
       if (filtered && filtered.length > 0) {
         result.push({ ...node, children: filtered });
       }
+    } else {
+      // Empty directory (no children or empty children array)
+      result.push({ ...node, children: undefined });
     }
   }
 
