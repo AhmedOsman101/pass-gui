@@ -7,7 +7,7 @@
   "copyright": "Copyright (c) Ahmad Othman <ahmad.ali.othman@outlook.com> 2026. All rights reserved.",
   "applicationIcon": "client/dist/app_icon.png",
   "version": "0.0.1",
-  "defaultMode": "window",
+  "defaultMode": "browser",
   "port": 0,
   "documentRoot": "/client/dist/",
   "url": "/",

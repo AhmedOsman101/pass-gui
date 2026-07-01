@@ -12,7 +12,7 @@ import {
 <template>
   <SidebarProvider>
     <ResizablePanelGroup direction="horizontal" class="h-screen">
-      <ResizablePanel :default-size="20" :min-size="15" :max-size="40">
+      <ResizablePanel :default-size="22" :min-size="12">
         <AppSidebar />
       </ResizablePanel>
       <ResizableHandle />

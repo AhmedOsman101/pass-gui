@@ -37,14 +37,17 @@ function handleSelect(): void {
       class="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
     >
       <CollapsibleTrigger as-child>
-        <SidebarMenuButton>
-          <ChevronRight class="transition-transform" />
-          <Folder />
-          {{ node.name }}
+        <SidebarMenuButton
+          class="overflow-hidden"
+          :title="node.name"
+        >
+          <ChevronRight class="shrink-0 transition-transform" />
+          <Folder class="shrink-0" />
+          <span class="truncate">{{ node.name }}</span>
         </SidebarMenuButton>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <SidebarMenuSub>
+        <SidebarMenuSub class="ml-3.5 mr-0 pl-2.5 pr-0">
           <Tree
             v-for="child in node.children"
             :key="child.path"
@@ -58,11 +61,12 @@ function handleSelect(): void {
   <SidebarMenuItem v-else>
     <SidebarMenuButton
       :is-active="isSelected"
-      class="data-[active=true]:bg-transparent"
+      class="data-[active=true]:bg-transparent overflow-hidden"
+      :title="node.name"
       @click="handleSelect"
     >
-      <File />
-      {{ node.name }}
+      <File class="shrink-0" />
+      <span class="truncate">{{ node.name }}</span>
     </SidebarMenuButton>
   </SidebarMenuItem>
 </template>
