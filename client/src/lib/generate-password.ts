@@ -49,7 +49,7 @@ export function generatePassword(length: number, charset: string): string {
 
 /**
  * Expands POSIX bracket expressions into a flat character string.
- * Supports `[:punct:]`, `[:alnum:]`, `[:alpha:]`, `[:digit:]`, `[:space:]`.
+ * Supports `[[:punct:]]`, `[[:alnum:]]`, `[[:alpha:]]`, `[[:digit:]]`, `[[:space:]]`.
  * Falls back to literal characters for unrecognized brackets.
  */
 function expandCharSet(set: string): string {

@@ -13,7 +13,9 @@ import {
   <SidebarProvider>
     <ResizablePanelGroup direction="horizontal" class="h-screen">
       <ResizablePanel :default-size="22" :min-size="12">
-        <AppSidebar />
+        <div class="h-screen overflow-hidden">
+          <AppSidebar />
+        </div>
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel :default-size="80">

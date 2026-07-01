@@ -4,7 +4,6 @@ import { computed, ref, watch } from "vue";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
 import Tree from "@/components/Tree.vue";
-import GenerateDialog from "@/components/GenerateDialog.vue";
 import InsertDialog from "@/components/InsertDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
@@ -27,15 +26,12 @@ const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!entries.currentPath);
-const isSaveDialogOpen = ref(false);
+const isInsertDialogOpen = ref(false);
+const insertPresetPassword = ref<string | undefined>(undefined);
 
 function onPasswordSave(password: string): void {
-  entries.setGeneratedPassword(password);
-  isSaveDialogOpen.value = true;
-}
-
-function onPasswordSaved(): void {
-  entries.clearGeneratedPassword();
+  insertPresetPassword.value = password;
+  isInsertDialogOpen.value = true;
 }
 
 watch(
@@ -97,7 +93,10 @@ useHotkey("Delete", () => {
       <SidebarGroup>
         <SidebarGroupLabel class="flex items-center justify-start mb-2">
           <div class="flex items-center gap-1">
-            <InsertDialog>
+            <InsertDialog
+              v-model:open="isInsertDialogOpen"
+              :preset-password="insertPresetPassword"
+            >
               <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
                 <Plus class="size-3 mr-1" />
                 New
@@ -109,11 +108,6 @@ useHotkey("Delete", () => {
                 Generate
               </Button>
             </PasswordGenerator>
-            <GenerateDialog
-              v-model:open="isSaveDialogOpen"
-              :preset-password="entries.generatedPassword ?? undefined"
-              @saved="onPasswordSaved"
-            />
           </div>
         </SidebarGroupLabel>
         <SidebarGroupContent>

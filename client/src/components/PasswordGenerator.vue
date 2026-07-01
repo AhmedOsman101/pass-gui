@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watchEffect } from "vue";
 import { Copy, RefreshCw } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +33,24 @@ const charset = computed(() => {
   return symbols.value ? `${alpha}[[:punct:]]` : alpha;
 });
 
-function generate(): void {
-  generated.value = memorable.value
+// Auto-regenerate when any option changes
+watchEffect(() => {
+  const _m = memorable.value;
+  const _s = symbols.value;
+  const _l = length.value;
+  generated.value = _m
     ? generateMemorablePassword()
-    : generatePassword(length.value, charset.value);
+    : generatePassword(_l, _s ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]");
+});
+
+function regenerate(): void {
+  // Force re-run by briefly toggling a dependency
+  const m = memorable.value;
+  const s = symbols.value;
+  const l = length.value;
+  generated.value = m
+    ? generateMemorablePassword()
+    : generatePassword(l, s ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]");
 }
 
 function copyToClipboard(): void {
@@ -51,14 +65,10 @@ function handleSave(): void {
     isOpen.value = false;
   }
 }
-
-function handleOpen(): void {
-  if (!generated.value) generate();
-}
 </script>
 
 <template>
-  <Dialog v-model:open="isOpen" @update:open="(v) => v && handleOpen()">
+  <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
       <slot />
     </DialogTrigger>
@@ -109,20 +119,26 @@ function handleOpen(): void {
         </div>
 
         <div v-if="!memorable" class="space-y-2">
-          <div class="flex items-center justify-between">
-            <label for="pg-length" class="text-sm font-medium">
-              Length: {{ length }}
-            </label>
-            <span class="text-xs text-muted-foreground">{{ length }}</span>
+          <label for="pg-length" class="text-sm font-medium">
+            Length
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              id="pg-length"
+              v-model.number="length"
+              type="range"
+              min="8"
+              max="64"
+              class="flex-1"
+            />
+            <input
+              v-model.number="length"
+              type="number"
+              min="8"
+              max="64"
+              class="w-16 rounded-md border border-input bg-background px-2 py-1 text-sm text-center font-mono ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            />
           </div>
-          <input
-            id="pg-length"
-            v-model.number="length"
-            type="range"
-            min="8"
-            max="64"
-            class="w-full"
-          />
         </div>
 
         <div v-if="!memorable" class="flex items-center justify-between">
@@ -150,7 +166,7 @@ function handleOpen(): void {
         </p>
 
         <div class="flex gap-2">
-          <Button variant="outline" class="flex-1" @click="generate">
+          <Button variant="outline" class="flex-1" @click="regenerate">
             <RefreshCw class="size-4 mr-2" />
             Regenerate
           </Button>

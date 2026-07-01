@@ -20,7 +20,6 @@ const useEntriesStore = defineStore("entries", () => {
   const searchQuery = ref("");
   const error = ref<string | null>(null);
   const copyBuffer = ref<{ path: string; mode: "copy" | "cut" } | null>(null);
-  const generatedPassword = ref<string | null>(null);
 
   const skeletonTimer = ref<ReturnType<typeof setTimeout> | null>(null);
   const SKELETON_DELAY_MS = 500;
@@ -260,13 +259,6 @@ const useEntriesStore = defineStore("entries", () => {
     copyEntry,
     cutEntry,
     pasteEntry,
-    generatedPassword,
-    setGeneratedPassword: (pw: string) => {
-      generatedPassword.value = pw;
-    },
-    clearGeneratedPassword: () => {
-      generatedPassword.value = null;
-    },
   };
 });
 

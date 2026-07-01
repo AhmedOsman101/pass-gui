@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,14 +13,46 @@ import {
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntriesStore } from "@/stores/entries";
 
+const props = withDefaults(
+  defineProps<{
+    presetPassword?: string;
+    open?: boolean;
+  }>(),
+  { presetPassword: undefined, open: false }
+);
+
+const emit = defineEmits<{
+  (e: "update:open", value: boolean): void;
+}>();
+
 const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
 
-const isOpen = ref(false);
+const isOpen = ref(props.open);
+
+watch(
+  () => props.open,
+  (val) => {
+    isOpen.value = val;
+  }
+);
+
+watch(isOpen, (val) => {
+  emit("update:open", val);
+});
 const path = ref("");
 const content = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
+
+watch(
+  () => props.presetPassword,
+  (pw) => {
+    if (pw !== undefined) {
+      content.value = pw;
+    }
+  }
+);
 
 async function handleSubmit(): Promise<void> {
   if (!path.value.trim()) {
