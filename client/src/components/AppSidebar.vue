@@ -12,8 +12,8 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntriesStore } from "@/stores/entries";
@@ -33,7 +33,10 @@ watch(
 </script>
 
 <template>
-  <Sidebar v-bind="props">
+  <Sidebar v-bind="props" collapsible="none" class="w-full">
+    <SidebarHeader class="border-b px-3 py-2">
+      <span class="text-sm font-semibold">pass-gui</span>
+    </SidebarHeader>
     <SidebarContent>
       <SidebarGroup>
         <SidebarGroupLabel class="flex items-center justify-between">
@@ -87,6 +90,5 @@ watch(
         </SidebarGroupContent>
       </SidebarGroup>
     </SidebarContent>
-    <SidebarRail />
   </Sidebar>
 </template>
