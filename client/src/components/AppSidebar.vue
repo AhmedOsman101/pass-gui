@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { Plus, Sparkles, Search } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, watch } from "vue";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
 import Tree from "@/components/Tree.vue";
-import InsertDialog from "@/components/InsertDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {
@@ -26,12 +25,9 @@ const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!entries.currentPath);
-const isInsertDialogOpen = ref(false);
-const insertPresetPassword = ref<string | undefined>(undefined);
 
 function onPasswordSave(password: string): void {
-  insertPresetPassword.value = password;
-  isInsertDialogOpen.value = true;
+  entries.openCreateForm(password);
 }
 
 watch(
@@ -93,15 +89,15 @@ useHotkey("Delete", () => {
       <SidebarGroup>
         <SidebarGroupLabel class="flex items-center justify-start mb-2">
           <div class="flex items-center gap-1">
-            <InsertDialog
-              v-model:open="isInsertDialogOpen"
-              :preset-password="insertPresetPassword"
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 px-2 text-xs"
+              @click="entries.openCreateForm()"
             >
-              <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
-                <Plus class="size-3 mr-1" />
-                New
-              </Button>
-            </InsertDialog>
+              <Plus class="size-3 mr-1" />
+              New
+            </Button>
             <PasswordGenerator @save="onPasswordSave">
               <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
                 <Sparkles class="size-3 mr-1" />
@@ -136,12 +132,10 @@ useHotkey("Delete", () => {
             class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"
           >
             <p>No entries yet.</p>
-            <InsertDialog>
-              <Button variant="outline" size="sm">
-                <Plus class="size-4 mr-1" />
-                Create your first entry
-              </Button>
-            </InsertDialog>
+            <Button variant="outline" size="sm" @click="entries.openCreateForm()">
+              <Plus class="size-4 mr-1" />
+              Create your first entry
+            </Button>
           </div>
         </SidebarGroupContent>
       </SidebarGroup>

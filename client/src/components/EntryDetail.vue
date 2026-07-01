@@ -4,7 +4,7 @@ import { computed, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import DuplicateEntryDialog from "@/components/DuplicateEntryDialog.vue";
-import EditEntryDialog from "@/components/EditEntryDialog.vue";
+import EntryForm from "@/components/EntryForm.vue";
 import MoveEntryDialog from "@/components/MoveEntryDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import { useClipboardStore } from "@/stores/clipboard";
@@ -53,8 +53,11 @@ function copyValue(value: string): void {
 </script>
 
 <template>
+  <!-- Entry form (create or edit) -->
+  <EntryForm v-if="entries.isFormOpen" />
+
   <!-- Loading -->
-  <div v-if="showSkeleton" class="p-6 space-y-4">
+  <div v-else-if="showSkeleton" class="p-6 space-y-4">
     <div class="h-6 w-48 bg-muted animate-pulse rounded" />
     <div class="h-10 w-full bg-muted animate-pulse rounded" />
     <div class="h-20 w-full bg-muted animate-pulse rounded" />
@@ -163,16 +166,15 @@ function copyValue(value: string): void {
           Duplicate
         </Button>
       </DuplicateEntryDialog>
-      <EditEntryDialog
+      <Button
         v-if="entries.currentPath && entry"
-        :current-path="entries.currentPath"
-        :current-content="entry.raw"
+        variant="outline"
+        size="sm"
+        @click="entries.openEditForm(entries.currentPath!)"
       >
-        <Button variant="outline" size="sm">
-          <SquarePen class="size-4 mr-1" />
-          Edit
-        </Button>
-      </EditEntryDialog>
+        <SquarePen class="size-4 mr-1" />
+        Edit
+      </Button>
       <RenameEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
         <Button variant="outline" size="sm">
           <Pencil class="size-4 mr-1" />

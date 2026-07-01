@@ -3,6 +3,8 @@ import { computed, ref } from "vue";
 import { Entries } from "@/services/entries";
 import type { EntryDetail, EntryTree } from "@/types/entries";
 
+type FormMode = "create" | "edit";
+
 /**
  * Manages the password entry tree and currently selected entry.
  *
@@ -21,8 +23,15 @@ const useEntriesStore = defineStore("entries", () => {
   const error = ref<string | null>(null);
   const copyBuffer = ref<{ path: string; mode: "copy" | "cut" } | null>(null);
 
+  // Form state
+  const formMode = ref<FormMode | null>(null);
+  const formPath = ref<string | null>(null);
+  const formPresetPassword = ref<string | null>(null);
+
   const skeletonTimer = ref<ReturnType<typeof setTimeout> | null>(null);
   const SKELETON_DELAY_MS = 500;
+
+  const isFormOpen = computed(() => formMode.value !== null);
 
   const filteredTree = computed<EntryTree>(() => {
     if (!searchQuery.value) return tree.value;
@@ -65,8 +74,8 @@ const useEntriesStore = defineStore("entries", () => {
     }
   }
 
-  async function selectEntry(path: string): Promise<void> {
-    if (currentPath.value === path && currentEntry.value) return;
+  async function selectEntry(path: string, force = false): Promise<void> {
+    if (!force && currentPath.value === path && currentEntry.value) return;
 
     currentPath.value = path;
     isLoadingEntry.value = true;
@@ -108,6 +117,29 @@ const useEntriesStore = defineStore("entries", () => {
     await loadTree();
   }
 
+  // --- Form mode actions ---
+
+  function openCreateForm(presetPassword?: string): void {
+    formMode.value = "create";
+    formPath.value = null;
+    formPresetPassword.value = presetPassword ?? null;
+  }
+
+  async function openEditForm(path: string): Promise<void> {
+    await selectEntry(path, true);
+    formMode.value = "edit";
+    formPath.value = path;
+    formPresetPassword.value = null;
+  }
+
+  function closeForm(): void {
+    formMode.value = null;
+    formPath.value = null;
+    formPresetPassword.value = null;
+  }
+
+  // --- Mutation actions ---
+
   async function insertEntry(
     path: string,
     content: string
@@ -120,6 +152,7 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
+    await selectEntry(path, true);
     return null;
   }
 
@@ -135,6 +168,7 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
+    await selectEntry(path, true);
     return null;
   }
 
@@ -163,6 +197,7 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
+    await selectEntry(newPath, true);
     return null;
   }
 
@@ -178,6 +213,7 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
+    await selectEntry(destPath, true);
     return null;
   }
 
@@ -192,7 +228,8 @@ const useEntriesStore = defineStore("entries", () => {
       error.value = msg;
       return msg;
     }
-    await selectEntry(path);
+    await refresh();
+    await selectEntry(path, true);
     return null;
   }
 
@@ -231,6 +268,7 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
+    await selectEntry(destPath, true);
     return null;
   }
 
@@ -244,12 +282,22 @@ const useEntriesStore = defineStore("entries", () => {
     searchQuery,
     error,
     copyBuffer,
+    // Form state
+    formMode,
+    formPath,
+    formPresetPassword,
+    isFormOpen,
     filteredTree,
     hasEntries,
     loadTree,
     selectEntry,
     clearSelection,
     refresh,
+    // Form actions
+    openCreateForm,
+    openEditForm,
+    closeForm,
+    // Mutations
     insertEntry,
     generateEntry,
     removeEntry,
