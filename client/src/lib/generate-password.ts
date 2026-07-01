@@ -54,12 +54,12 @@ export function generatePassword(length: number, charset: string): string {
  */
 function expandCharSet(set: string): string {
   const posixClasses: Record<string, string> = {
-    "[:punct:]": "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
-    "[:alnum:]":
+    "[[:punct:]]": "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+    "[[:alnum:]]":
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    "[:alpha:]": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    "[:digit:]": "0123456789",
-    "[:space:]": " \t\n\r\v\f",
+    "[[:alpha:]]": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "[[:digit:]]": "0123456789",
+    "[[:space:]]": " \t\n\r\v\f",
   };
 
   let result = "";

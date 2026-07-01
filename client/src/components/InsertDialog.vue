@@ -107,7 +107,7 @@ async function handleSubmit(): Promise<void> {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Creating…" : "Create" }}
+            {{ isSubmitting ? "Creating..." : "Create" }}
           </Button>
         </DialogFooter>
       </form>

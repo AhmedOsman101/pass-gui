@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Plus, Sparkles, Search } from "@lucide/vue";
-import { watch } from "vue";
+import { computed, ref, watch } from "vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
 import Tree from "@/components/Tree.vue";
 import GenerateDialog from "@/components/GenerateDialog.vue";
 import InsertDialog from "@/components/InsertDialog.vue";
+import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
 import {
   Sidebar,
@@ -17,11 +19,24 @@ import {
 } from "@/components/ui/sidebar";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntriesStore } from "@/stores/entries";
+import type { EntryTree, EntryNode } from "@/types/entries";
 
 const props = defineProps<SidebarProps>();
 
 const entries = useEntriesStore();
 const activeStore = useActiveStoreStore();
+
+const hasSelection = computed(() => !!entries.currentPath);
+const isSaveDialogOpen = ref(false);
+
+function onPasswordSave(password: string): void {
+  entries.setGeneratedPassword(password);
+  isSaveDialogOpen.value = true;
+}
+
+function onPasswordSaved(): void {
+  entries.clearGeneratedPassword();
+}
 
 watch(
   () => activeStore.hasStore,
@@ -30,6 +45,47 @@ watch(
   },
   { immediate: true }
 );
+
+// Global hotkeys — only active when there's something in the copy buffer
+useHotkey("Mod+V", () => {
+  if (entries.copyBuffer) {
+    const selected = entries.currentPath;
+    if (selected) {
+      const node = findNode(entries.tree, selected);
+      const destDir = node?.type === "DIRECTORY"
+        ? selected
+        : selected.split("/").slice(0, -1).join("/");
+      entries.pasteEntry(destDir);
+    } else {
+      entries.pasteEntry("");
+    }
+  }
+}, { enabled: computed(() => !!entries.copyBuffer) });
+
+useHotkey("Mod+X", () => {
+  if (entries.currentPath) {
+    entries.cutEntry(entries.currentPath);
+  }
+}, { enabled: hasSelection });
+
+function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
+  for (const node of nodes) {
+    if (node.path === path) return node;
+    if (node.children) {
+      const found = findNode(node.children, path);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+useHotkey("F2", () => {
+  // Handled by RenameEntryDialog when open — this is a fallback for tree items
+}, { enabled: hasSelection });
+
+useHotkey("Delete", () => {
+  // Delete handled by context menu / EntryDetail — sidebar doesn't own the dialog
+}, { enabled: hasSelection });
 </script>
 
 <template>
@@ -39,19 +95,25 @@ watch(
     </SidebarHeader>
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel class="flex items-center justify-between">
-          <span>Entries</span>
+        <SidebarGroupLabel class="flex items-center justify-start mb-2">
           <div class="flex items-center gap-1">
             <InsertDialog>
-              <Button variant="ghost" size="icon" class="size-5">
-                <Plus class="size-3" />
+              <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
+                <Plus class="size-3 mr-1" />
+                New
               </Button>
             </InsertDialog>
-            <GenerateDialog>
-              <Button variant="ghost" size="icon" class="size-5">
-                <Sparkles class="size-3" />
+            <PasswordGenerator @save="onPasswordSave">
+              <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
+                <Sparkles class="size-3 mr-1" />
+                Generate
               </Button>
-            </GenerateDialog>
+            </PasswordGenerator>
+            <GenerateDialog
+              v-model:open="isSaveDialogOpen"
+              :preset-password="entries.generatedPassword ?? undefined"
+              @saved="onPasswordSaved"
+            />
           </div>
         </SidebarGroupLabel>
         <SidebarGroupContent>
@@ -63,7 +125,7 @@ watch(
               <input
                 v-model="entries.searchQuery"
                 type="text"
-                placeholder="Search…"
+                placeholder="Search..."
                 class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
