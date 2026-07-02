@@ -168,13 +168,7 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
                   />
                 </div>
               </div>
-              <SidebarMenu v-if="entries.hasEntries">
-                <Tree
-                  v-for="node in entries.filteredTree"
-                  :key="node.path"
-                  :node="node"
-                />
-              </SidebarMenu>
+              <Tree v-if="entries.hasEntries" />
               <div
                 v-else-if="!entries.isLoadingTree"
                 class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"

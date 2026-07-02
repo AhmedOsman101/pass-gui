@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { ChevronRight, Copy, File, Folder, Pencil, Trash2, Scissors, FolderPlus } from "@lucide/vue";
-import { ref, computed } from "vue";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ChevronRight, Copy, File, Folder, FolderPlus, Pencil, Scissors, Trash2 } from "@lucide/vue";
+import { computed, ref, TransitionGroup } from "vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -17,264 +13,209 @@ import {
 import {
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import { useEntriesStore } from "@/stores/entries";
-import type { EntryNode } from "@/types/entries";
+import { useTreeState } from "@/composables/useTreeState";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
-
-const props = defineProps<{
-  node: EntryNode;
-}>();
 
 const entries = useEntriesStore();
 
-const isDirectory = computed(() => props.node.type === "DIRECTORY");
-const isEmpty = computed(
-  () => isDirectory.value && (!props.node.children || props.node.children.length === 0)
-);
-const isSelected = computed(() => entries.currentPath === props.node.path);
-
-useHotkey("F2", () => {
-  isRenameOpen.value = true;
-}, { enabled: isSelected });
-
-useHotkey("Delete", () => {
-  isDeleteOpen.value = true;
-}, { enabled: isSelected });
-
-const isCutDimmed = computed(
-  () => entries.copyBuffer?.mode === "cut" && entries.copyBuffer?.path === props.node.path,
-);
-const hasCopyBuffer = computed(
-  () => !!entries.copyBuffer && entries.copyBuffer.path === props.node.path,
-);
+const {
+  visibleNodes,
+  focusedPath,
+  selectedPath,
+  toggleDir,
+  selectFile,
+  toggleSelect,
+  focusNext,
+  focusPrev,
+  focusSelect,
+  arrowRight,
+  arrowLeft,
+} = useTreeState();
 
 const isRenameOpen = ref(false);
+const renamePath = ref<string | null>(null);
 const isDeleteOpen = ref(false);
+const deletePath = ref<string | null>(null);
 const isCreateFolderOpen = ref(false);
+const createFolderParent = ref<string | null>(null);
 
-// For empty dirs: manual arrow toggle without Collapsible expansion
-const emptyOpen = ref(false);
-
-function handleSelect(): void {
-  if (props.node.type === "FILE") {
-    entries.selectEntry(props.node.path);
-  }
-}
-
-function handleDirClick(): void {
-  entries.setCurrentPath(props.node.path);
-}
-
-function handleCopy(): void {
-  entries.copyEntry(props.node.path);
-}
-
-function handleCut(): void {
-  entries.cutEntry(props.node.path);
-}
-
-function handlePaste(): void {
-  if (entries.copyBuffer) {
-    entries.pasteEntry(props.node.path);
-  }
-}
-
-function openRename(): void {
+function openRename(path: string): void {
+  renamePath.value = path;
   isRenameOpen.value = true;
 }
 
-function openDelete(): void {
+function openDelete(path: string): void {
+  deletePath.value = path;
   isDeleteOpen.value = true;
 }
+
+function openCreateFolder(path: string): void {
+  createFolderParent.value = path;
+  isCreateFolderOpen.value = true;
+}
+
+function nodeName(path: string): string {
+  const parts = path.split("/");
+  return parts[parts.length - 1] ?? path;
+}
+
+function dirPath(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i === -1 ? "" : path.slice(0, i);
+}
+
+function isSelectedNode(path: string): boolean {
+  return selectedPath.value === path;
+}
+
+function isFocusedNode(path: string): boolean {
+  return focusedPath.value === path;
+}
+
+function isCutDimmed(path: string): boolean {
+  return entries.copyBuffer?.mode === "cut" && entries.copyBuffer.path === path;
+}
+
+function hasCopyBuffer(path: string): boolean {
+  return !!entries.copyBuffer && entries.copyBuffer.path === path;
+}
+
+// Hotkeys — global for the tree
+const hasSelected = computed(() => !!selectedPath.value);
+
+useHotkey("F2", () => {
+  if (selectedPath.value) openRename(selectedPath.value);
+}, { enabled: hasSelected });
+
+useHotkey("Delete", () => {
+  if (selectedPath.value) openDelete(selectedPath.value);
+}, { enabled: hasSelected });
+
+// Keyboard navigation
+useHotkey("ArrowDown", () => { focusNext(); });
+useHotkey("ArrowUp", () => { focusPrev(); });
+useHotkey("ArrowRight", () => { arrowRight(); });
+useHotkey("ArrowLeft", () => { arrowLeft(); });
+useHotkey("Enter", () => { focusSelect(); });
 </script>
 
 <template>
-  <SidebarMenuItem v-if="isDirectory">
-    <ContextMenu>
-      <ContextMenuTrigger as-child>
-        <!-- Empty directory: no Collapsible, just arrow toggle -->
-        <SidebarMenuButton
-          v-if="isEmpty"
-          class="overflow-hidden"
-          :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
-          :title="node.name"
-          @click="emptyOpen = !emptyOpen; handleDirClick()"
-        >
-          <ChevronRight
-            class="shrink-0 transition-transform duration-200"
-            :class="{ 'rotate-90': emptyOpen }"
-          />
-          <Folder class="shrink-0" />
-          <span class="truncate">{{ node.name }}</span>
-        </SidebarMenuButton>
+  <TransitionGroup
+    tag="ul"
+    data-slot="sidebar-menu"
+    data-sidebar="menu"
+    class="flex w-full min-w-0 flex-col gap-1"
+    name="tree-node"
+  >
+    <SidebarMenuItem
+      v-for="node in visibleNodes"
+      :key="node.path"
+    >
+      <ContextMenu>
+        <ContextMenuTrigger as-child>
+          <SidebarMenuButton
+            :is-active="isSelectedNode(node.path)"
+            class="overflow-hidden"
+            :class="{
+              'bg-accent/30': isFocusedNode(node.path) && !isSelectedNode(node.path),
+              'cut-dimmed': isCutDimmed(node.path),
+              'copy-pulse': hasCopyBuffer(node.path),
+            }"
+            :style="{ paddingLeft: `${12 + node.depth * 16}px` }"
+            :title="nodeName(node.path)"
+            @click="toggleSelect(node.path)"
+          >
+            <ChevronRight
+              v-if="node.isDirectory"
+              class="shrink-0 transition-transform duration-200"
+              :class="{ 'rotate-90': node.isExpanded }"
+              @click.stop="toggleDir(node.path)"
+            />
+            <Folder v-if="node.isDirectory" class="shrink-0 size-4" />
+            <File v-else class="shrink-0 size-4" />
+            <span class="truncate">{{ nodeName(node.path) }}</span>
+          </SidebarMenuButton>
+        </ContextMenuTrigger>
 
-        <!-- Non-empty directory: Collapsible with expand/collapse -->
-        <Collapsible
-          v-else
-          v-slot="{ open }"
-        >
-          <CollapsibleTrigger as-child>
-            <SidebarMenuButton
-              class="overflow-hidden"
-              :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
-              :title="node.name"
-              @click="handleDirClick"
-            >
-              <ChevronRight
-                class="shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-90': open }"
-              />
-              <Folder class="shrink-0" />
-              <span class="truncate">{{ node.name }}</span>
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent class="collapsible-slide">
-            <SidebarMenuSub class="ml-3.5 mr-0 pl-2.5 pr-0">
-              <Tree
-                v-for="child in node.children"
-                :key="child.path"
-                :node="child"
-              />
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        </Collapsible>
-      </ContextMenuTrigger>
-      <ContextMenuContent class="min-w-64 p-2">
-        <ContextMenuItem v-if="entries.copyBuffer" @click="handlePaste">
-          <Copy class="size-4 mr-2" />
-          Paste
-          <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuItem @click="isCreateFolderOpen = true">
-          <FolderPlus class="size-4 mr-2" />
-          New Folder
-        </ContextMenuItem>
-        <ContextMenuItem @click="openRename">
-          <Pencil class="size-4 mr-2" />
-          Rename
-          <ContextMenuShortcut>F2</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem class="text-destructive" @click="openDelete">
-          <Trash2 class="size-4 mr-2" />
-          Delete
-          <ContextMenuShortcut>Del</ContextMenuShortcut>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+        <!-- Directory context menu -->
+        <ContextMenuContent v-if="node.isDirectory" class="min-w-64 p-2">
+          <ContextMenuItem v-if="entries.copyBuffer" @click="entries.pasteEntry(node.path)">
+            <Copy class="size-4 mr-2" />
+            Paste
+            <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem @click="openCreateFolder(node.path)">
+            <FolderPlus class="size-4 mr-2" />
+            New Folder
+          </ContextMenuItem>
+          <ContextMenuItem @click="openRename(node.path)">
+            <Pencil class="size-4 mr-2" />
+            Rename
+            <ContextMenuShortcut>F2</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem class="text-destructive" @click="openDelete(node.path)">
+            <Trash2 class="size-4 mr-2" />
+            Delete
+            <ContextMenuShortcut>Del</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuContent>
 
-    <CreateFolderDialog
-      v-if="isCreateFolderOpen"
-      :parent-path="node.path"
-      v-model:open="isCreateFolderOpen"
-    />
-    <RenameEntryDialog
-      v-if="isRenameOpen"
-      :current-path="node.path"
-      node-type="DIRECTORY"
-      v-model:open="isRenameOpen"
-    />
-    <DeleteConfirmDialog
-      v-if="isDeleteOpen"
-      :entry-path="node.path"
-      v-model:open="isDeleteOpen"
-    />
-  </SidebarMenuItem>
+        <!-- File context menu -->
+        <ContextMenuContent v-else class="min-w-64 p-2">
+          <ContextMenuItem v-if="entries.copyBuffer" @click="entries.pasteEntry(dirPath(node.path))">
+            <Copy class="size-4 mr-2" />
+            Paste
+            <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem @click="entries.copyEntry(node.path)">
+            <Copy class="size-4 mr-2" />
+            Copy
+            <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem @click="entries.cutEntry(node.path)">
+            <Scissors class="size-4 mr-2" />
+            Cut
+            <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem @click="openRename(node.path)">
+            <Pencil class="size-4 mr-2" />
+            Rename
+            <ContextMenuShortcut>F2</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem class="text-destructive" @click="openDelete(node.path)">
+            <Trash2 class="size-4 mr-2" />
+            Delete
+            <ContextMenuShortcut>Del</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </SidebarMenuItem>
+  </TransitionGroup>
 
-  <SidebarMenuItem v-else>
-    <ContextMenu>
-      <ContextMenuTrigger as-child>
-        <SidebarMenuButton
-          :is-active="isSelected"
-          class="overflow-hidden"
-          :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
-          :title="node.name"
-          @click="handleSelect"
-        >
-          <File class="shrink-0" />
-          <span class="truncate">{{ node.name }}</span>
-        </SidebarMenuButton>
-      </ContextMenuTrigger>
-      <ContextMenuContent class="min-w-64 p-2">
-        <ContextMenuItem v-if="entries.copyBuffer" @click="handlePaste">
-          <Copy class="size-4 mr-2" />
-          Paste
-          <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuItem @click="handleCopy">
-          <Copy class="size-4 mr-2" />
-          Copy
-          <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuItem @click="handleCut">
-          <Scissors class="size-4 mr-2" />
-          Cut
-          <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuItem @click="openRename">
-          <Pencil class="size-4 mr-2" />
-          Rename
-          <ContextMenuShortcut>F2</ContextMenuShortcut>
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem class="text-destructive" @click="openDelete">
-          <Trash2 class="size-4 mr-2" />
-          Delete
-          <ContextMenuShortcut>Del</ContextMenuShortcut>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-
-    <RenameEntryDialog
-      v-if="isRenameOpen"
-      :current-path="node.path"
-      v-model:open="isRenameOpen"
-    />
-    <DeleteConfirmDialog
-      v-if="isDeleteOpen"
-      :entry-path="node.path"
-      v-model:open="isDeleteOpen"
-    />
-  </SidebarMenuItem>
+  <RenameEntryDialog
+    v-if="isRenameOpen && renamePath"
+    :current-path="renamePath"
+    v-model:open="isRenameOpen"
+  />
+  <DeleteConfirmDialog
+    v-if="isDeleteOpen && deletePath"
+    :entry-path="deletePath"
+    v-model:open="isDeleteOpen"
+  />
+  <CreateFolderDialog
+    v-if="isCreateFolderOpen && createFolderParent"
+    :parent-path="createFolderParent"
+    v-model:open="isCreateFolderOpen"
+  />
 </template>
 
 <style>
-/* Smooth expand/collapse animation for CollapsibleContent */
-.collapsible-slide {
-  overflow: hidden;
-}
-.collapsible-slide[data-state="open"] {
-  animation: collapsible-open 200ms ease-out;
-}
-.collapsible-slide[data-state="closed"] {
-  animation: collapsible-close 150ms ease-in;
-}
-@keyframes collapsible-open {
-  from {
-    height: 0;
-    opacity: 0;
-  }
-  to {
-    height: var(--reka-collapsible-content-height);
-    opacity: 1;
-  }
-}
-@keyframes collapsible-close {
-  from {
-    height: var(--reka-collapsible-content-height);
-    opacity: 1;
-  }
-  to {
-    height: 0;
-    opacity: 0;
-  }
-}
-
 .copy-pulse {
   animation: copy-pulse 1.5s ease-in-out infinite;
 }
@@ -285,5 +226,22 @@ function openDelete(): void {
 
 .cut-dimmed {
   opacity: 0.4;
+}
+
+/* Expand/collapse slide animation for tree nodes */
+.tree-node-enter-active,
+.tree-node-leave-active {
+  transition: all 200ms ease;
+}
+.tree-node-enter-from,
+.tree-node-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.tree-node-leave-active {
+  position: absolute;
+}
+.tree-node-move {
+  transition: transform 200ms ease;
 }
 </style>

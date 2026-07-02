@@ -101,6 +101,27 @@ type ClipboardState = {
   isActive: boolean;
 };
 
+/**
+ * Index of an EntryTree for O(1) lookups.
+ * Built once from the raw tree, updated on reload.
+ */
+type TreeIndex = {
+  byPath: Map<string, EntryNode>;
+  parent: Map<string, string | null>;
+  children: Map<string, string[]>;
+};
+
+/**
+ * A single visible row in the flattened tree renderer.
+ * Derived from TreeIndex + expansion state — never stored directly.
+ */
+type VisibleNode = {
+  path: string;
+  depth: number;
+  isExpanded: boolean;
+  isDirectory: boolean;
+};
+
 export type {
   ClipboardAction,
   ClipboardSelection,
@@ -110,4 +131,6 @@ export type {
   EntryTree,
   MutationInput,
   MutationResult,
+  TreeIndex,
+  VisibleNode,
 };

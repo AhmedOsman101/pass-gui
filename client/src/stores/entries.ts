@@ -9,29 +9,6 @@ type FormMode = "create" | "edit";
 type SortMode = "alphabetical" | "reverse-alphabetical";
 
 /**
- * Recursively sorts an EntryTree.
- * Directories are always grouped first, regardless of sort mode.
- * The mode controls ordering within each group.
- */
-function sortTree(nodes: EntryTree, mode: SortMode): EntryTree {
-  const dirNodes = nodes.filter(n => n.type === "DIRECTORY");
-  const fileNodes = nodes.filter(n => n.type !== "DIRECTORY");
-
-  const cmp =
-    mode === "reverse-alphabetical"
-      ? (a: string, b: string) => b.localeCompare(a)
-      : (a: string, b: string) => a.localeCompare(b);
-
-  dirNodes.sort((a, b) => cmp(a.name, b.name));
-  fileNodes.sort((a, b) => cmp(a.name, b.name));
-
-  return [...dirNodes, ...fileNodes].map(node => ({
-    ...node,
-    children: node.children ? sortTree(node.children, mode) : undefined,
-  }));
-}
-
-/**
  * Manages the password entry tree and currently selected entry.
  *
  * Calls `Entries.list()` and `Entries.show()` services,
@@ -61,36 +38,6 @@ const useEntriesStore = defineStore("entries", () => {
   const SKELETON_DELAY_MS = 500;
 
   const isFormOpen = computed(() => formMode.value !== null);
-
-  const filteredTree = computed<EntryTree>(() => {
-    const source = tree.value;
-
-    // Apply search filter
-    let result: EntryTree;
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-
-      function filterNodes(nodes: EntryTree): EntryTree {
-        return nodes
-          .filter(
-            node =>
-              node.name.toLowerCase().includes(query) ||
-              node.path.toLowerCase().includes(query)
-          )
-          .map(node => ({
-            ...node,
-            children: node.children ? filterNodes(node.children) : undefined,
-          }));
-      }
-
-      result = filterNodes(source);
-    } else {
-      result = source;
-    }
-
-    // Apply sorting
-    return sortTree(result, sortMode.value);
-  });
 
   const hasEntries = computed(() => tree.value.length > 0);
 
@@ -371,7 +318,6 @@ const useEntriesStore = defineStore("entries", () => {
     formPath,
     formPresetPassword,
     isFormOpen,
-    filteredTree,
     hasEntries,
     loadTree,
     selectEntry,
