@@ -9,27 +9,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useEntriesStore } from "@/stores/entries";
 
 const props = defineProps<{
   parentPath?: string;
+  open?: boolean;
+}>();
+
+const emit = defineEmits<{
+  "update:open": [value: boolean];
 }>();
 
 const entries = useEntriesStore();
 
-const isOpen = ref(false);
 const folderName = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
 
-watch(isOpen, (open) => {
-  if (open) {
-    folderName.value = "";
-    formError.value = null;
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      folderName.value = "";
+      formError.value = null;
+    }
   }
-});
+);
 
 function buildFullPath(): string {
   if (props.parentPath) {
@@ -57,15 +63,12 @@ async function handleSubmit(): Promise<void> {
     return;
   }
 
-  isOpen.value = false;
+  emit("update:open", false);
 }
 </script>
 
 <template>
-  <Dialog v-model:open="isOpen">
-    <DialogTrigger as-child>
-      <slot />
-    </DialogTrigger>
+  <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="max-w-sm">
       <DialogHeader>
         <DialogTitle>Create Folder</DialogTitle>
@@ -88,9 +91,6 @@ async function handleSubmit(): Promise<void> {
         </p>
 
         <DialogFooter>
-          <Button type="button" variant="outline" @click="isOpen = false">
-            Cancel
-          </Button>
           <Button type="submit" :disabled="isSubmitting">
             <FolderPlus class="size-4 mr-1" />
             {{ isSubmitting ? "Creating..." : "Create" }}
