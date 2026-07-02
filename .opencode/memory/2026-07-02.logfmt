@@ -1,1 +1,2 @@
 ts=2026-07-02T14:39:31.426Z type=decision scope=pass-gui content="Expand/collapse animation for flat tree renderer: replaced `<SidebarMenu>` with `<TransitionGroup>` using `tag=\"ul\"` and same shadcn-vue data attributes/classes. CSS uses `translateY(-8px)` + `opacity` over 200ms for enter/leave, with `position: absolute` on leave to prevent layout jump." tags=animation,TransitionGroup,tree,Tree.vue
+ts=2026-07-02T15:01:34.977Z type=context scope=user content="Don't use unicode characters, either use ascii or icons (lucide icons), never raw unicode characters." tags=auto

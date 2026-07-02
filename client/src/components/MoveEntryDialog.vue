@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ChevronRight, Folder, FolderOpen, FolderPlus } from "@lucide/vue";
+import { Folder, FolderOpen, FolderPlus } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,8 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import DirectoryTree from "@/components/DirectoryTree.vue";
 import { useEntriesStore } from "@/stores/entries";
-import type { EntryNode } from "@/types/entries";
 
 const props = defineProps<{
   currentPath: string;
@@ -34,23 +34,6 @@ const folderError = ref<string | null>(null);
 const currentName = computed(() => {
   const parts = props.currentPath.split("/");
   return parts[parts.length - 1] ?? "";
-});
-
-const directories = computed(() => {
-  const dirs: { name: string; path: string }[] = [{ name: "(root)", path: "" }];
-
-  function collectDirs(nodes: EntryNode[], prefix: string): void {
-    for (const node of nodes) {
-      if (node.type === "DIRECTORY") {
-        const fullPath = prefix ? `${prefix}/${node.name}` : node.name;
-        dirs.push({ name: node.name, path: fullPath });
-        if (node.children) collectDirs(node.children, fullPath);
-      }
-    }
-  }
-
-  collectDirs(entries.tree, "");
-  return dirs;
 });
 
 function buildFullDestination(): string {
@@ -135,7 +118,7 @@ async function handleSubmit(): Promise<void> {
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Cut Entry</DialogTitle>
+        <DialogTitle>Move Entry</DialogTitle>
         <DialogDescription>
           Move <code class="font-mono">{{ currentPath }}</code> to a new location
         </DialogDescription>
@@ -147,19 +130,24 @@ async function handleSubmit(): Promise<void> {
           <label class="text-sm font-medium">Destination folder</label>
           <div class="max-h-48 overflow-y-auto rounded-md border bg-muted/30 p-2 space-y-0.5">
             <button
-              v-for="dir in directories"
-              :key="dir.path"
               type="button"
               class="flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm text-left transition-colors"
-              :class="selectedFolder === dir.path
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-accent/50'"
-              @click="selectedFolder = dir.path"
+              :class="
+                selectedFolder === ''
+                  ? 'bg-accent text-accent-foreground'
+                  : 'hover:bg-accent/50'
+              "
+              @click="selectedFolder = ''"
             >
-              <FolderOpen v-if="selectedFolder === dir.path" class="size-4 shrink-0" />
+              <FolderOpen v-if="selectedFolder === ''" class="size-4 shrink-0" />
               <Folder v-else class="size-4 shrink-0" />
-              <span class="truncate">{{ dir.name }}</span>
+              <span class="truncate">(root)</span>
             </button>
+            <DirectoryTree
+              :nodes="entries.tree"
+              :selected-path="selectedFolder"
+              @select="(p: string) => (selectedFolder = p)"
+            />
           </div>
         </div>
 
@@ -218,7 +206,7 @@ async function handleSubmit(): Promise<void> {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Cutting..." : "Cut" }}
+            {{ isSubmitting ? "Moving..." : "Move" }}
           </Button>
         </DialogFooter>
       </form>
