@@ -58,7 +58,19 @@ watch(
   { immediate: true }
 );
 
-// Global hotkeys — only active when there's something in the copy buffer
+// Global hotkeys
+useHotkey("Mod+C", () => {
+  if (entries.currentPath) {
+    entries.copyEntry(entries.currentPath);
+  }
+}, { enabled: hasSelection });
+
+useHotkey("Mod+X", () => {
+  if (entries.currentPath) {
+    entries.cutEntry(entries.currentPath);
+  }
+}, { enabled: hasSelection });
+
 useHotkey("Mod+V", () => {
   if (entries.copyBuffer) {
     const selected = entries.currentPath;
@@ -73,12 +85,6 @@ useHotkey("Mod+V", () => {
     }
   }
 }, { enabled: computed(() => !!entries.copyBuffer) });
-
-useHotkey("Mod+X", () => {
-  if (entries.currentPath) {
-    entries.cutEntry(entries.currentPath);
-  }
-}, { enabled: hasSelection });
 
 function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   for (const node of nodes) {

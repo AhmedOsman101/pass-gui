@@ -15,11 +15,16 @@ import { useEntriesStore } from "@/stores/entries";
 
 const props = defineProps<{
   currentPath: string;
+  nodeType?: "FILE" | "DIRECTORY";
+  open?: boolean;
+}>();
+
+const emit = defineEmits<{
+  "update:open": [value: boolean];
 }>();
 
 const entries = useEntriesStore();
 
-const isOpen = ref(false);
 const newName = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
@@ -35,6 +40,11 @@ const parentDir = computed(() => {
   return parts.join("/");
 });
 
+const isDirectory = computed(() => props.nodeType === "DIRECTORY");
+const dialogTitle = computed(() =>
+  isDirectory.value ? "Rename Folder" : "Rename Entry"
+);
+
 function buildNewPath(): string {
   if (parentDir.value) {
     return `${parentDir.value}/${newName.value}`;
@@ -42,18 +52,21 @@ function buildNewPath(): string {
   return newName.value;
 }
 
-watch(isOpen, (open) => {
-  if (open) {
-    newName.value = currentName.value;
-    formError.value = null;
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      newName.value = currentName.value;
+      formError.value = null;
+    }
   }
-});
+);
 
 useHotkey("F2", () => {
-  if (entries.currentPath && !isOpen.value) {
-    isOpen.value = true;
+  if (entries.currentPath && !props.open) {
+    emit("update:open", true);
   }
-}, { enabled: computed(() => !!entries.currentPath && !isOpen.value) });
+}, { enabled: computed(() => !!entries.currentPath && !props.open) });
 
 async function handleSubmit(): Promise<void> {
   const name = newName.value.trim();
@@ -71,7 +84,11 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.moveEntry(props.currentPath, fullPath);
+  const result = await entries.moveEntry(
+    props.currentPath,
+    fullPath,
+    props.nodeType
+  );
 
   isSubmitting.value = false;
 
@@ -80,18 +97,18 @@ async function handleSubmit(): Promise<void> {
     return;
   }
 
-  isOpen.value = false;
+  emit("update:open", false);
 }
 </script>
 
 <template>
-  <Dialog v-model:open="isOpen">
-    <DialogTrigger as-child>
+  <Dialog :open="open" @update:open="emit('update:open', $event)">
+    <DialogTrigger v-if="!open" as-child>
       <slot />
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Rename Entry</DialogTitle>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
         <DialogDescription>
           Rename <code class="font-mono">{{ currentPath }}</code>
         </DialogDescription>
@@ -114,13 +131,6 @@ async function handleSubmit(): Promise<void> {
         </p>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            @click="isOpen = false"
-          >
-            Cancel
-          </Button>
           <Button type="submit" :disabled="isSubmitting">
             {{ isSubmitting ? "Renaming..." : "Rename" }}
           </Button>

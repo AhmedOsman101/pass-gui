@@ -50,6 +50,10 @@ function handleSelect(): void {
   }
 }
 
+function handleDirClick(): void {
+  entries.setCurrentPath(props.node.path);
+}
+
 function handleCopy(): void {
   entries.copyEntry(props.node.path);
 }
@@ -82,7 +86,7 @@ function openDelete(): void {
           v-if="isEmpty"
           class="overflow-hidden"
           :title="node.name"
-          @click="emptyOpen = !emptyOpen"
+          @click="emptyOpen = !emptyOpen; handleDirClick()"
         >
           <ChevronRight
             class="shrink-0 transition-transform duration-200"
@@ -101,6 +105,7 @@ function openDelete(): void {
             <SidebarMenuButton
               class="overflow-hidden"
               :title="node.name"
+              @click="handleDirClick"
             >
               <ChevronRight
                 class="shrink-0 transition-transform duration-200"
@@ -153,6 +158,7 @@ function openDelete(): void {
     <RenameEntryDialog
       v-if="isRenameOpen"
       :current-path="node.path"
+      node-type="DIRECTORY"
       v-model:open="isRenameOpen"
     />
     <DeleteConfirmDialog
@@ -167,7 +173,7 @@ function openDelete(): void {
       <ContextMenuTrigger as-child>
         <SidebarMenuButton
           :is-active="isSelected"
-          class="data-[active=true]:bg-transparent overflow-hidden"
+          class="overflow-hidden"
           :title="node.name"
           @click="handleSelect"
         >

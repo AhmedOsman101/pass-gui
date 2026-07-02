@@ -15,6 +15,8 @@ const entries = useEntriesStore();
 const clipboard = useClipboardStore();
 
 const isSecretVisible = ref(false);
+const isDeleteOpen = ref(false);
+const isRenameOpen = ref(false);
 
 const entry = computed(() => entries.currentEntry);
 const showSkeleton = computed(() => entries.showEntrySkeleton);
@@ -199,8 +201,16 @@ function copyValue(value: string): void {
         <SquarePen class="size-4 mr-1" />
         Edit
       </Button>
-      <RenameEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
-        <Button variant="outline" size="sm">
+      <RenameEntryDialog
+        v-if="entries.currentPath"
+        :current-path="entries.currentPath"
+        v-model:open="isRenameOpen"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          @click="isRenameOpen = true"
+        >
           <Pencil class="size-4 mr-1" />
           Rename
         </Button>
@@ -211,8 +221,17 @@ function copyValue(value: string): void {
           Move
         </Button>
       </MoveEntryDialog>
-      <DeleteConfirmDialog v-if="entries.currentPath" :entry-path="entries.currentPath">
-        <Button variant="outline" size="sm" class="text-destructive hover:text-destructive">
+      <DeleteConfirmDialog
+        v-if="entries.currentPath"
+        :entry-path="entries.currentPath"
+        v-model:open="isDeleteOpen"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          class="text-destructive hover:text-destructive"
+          @click="isDeleteOpen = true"
+        >
           <Trash2 class="size-4 mr-1" />
           Delete
         </Button>

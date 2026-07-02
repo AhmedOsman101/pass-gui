@@ -146,6 +146,11 @@ const useEntriesStore = defineStore("entries", () => {
     }
   }
 
+  function setCurrentPath(path: string): void {
+    currentPath.value = path;
+    currentEntry.value = null;
+  }
+
   function clearSelection(): void {
     currentPath.value = null;
     currentEntry.value = null;
@@ -225,7 +230,8 @@ const useEntriesStore = defineStore("entries", () => {
 
   async function moveEntry(
     oldPath: string,
-    newPath: string
+    newPath: string,
+    nodeType?: "FILE" | "DIRECTORY"
   ): Promise<string | null> {
     error.value = null;
     const result = await Entries.move(oldPath, newPath);
@@ -235,7 +241,10 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
-    await selectEntry(newPath, true);
+    // Only select the entry if it's a file — directories can't be "shown"
+    if (nodeType !== "DIRECTORY") {
+      await selectEntry(newPath, true);
+    }
     return null;
   }
 
@@ -367,6 +376,7 @@ const useEntriesStore = defineStore("entries", () => {
     hasEntries,
     loadTree,
     selectEntry,
+    setCurrentPath,
     clearSelection,
     refresh,
     // Form actions

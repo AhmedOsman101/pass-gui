@@ -157,7 +157,7 @@ class Entries {
 
   /**
    * Removes a password entry from the store.
-   * Uses `pass rm -f` to skip confirmation prompts.
+   * Uses `pass rm -rf` to handle both files and directories.
    */
   static async remove(
     path: string
@@ -167,7 +167,7 @@ class Entries {
       MutationError | EntryNotFoundError | EntryAlreadyExistsError
     >
   > {
-    const result = await Pass.exec(["rm", "-f", path]);
+    const result = await Pass.exec(["rm", "-rf", path]);
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);
