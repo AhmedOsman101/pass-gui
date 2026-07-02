@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus, Sparkles, Search, FolderPlus, ArrowUpDown, Check } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { refDebounced } from "@vueuse/core";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,12 @@ const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!entries.currentPath);
 const isCreateFolderOpen = ref(false);
+
+const localSearchQuery = ref(entries.searchQuery);
+const debouncedSearch = refDebounced(localSearchQuery, 300);
+watch(debouncedSearch, (val) => {
+  entries.searchQuery = val;
+});
 
 const sortOptions: { value: SortMode; label: string }[] = [
   { value: "alphabetical", label: "A-Z" },
@@ -161,7 +168,7 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
                     class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
                   />
                   <input
-                    v-model="entries.searchQuery"
+                    v-model="localSearchQuery"
                     type="text"
                     placeholder="Search..."
                     class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
