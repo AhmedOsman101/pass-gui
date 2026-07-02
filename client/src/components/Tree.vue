@@ -32,12 +32,17 @@ const props = defineProps<{
 const entries = useEntriesStore();
 
 const isDirectory = computed(() => props.node.type === "DIRECTORY");
-
+const isEmpty = computed(
+  () => isDirectory.value && (!props.node.children || props.node.children.length === 0)
+);
 const isSelected = computed(() => entries.currentPath === props.node.path);
 
 const isRenameOpen = ref(false);
 const isDeleteOpen = ref(false);
 const isCreateFolderOpen = ref(false);
+
+// For empty dirs: manual arrow toggle without Collapsible expansion
+const emptyOpen = ref(false);
 
 function handleSelect(): void {
   if (props.node.type === "FILE") {
@@ -72,20 +77,40 @@ function openDelete(): void {
   <SidebarMenuItem v-if="isDirectory">
     <ContextMenu>
       <ContextMenuTrigger as-child>
+        <!-- Empty directory: no Collapsible, just arrow toggle -->
+        <SidebarMenuButton
+          v-if="isEmpty"
+          class="overflow-hidden"
+          :title="node.name"
+          @click="emptyOpen = !emptyOpen"
+        >
+          <ChevronRight
+            class="shrink-0 transition-transform duration-200"
+            :class="{ 'rotate-90': emptyOpen }"
+          />
+          <Folder class="shrink-0" />
+          <span class="truncate">{{ node.name }}</span>
+        </SidebarMenuButton>
+
+        <!-- Non-empty directory: Collapsible with expand/collapse -->
         <Collapsible
-          class="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+          v-else
+          v-slot="{ open }"
         >
           <CollapsibleTrigger as-child>
             <SidebarMenuButton
               class="overflow-hidden"
               :title="node.name"
             >
-              <ChevronRight class="shrink-0 transition-transform" />
+              <ChevronRight
+                class="shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': open }"
+              />
               <Folder class="shrink-0" />
               <span class="truncate">{{ node.name }}</span>
             </SidebarMenuButton>
           </CollapsibleTrigger>
-          <CollapsibleContent>
+          <CollapsibleContent class="collapsible-slide">
             <SidebarMenuSub class="ml-3.5 mr-0 pl-2.5 pr-0">
               <Tree
                 v-for="child in node.children"
@@ -192,3 +217,36 @@ function openDelete(): void {
     />
   </SidebarMenuItem>
 </template>
+
+<style>
+/* Smooth expand/collapse animation for CollapsibleContent */
+.collapsible-slide {
+  overflow: hidden;
+}
+.collapsible-slide[data-state="open"] {
+  animation: collapsible-open 200ms ease-out;
+}
+.collapsible-slide[data-state="closed"] {
+  animation: collapsible-close 150ms ease-in;
+}
+@keyframes collapsible-open {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--reka-collapsible-content-height);
+    opacity: 1;
+  }
+}
+@keyframes collapsible-close {
+  from {
+    height: var(--reka-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+</style>

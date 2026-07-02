@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, Sparkles, Search, FolderPlus } from "@lucide/vue";
+import { Plus, Sparkles, Search, FolderPlus, ArrowUpDown, Check } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,17 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Tree from "@/components/Tree.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
+import type { SortMode } from "@/stores/entries";
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +40,11 @@ const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!entries.currentPath);
 const isCreateFolderOpen = ref(false);
+
+const sortOptions: { value: SortMode; label: string }[] = [
+  { value: "alphabetical", label: "A-Z" },
+  { value: "reverse-alphabetical", label: "Z-A" },
+];
 
 function onPasswordSave(password: string): void {
   entries.openCreateForm(password);
@@ -91,7 +103,34 @@ useHotkey("Delete", () => {
 <template>
   <Sidebar v-bind="props" collapsible="none" class="w-full">
     <SidebarHeader class="border-b px-3 py-2">
-      <span class="text-sm font-semibold">pass-gui</span>
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold">pass-gui</span>
+        <DropdownMenu v-if="entries.hasEntries">
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 px-2 text-xs text-muted-foreground"
+            >
+              <ArrowUpDown class="size-3 mr-1" />
+              {{ sortOptions.find(o => o.value === entries.sortMode)?.label }}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="min-w-32">
+            <DropdownMenuItem
+              v-for="opt in sortOptions"
+              :key="opt.value"
+              @click="entries.setSortMode(opt.value)"
+            >
+              <Check
+                class="size-4 mr-2"
+                :class="entries.sortMode === opt.value ? 'opacity-100' : 'opacity-0'"
+              />
+              {{ opt.label }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </SidebarHeader>
     <ContextMenu>
       <ContextMenuTrigger as-child>

@@ -5,12 +5,21 @@ import type { EntryNode, EntryTree } from "@/types/entries";
 import type { MutationError } from "./errors";
 
 /**
+ * Default patterns for the ignore filter.
+ * These are always applied when walking the store.
+ * Will be extended in the future to support custom patterns
+ * and .gitignore file reading.
+ */
+const DEFAULT_IGNORE = [".git", ".gpg-id"];
+
+/**
  * Recursively filters a TreeDirectoryEntry[] to keep:
  * - .gpg files
  * - Directories that contain .gpg descendants
  * - Empty directories (newly created, no children yet)
  *
- * Prunes directories like .git that have children but none are .gpg.
+ * The ignore filter (DEFAULT_IGNORE) runs at the readDirectory level,
+ * so .git and .gpg-id are already excluded before this runs.
  */
 function filterGpgNodes(
   nodes: TreeDirectoryEntry[]
@@ -25,14 +34,14 @@ function filterGpgNodes(
       continue;
     }
 
-    // Directory — keep if empty or if it has .gpg descendants
+    // Directory — keep if it has children with .gpg descendants
     if (node.children && node.children.length > 0) {
       const filtered = filterGpgNodes(node.children);
       if (filtered && filtered.length > 0) {
         result.push({ ...node, children: filtered });
       }
     } else {
-      // Empty directory (no children or empty children array)
+      // Truly empty directory (no children at all)
       result.push({ ...node, children: undefined });
     }
   }
@@ -61,9 +70,10 @@ function toEntryNodes(nodes: TreeDirectoryEntry[]): EntryNode[] {
 /**
  * Walks the password store directory and returns a tree of EntryNode[].
  *
- * Uses fs.readDirectory with recursive: true to get the full hierarchy,
- * filters to only .gpg files and directories containing them, then
- * converts to the domain EntryNode type with .gpg extensions stripped.
+ * Uses fs.readDirectory with recursive: true and DEFAULT_IGNORE patterns
+ * to skip .git and .gpg-id, then filters to only .gpg files and
+ * directories containing them, then converts to the domain EntryNode
+ * type with .gpg extensions stripped.
  *
  * @example
  * ```ts
@@ -79,7 +89,10 @@ function toEntryNodes(nodes: TreeDirectoryEntry[]): EntryNode[] {
 async function walkStore(
   storePath: string
 ): Promise<Result<EntryTree, MutationError | Error>> {
-  const tree = await Fs.readDirectory(storePath, { recursive: true });
+  const tree = await Fs.readDirectory(storePath, {
+    recursive: true,
+    ignore: DEFAULT_IGNORE,
+  });
   if (tree.isError()) return Err(tree.error);
 
   const filtered = filterGpgNodes(tree.ok);
