@@ -135,7 +135,7 @@ async function handleSubmit(): Promise<void> {
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Move Entry</DialogTitle>
+        <DialogTitle>Cut Entry</DialogTitle>
         <DialogDescription>
           Move <code class="font-mono">{{ currentPath }}</code> to a new location
         </DialogDescription>
@@ -218,7 +218,7 @@ async function handleSubmit(): Promise<void> {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Moving..." : "Move" }}
+            {{ isSubmitting ? "Cutting..." : "Cut" }}
           </Button>
         </DialogFooter>
       </form>

@@ -148,7 +148,6 @@ const useEntriesStore = defineStore("entries", () => {
 
   function setCurrentPath(path: string): void {
     currentPath.value = path;
-    currentEntry.value = null;
   }
 
   function clearSelection(): void {

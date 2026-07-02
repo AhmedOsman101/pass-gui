@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Eye, EyeOff, Copy, ArrowRightLeft, Trash2, Pencil, SquarePen, Files, X, Plus, Sparkles } from "@lucide/vue";
+import { Eye, EyeOff, Copy, Scissors, Trash2, Pencil, SquarePen, Files, X, Plus, Sparkles } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
@@ -217,8 +217,8 @@ function copyValue(value: string): void {
       </RenameEntryDialog>
       <MoveEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
         <Button variant="outline" size="sm">
-          <ArrowRightLeft class="size-4 mr-1" />
-          Move
+          <Scissors class="size-4 mr-1" />
+          Cut
         </Button>
       </MoveEntryDialog>
       <DeleteConfirmDialog

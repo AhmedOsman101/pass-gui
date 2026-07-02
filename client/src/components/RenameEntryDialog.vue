@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,14 +58,9 @@ watch(
       newName.value = currentName.value;
       formError.value = null;
     }
-  }
+  },
+  { immediate: true }
 );
-
-useHotkey("F2", () => {
-  if (entries.currentPath && !props.open) {
-    emit("update:open", true);
-  }
-}, { enabled: computed(() => !!entries.currentPath && !props.open) });
 
 async function handleSubmit(): Promise<void> {
   const name = newName.value.trim();

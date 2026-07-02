@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronRight, Copy, File, Folder, Pencil, Trash2, ArrowRightLeft, FolderPlus } from "@lucide/vue";
+import { ChevronRight, Copy, File, Folder, Pencil, Trash2, Scissors, FolderPlus } from "@lucide/vue";
 import { ref, computed } from "vue";
 import {
   Collapsible,
@@ -24,6 +24,7 @@ import type { EntryNode } from "@/types/entries";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
 
 const props = defineProps<{
   node: EntryNode;
@@ -36,6 +37,21 @@ const isEmpty = computed(
   () => isDirectory.value && (!props.node.children || props.node.children.length === 0)
 );
 const isSelected = computed(() => entries.currentPath === props.node.path);
+
+useHotkey("F2", () => {
+  isRenameOpen.value = true;
+}, { enabled: isSelected });
+
+useHotkey("Delete", () => {
+  isDeleteOpen.value = true;
+}, { enabled: isSelected });
+
+const isCutDimmed = computed(
+  () => entries.copyBuffer?.mode === "cut" && entries.copyBuffer?.path === props.node.path,
+);
+const hasCopyBuffer = computed(
+  () => !!entries.copyBuffer && entries.copyBuffer.path === props.node.path,
+);
 
 const isRenameOpen = ref(false);
 const isDeleteOpen = ref(false);
@@ -58,7 +74,7 @@ function handleCopy(): void {
   entries.copyEntry(props.node.path);
 }
 
-function handleMove(): void {
+function handleCut(): void {
   entries.cutEntry(props.node.path);
 }
 
@@ -85,6 +101,7 @@ function openDelete(): void {
         <SidebarMenuButton
           v-if="isEmpty"
           class="overflow-hidden"
+          :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
           :title="node.name"
           @click="emptyOpen = !emptyOpen; handleDirClick()"
         >
@@ -104,6 +121,7 @@ function openDelete(): void {
           <CollapsibleTrigger as-child>
             <SidebarMenuButton
               class="overflow-hidden"
+              :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
               :title="node.name"
               @click="handleDirClick"
             >
@@ -174,6 +192,7 @@ function openDelete(): void {
         <SidebarMenuButton
           :is-active="isSelected"
           class="overflow-hidden"
+          :class="{ 'cut-dimmed': isCutDimmed, 'copy-pulse': hasCopyBuffer }"
           :title="node.name"
           @click="handleSelect"
         >
@@ -192,9 +211,9 @@ function openDelete(): void {
           Copy
           <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem @click="handleMove">
-          <ArrowRightLeft class="size-4 mr-2" />
-          Move
+        <ContextMenuItem @click="handleCut">
+          <Scissors class="size-4 mr-2" />
+          Cut
           <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem @click="openRename">
@@ -254,5 +273,17 @@ function openDelete(): void {
     height: 0;
     opacity: 0;
   }
+}
+
+.copy-pulse {
+  animation: copy-pulse 1.5s ease-in-out infinite;
+}
+@keyframes copy-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.cut-dimmed {
+  opacity: 0.4;
 }
 </style>

@@ -97,13 +97,6 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   return undefined;
 }
 
-useHotkey("F2", () => {
-  // Handled by RenameEntryDialog when open — this is a fallback for tree items
-}, { enabled: hasSelection });
-
-useHotkey("Delete", () => {
-  // Delete handled by context menu / EntryDetail — sidebar doesn't own the dialog
-}, { enabled: hasSelection });
 </script>
 
 <template>
