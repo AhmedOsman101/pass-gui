@@ -1,4 +1,4 @@
-# Frontend UI Remaining — Quest Chain
+# Frontend UI Remaining - Quest Chain
 
 > **For agentic workers:** Use superpowers:executing-plans or superpowers:subagent-driven-development to implement this plan task-by-task.
 
@@ -9,7 +9,7 @@
 - [ ] Quest 3: The Settings Page
 - [ ] Quest 4: The Clean Sweep
 
-**Goal:** Complete the remaining frontend work — app shell with sidebar layout, passwords page (two-panel tree + detail), settings page, and cleanup of old artifacts.
+**Goal:** Complete the remaining frontend work - app shell with sidebar layout, passwords page (two-panel tree + detail), settings page, and cleanup of old artifacts.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Replace the bare `ReadinessGate > RouterView + ClipboardToast` with a full shadc
 - Main area renders `<RouterView />` inside the inset
 - `ClipboardToast` stays as a floating element
 
-**Keep** `ReadinessGate` wrapping — it controls blocked vs. ready rendering.
+**Keep** `ReadinessGate` wrapping - it controls blocked vs. ready rendering.
 
 **Done when:** App shell renders with collapsible sidebar, header with search/mode/settings, and router view below.
 
@@ -54,7 +54,7 @@ Two-panel layout:
 - **Left panel**: scrollable area with `<Tree />` (flat renderer, already exists)
 - **Right panel**: `EntryDetail` when selected, or empty state "Select a password to view" when nothing selected
 
-**Empty state**: A centered message when `entries.currentEntry` is null — "Select a password to view its details."
+**Empty state**: A centered message when `entries.currentEntry` is null - "Select a password to view its details."
 
 **Done when:** Tree shows entries on the left, clicking a file shows its detail on the right. Works with readiness gate.
 
@@ -85,9 +85,10 @@ On mount, load config via `ConfigService.load()`. Each section has a Save button
 
 **What to delete:**
 
-- `about.vue` — old auto-router artifact
-- `test.vue` — old auto-router artifact
-- `index.vue` — old auto-router artifact (sidebar layout moved to App.vue)
+- `about.vue` - old auto-router artifact
+- `test.vue` - old auto-router artifact (will be gitignored per user request instead)
+
+**Note:** `index.vue` is the current main page with sidebar layout. Do NOT delete it.
 
 **Verify**: No remaining imports of these files anywhere.
 
@@ -97,8 +98,8 @@ On mount, load config via `ConfigService.load()`. Each section has a Save button
 
 ## Verification
 
-- `pnpm typecheck` — zero errors
-- `pnpm lint && pnpm format` — zero issues
+- `pnpm typecheck` - zero errors
+- `pnpm lint && pnpm format` - zero issues
 - App shell renders with collapsible sidebar
 - Header shows search, mode toggle, settings button
 - Passwords page shows tree on left, detail on right

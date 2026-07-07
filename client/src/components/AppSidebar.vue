@@ -68,13 +68,15 @@ watch(
 // Global hotkeys
 useHotkey("Mod+C", () => {
   if (entries.currentPath) {
-    entries.copyEntry(entries.currentPath);
+    const node = findNode(entries.tree, entries.currentPath);
+    entries.copyEntry(entries.currentPath, node?.type);
   }
 }, { enabled: hasSelection });
 
 useHotkey("Mod+X", () => {
   if (entries.currentPath) {
-    entries.cutEntry(entries.currentPath);
+    const node = findNode(entries.tree, entries.currentPath);
+    entries.cutEntry(entries.currentPath, node?.type);
   }
 }, { enabled: hasSelection });
 

@@ -40,3 +40,6 @@ lerna-debug.log*
 docs/refs
 review.md
 test.sh
+
+# Testing playground
+client/src/pages/test.vue

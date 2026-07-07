@@ -1,3 +1,4 @@
+import type { ExecCommandResult } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import {
   CommandFailedError,
@@ -5,10 +6,7 @@ import {
   EntryNotFoundError,
   MutationError,
 } from "@/lib/errors";
-import {
-  generateMemorablePassword,
-  generatePassword,
-} from "@/lib/generate-password";
+import { generateMemorablePassword } from "@/lib/generate-password";
 import { parsePassShowOutput } from "@/lib/parse-pass-show";
 import { walkStore } from "@/lib/store-walker";
 import type {
@@ -134,19 +132,14 @@ class Entries {
       MutationError | EntryNotFoundError | EntryAlreadyExistsError
     >
   > {
-    let content: string;
-
+    let result: Result<ExecCommandResult, CommandFailedError | Error>;
     if (options?.memorable) {
-      content = generateMemorablePassword();
+      result = await Pass.exec(["insert", "-f", path], {
+        stdIn: generateMemorablePassword(),
+      });
     } else {
-      const charset = options?.symbols ? "[:punct:][:alnum:]" : "[:alnum:]";
-      const length = options?.length ?? 25;
-      content = generatePassword(length, charset);
+      result = await Pass.exec(["generate", "-f", path]);
     }
-
-    const result = await Pass.exec(["generate", "-f", "-p", path], {
-      stdIn: content,
-    });
     if (result.isError()) {
       const mapped = mapPassError(result.error);
       return Err(mapped);

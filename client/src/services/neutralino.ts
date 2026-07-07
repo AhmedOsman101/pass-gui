@@ -96,14 +96,8 @@ class NeutralinoService {
       result.stdErr = stripAnsi(result.stdErr);
 
       if (result.exitCode !== 0) {
-        throw new CommandFailedError({
-          cmd,
-          args,
-          exitCode: result.exitCode,
-          stdOut: result.stdOut,
-          stdErr: result.stdErr,
-          pid: result.pid,
-        });
+        // ...result contains exitCode, stdOut, stdErr, and pid
+        throw new CommandFailedError({ cmd, args, ...result });
       }
 
       return result;
@@ -144,17 +138,13 @@ class NeutralinoService {
         cmd: "where.exe",
         args: [program],
       });
-      if (whereResult.isOk() && whereResult.ok.exitCode === 0) {
-        return Ok(true);
-      }
+      if (whereResult.isOk()) return Ok(true);
     } else {
       const whichResult = await this.exec({
         cmd: "which",
         args: [program],
       });
-      if (whichResult.isOk() && whichResult.ok.exitCode === 0) {
-        return Ok(true);
-      }
+      if (whichResult.isOk()) return Ok(true);
     }
 
     return Ok(false);

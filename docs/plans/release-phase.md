@@ -1,10 +1,10 @@
 # Release Phase — Implementation Plan
 
-> **Status**: ⏳ Waiting — Frontend Phase 04 UI (app shell, pages) must be complete before this phase begins. See `2026-07-02-frontend-ui-remaining.md`.
+> **Status**: [WAITING] Waiting — Frontend Phase 04 UI (app shell, pages) must be complete before this phase begins. See `2026-07-02-frontend-ui-remaining.md`.
 
 > **Spec**: `docs/specs/release.md`
 > **Roadmap**: `docs/roadmap/05-release-and-future-work.md`
-> **Depends on**: Phase 02 (readiness) ✅, Phase 03 (entry ops) ✅, Phase 04 (frontend UI) ⏳ partially complete
+> **Depends on**: Phase 02 (readiness) [DONE], Phase 03 (entry ops) [DONE], Phase 04 (frontend UI) [WAITING] partially complete
 
 ## Goal
 
@@ -130,10 +130,10 @@ if (!this.storeDirectory) {
 
 **Changes**: Update phase statuses:
 
-- Phase 02: "📋 Ready to implement" -> "✅ Done"
-- Phase 03: "📋 Planned" -> "✅ Done"
-- Phase 04: "📋 Planned" -> "✅ Done"
-- Phase 05: "📋 Planned" -> "✅ Done"
+- Phase 02: "[PLAN] Ready to implement" -> "[DONE] Done"
+- Phase 03: "[PLAN] Planned" -> "[DONE] Done"
+- Phase 04: "[PLAN] Planned" -> "[DONE] Done"
+- Phase 05: "[PLAN] Planned" -> "[DONE] Done"
 
 ### 8. `AGENTS.md`
 
@@ -262,10 +262,10 @@ Create 5 files under `docs/wiki/`:
 1. **`TODO.md`**: Mark all Phase 02/03/04 items as `[x]`. Add `## Future / Post-Release` section with deferred items.
 2. **`docs/roadmap/README.md`**: Add note at top: "All 5 roadmap phases are complete as of the 1.0.0 release. Future work is tracked in `TODO.md`."
 3. **`docs/README.md`**: Update the phase status table:
-   - Phase 02: "📋 Ready to implement" -> "✅ Done"
-   - Phase 03: "📋 Planned" -> "✅ Done"
-   - Phase 04: "📋 Planned" -> "✅ Done"
-   - Phase 05: "📋 Planned" -> "✅ Done"
+   - Phase 02: "[PLAN] Ready to implement" -> "[DONE] Done"
+   - Phase 03: "[PLAN] Planned" -> "[DONE] Done"
+- Phase 04: "[PLAN] Planned" -> "In Progress"
+   - Phase 05: "[PLAN] Planned" -> "[DONE] Done"
 4. **`AGENTS.md`**: In the "Current Project Reality" section, update the bullet list to reflect all phases complete. Remove references to planned/gap items. Keep architecture patterns, code style rules, service descriptions, and security guidance intact.
 
 ## Integration Points

@@ -20,6 +20,7 @@ const isRenameOpen = ref(false);
 
 const entry = computed(() => entries.currentEntry);
 const showSkeleton = computed(() => entries.showEntrySkeleton);
+const editPath = computed(() => entries.currentPath ?? "");
 
 const metadataEntries = computed(() => {
   if (!entry.value) return [];
@@ -196,7 +197,7 @@ function copyValue(value: string): void {
         v-if="entries.currentPath && entry"
         variant="outline"
         size="sm"
-        @click="entries.openEditForm(entries.currentPath!)"
+        @click="entries.openEditForm(editPath)"
       >
         <SquarePen class="size-4 mr-1" />
         Edit

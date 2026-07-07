@@ -295,19 +295,16 @@ class Readiness {
   private static async resolveGnupgHome(
     storePath: string
   ): Promise<string | undefined> {
-    try {
-      const config = await Config.load();
-      if (config.isError()) return;
+    const config = await Config.load();
+    if (config.isError()) return;
 
-      const stores = config.ok.data.stores;
-      for (const store of Object.values(stores)) {
-        if (store.path === storePath && store.gnupg_home) {
-          return store.gnupg_home;
-        }
+    const stores = config.ok.data.stores;
+    for (const store of Object.values(stores)) {
+      if (store.path === storePath && store.gnupg_home) {
+        return store.gnupg_home;
       }
-    } catch {
-      // Config not available, use default GNUPGHOME
     }
+
     return;
   }
 }

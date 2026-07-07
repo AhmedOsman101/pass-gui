@@ -68,11 +68,11 @@ One note: `Entries.show()` returns `raw: stdout` in `EntryDetail`. This raw outp
 
 ## Part 2: Solutions
 
-### Fix 1: Store.validatePath() -- check isDirectory result
+### ~~Fix 1: Store.validatePath() -- check isDirectory result~~
 
 Already done
 
-### Fix 2: Copy buffer stores node type for paste
+### ~~Fix 2: Copy buffer stores node type for paste~~
 
 ```typescript
 // client/src/stores/entries.ts -- copyBuffer type
@@ -105,7 +105,7 @@ Also update Tree.vue context menu calls to pass node type:
 <ContextMenuItem @click="entries.cutEntry(node.path, 'FILE')">
 ```
 
-### Fix 3: RenameEntryDialog receives nodeType from Tree.vue
+### ~~Fix 3: RenameEntryDialog receives nodeType from Tree.vue~~
 
 ```vue
 <!-- Tree.vue -- openRename passes nodeType -->
@@ -127,11 +127,11 @@ function openRename(path: string, nodeType?: "FILE" | "DIRECTORY"): void {
 
 I've told you the fix
 
-### Fix 5: Delete test.vue
+### ~~Fix 5: Delete test.vue~~
 
 Cancel
 
-### Fix 6: Fix unscoped styles in Tree.vue
+### ~~Fix 6: Fix unscoped styles in Tree.vue~~
 
 ```vue
 <style scoped>
@@ -150,7 +150,7 @@ Or if scoped doesn't work with TransitionGroup, use a unique prefix:
 </style>
 ```
 
-### Fix 7: Narrow the catch in readiness.ts
+### ~~Fix 7: Narrow the catch in readiness.ts~~
 
 ```typescript
 private static async resolveGnupgHome(storePath: string): Promise<string | undefined> {
@@ -175,15 +175,15 @@ private static async resolveGnupgHome(storePath: string): Promise<string | undef
 
 Or you can use `wrapAsync` from lib-result.
 
-### Fix 8: Release phase doc accuracy
+### ~~Fix 8: Release phase doc accuracy~~
 
 In `docs/plans/release-phase.md`, the checklist items that say "Phase 04: Done" should be reverted to "Phase 04: In Progress" or removed until the UI work from `2026-07-02-frontend-ui-remaining.md` is actually complete.
 
-### Fix 9: Frontend remaining plan -- fix index.vue reference
+### ~~Fix 9: Frontend remaining plan -- fix index.vue reference~~
 
 In `docs/plans/2026-07-02-frontend-ui-remaining.md`, line 89 lists `index.vue` as an artifact to delete. This is wrong -- `index.vue` IS the current main page with sidebar layout. The plan should be updated to say that `index.vue` stays and `App.vue` gets the sidebar layout, OR that `index.vue` is the route-level page and App.vue stays thin.
 
-### Fix 10: Sanitize raw Unicode in docs (optional, low priority)
+### ~~Fix 10: Sanitize raw Unicode in docs (optional, low priority)~~
 
 Replace raw Unicode characters in newly-edited docs with ASCII equivalents:
 
@@ -194,7 +194,7 @@ Replace raw Unicode characters in newly-edited docs with ASCII equivalents:
 
 Only apply to files touched in this session. Don't batch-edit old docs.
 
-### Fix 11: Non-null assertion in EntryDetail.vue
+### ~~Fix 11: Non-null assertion in EntryDetail.vue~~
 
 ```vue
 <script setup lang="ts">
@@ -204,7 +204,7 @@ const editPath = computed(() => entries.currentPath ?? "");
 <Button @click="entries.openEditForm(editPath)">
 ```
 
-### Fix 12: Paste failure feedback
+### ~~Fix 12: Paste failure feedback~~
 
 Add a small toast or inline error after paste operations. The simplest approach: emit a temporary error banner from the entries store error state, shown in AppSidebar or App.vue.
 
@@ -221,14 +221,14 @@ Add a small toast or inline error after paste operations. The simplest approach:
 
 ## Recommended Fix Order
 
-1. Fix 1 (Store.validatePath) -- 2 lines, real bug
-2. Fix 2 (copy buffer nodeType) -- paste directory crash
-3. Fix 3 (rename nodeType) -- rename directory crash
-4. Fix 5 (delete test.vue) -- 1 command
-5. Fix 6 (scoped styles) -- 1 word change
+1. ~~Fix 1 (Store.validatePath) -- 2 lines, real bug~~
+2. ~~Fix 2 (copy buffer nodeType) -- paste directory crash~~
+3. ~~Fix 3 (rename nodeType) -- rename directory crash~~
+4. ~~Fix 5 (delete test.vue) -- 1 command~~
+5. ~~Fix 6 (scoped styles) -- 1 word change~~
 6. Fix 4 (cache gpg opts) -- perf improvement
-7. Fix 7 (narrow catch) -- safety
-8. Fix 8 + 9 (docs accuracy) -- correctness
-9. Fix 11 (non-null assertion) -- cleanliness
-10. Fix 10 (Unicode) -- preference compliance
-11. Fix 12 (paste feedback) -- UX polish
+7. ~~Fix 7 (narrow catch) -- safety~~
+8. ~~Fix 8 + 9 (docs accuracy) -- correctness~~
+9. ~~Fix 11 (non-null assertion) -- cleanliness~~
+10. ~~Fix 10 (Unicode) -- preference compliance~~
+11. ~~Fix 12 (paste feedback) -- UX polish~~

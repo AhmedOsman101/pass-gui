@@ -27,7 +27,6 @@ const {
   focusedPath,
   selectedPath,
   toggleDir,
-  selectFile,
   toggleSelect,
   focusNext,
   focusPrev,
@@ -38,13 +37,15 @@ const {
 
 const isRenameOpen = ref(false);
 const renamePath = ref<string | null>(null);
+const renameNodeType = ref<"FILE" | "DIRECTORY">("FILE");
 const isDeleteOpen = ref(false);
 const deletePath = ref<string | null>(null);
 const isCreateFolderOpen = ref(false);
 const createFolderParent = ref<string | null>(null);
 
-function openRename(path: string): void {
+function openRename(path: string, nodeType?: "FILE" | "DIRECTORY"): void {
   renamePath.value = path;
+  renameNodeType.value = nodeType ?? "FILE";
   isRenameOpen.value = true;
 }
 
@@ -88,7 +89,10 @@ function hasCopyBuffer(path: string): boolean {
 const hasSelected = computed(() => !!selectedPath.value);
 
 useHotkey("F2", () => {
-  if (selectedPath.value) openRename(selectedPath.value);
+  if (selectedPath.value) {
+    const node = visibleNodes.value.find((n) => n.path === selectedPath.value);
+    openRename(selectedPath.value, node?.isDirectory ? "DIRECTORY" : "FILE");
+  }
 }, { enabled: hasSelected });
 
 useHotkey("Delete", () => {
@@ -152,7 +156,7 @@ useHotkey("Enter", () => { focusSelect(); });
             <FolderPlus class="size-4 mr-2" />
             New Folder
           </ContextMenuItem>
-          <ContextMenuItem @click="openRename(node.path)">
+          <ContextMenuItem @click="openRename(node.path, 'DIRECTORY')">
             <Pencil class="size-4 mr-2" />
             Rename
             <ContextMenuShortcut>F2</ContextMenuShortcut>
@@ -172,17 +176,17 @@ useHotkey("Enter", () => { focusSelect(); });
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="entries.copyEntry(node.path)">
+          <ContextMenuItem @click="entries.copyEntry(node.path, 'FILE')">
             <Copy class="size-4 mr-2" />
             Copy
             <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="entries.cutEntry(node.path)">
+          <ContextMenuItem @click="entries.cutEntry(node.path, 'FILE')">
             <Scissors class="size-4 mr-2" />
             Cut
             <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="openRename(node.path)">
+          <ContextMenuItem @click="openRename(node.path, 'FILE')">
             <Pencil class="size-4 mr-2" />
             Rename
             <ContextMenuShortcut>F2</ContextMenuShortcut>
@@ -201,6 +205,7 @@ useHotkey("Enter", () => { focusSelect(); });
   <RenameEntryDialog
     v-if="isRenameOpen && renamePath"
     :current-path="renamePath"
+    :node-type="renameNodeType"
     v-model:open="isRenameOpen"
   />
   <DeleteConfirmDialog

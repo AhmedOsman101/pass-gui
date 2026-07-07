@@ -1,4 +1,4 @@
-import { Err, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { StoreConfig } from "@/types/config";
 import { Config } from "./config";
 import { Fs } from "./filesystem";
@@ -33,6 +33,9 @@ class Store {
     const existsResult = await Fs.isDirectory(store.ok.path);
 
     if (existsResult.isError()) return Err(existsResult.error);
+    if (!existsResult.ok) {
+      return ErrFromText(`Store path is not a directory: ${store.ok.path}`);
+    }
     return Ok(undefined);
   }
 }

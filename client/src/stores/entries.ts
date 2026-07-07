@@ -24,7 +24,11 @@ const useEntriesStore = defineStore("entries", () => {
   const showEntrySkeleton = ref(false);
   const searchQuery = ref("");
   const error = ref<string | null>(null);
-  const copyBuffer = ref<{ path: string; mode: "copy" | "cut" } | null>(null);
+  const copyBuffer = ref<{
+    path: string;
+    mode: "copy" | "cut";
+    nodeType: "FILE" | "DIRECTORY";
+  } | null>(null);
 
   // Sort state
   const sortMode = ref<SortMode>("alphabetical");
@@ -226,22 +230,22 @@ const useEntriesStore = defineStore("entries", () => {
     return null;
   }
 
-  function copyEntry(path: string): void {
-    copyBuffer.value = { path, mode: "copy" };
+  function copyEntry(path: string, nodeType?: "FILE" | "DIRECTORY"): void {
+    copyBuffer.value = { path, mode: "copy", nodeType: nodeType ?? "FILE" };
   }
 
-  function cutEntry(path: string): void {
-    copyBuffer.value = { path, mode: "cut" };
+  function cutEntry(path: string, nodeType?: "FILE" | "DIRECTORY"): void {
+    copyBuffer.value = { path, mode: "cut", nodeType: nodeType ?? "FILE" };
   }
 
   async function pasteEntry(destinationDir: string): Promise<string | null> {
     if (!copyBuffer.value) return null;
 
     error.value = null;
-    const { path: sourcePath, mode } = copyBuffer.value;
+    const { path: sourcePath, mode, nodeType } = copyBuffer.value;
     const fileName = sourcePath.split("/").pop() as string;
     const destPath = destinationDir
-      ? `${destinationDir}/${fileName}`
+      ? await Fs.join(destinationDir, fileName)
       : fileName;
 
     let result:
@@ -261,7 +265,9 @@ const useEntriesStore = defineStore("entries", () => {
       return msg;
     }
     await refresh();
-    await selectEntry(destPath, true);
+    if (nodeType !== "DIRECTORY") {
+      await selectEntry(destPath, true);
+    }
     return null;
   }
 
