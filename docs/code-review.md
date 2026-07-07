@@ -14,11 +14,11 @@ Scope: services, stores, lib, composables, components, pages, router, types, doc
 
 2. ~~services/store.ts:33-36: bug `Store.validatePath()` never checks the `isDirectory` result. If the path is a file (not a directory), it returns `Ok(undefined)` -- validation passes for non-directory paths. Every caller that relies on this to confirm a valid store directory is operating on a lie.~~ [Solved]
 
-3. stores/entries.ts:250-264: bug `pasteEntry()` always calls `selectEntry(destPath)` after paste. If the copy buffer source was a DIRECTORY, this runs `pass show <directory>` which fails with a mutation error in the UI. The source node type is never stored in the copy buffer.
+3. ~~stores/entries.ts:250-264: bug `pasteEntry()` always calls `selectEntry(destPath)` after paste. If the copy buffer source was a DIRECTORY, this runs `pass show <directory>` which fails with a mutation error in the UI. The source node type is never stored in the copy buffer.~~
 
-4. components/Tree.vue:155 + RenameEntryDialog.vue:81-84: bug `openRename(node.path)` does not pass `nodeType` to the rename dialog. `RenameEntryDialog` always receives `nodeType=undefined`, so `moveEntry()` always treats the renamed item as a file. After renaming a directory, `selectEntry(newPath)` fires and `pass show` on a directory path fails.
+4. ~~components/Tree.vue:155 + RenameEntryDialog.vue:81-84: bug `openRename(node.path)` does not pass `nodeType` to the rename dialog. `RenameEntryDialog` always receives `nodeType=undefined`, so `moveEntry()` always treats the renamed item as a file. After renaming a directory, `selectEntry(newPath)` fires and `pass show` on a directory path fails.~~
 
-5. services/entries.ts:91: nit `parsePassShowOutput` error is wrapped in a `MutationError` with `stdOut` as the message, leaking raw pass output into error state. Not a security leak (stdout doesn't contain secrets in error context) but bad UX.
+5. ~~services/entries.ts:91: nit `parsePassShowOutput` error is wrapped in a `MutationError` with `stdOut` as the message, leaking raw pass output into error state. Not a security leak (stdout doesn't contain secrets in error context) but bad UX.~~
 
 ### Performance / Architecture Risks
 

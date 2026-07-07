@@ -86,7 +86,7 @@ class Entries {
 
     const parsed = parsePassShowOutput(result.ok.stdOut, path);
     if (parsed.isError()) {
-      return Err(new MutationError(-1, result.ok.stdOut, parsed.error.message));
+      return Err(new MutationError(-1, result.ok.stdErr, parsed.error.message));
     }
 
     return Ok(parsed.ok);
