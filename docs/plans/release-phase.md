@@ -264,8 +264,10 @@ Create 5 files under `docs/wiki/`:
 3. **`docs/README.md`**: Update the phase status table:
    - Phase 02: "[PLAN] Ready to implement" -> "[DONE] Done"
    - Phase 03: "[PLAN] Planned" -> "[DONE] Done"
+
 - Phase 04: "[PLAN] Planned" -> "In Progress"
-   - Phase 05: "[PLAN] Planned" -> "[DONE] Done"
+  - Phase 05: "[PLAN] Planned" -> "[DONE] Done"
+
 4. **`AGENTS.md`**: In the "Current Project Reality" section, update the bullet list to reflect all phases complete. Remove references to planned/gap items. Keep architecture patterns, code style rules, service descriptions, and security guidance intact.
 
 ## Integration Points
