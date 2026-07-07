@@ -31,14 +31,18 @@ before moving to the next file.
 
 ## Doc Structure
 
-Each roadmap phase has two companion files in `docs/`:
+Each roadmap phase has companion files in `docs/`:
 
-| Phase                  | Spec (scope + acceptance)         | Plan (execution steps)                  |
-| ---------------------- | --------------------------------- | --------------------------------------- |
-| 02 – Backend Readiness | `docs/specs/backend-readiness.md` | `docs/plans/backend-readiness-phase.md` |
-| 03 – Entry Operations  | `docs/specs/entry-operations.md`  | `docs/plans/entry-operations-phase.md`  |
-| 04 – Frontend UI       | `docs/specs/frontend-ui.md`       | `docs/plans/frontend-ui-phase.md`       |
-| 05 – Release           | `docs/specs/release.md`           | `docs/plans/release-phase.md`           |
+| Phase                  | Spec (scope + acceptance)         | Plan (execution steps)                              | Status         |
+| ---------------------- | --------------------------------- | --------------------------------------------------- | -------------- |
+| 02 – Backend Readiness | `docs/specs/backend-readiness.md` | `docs/plans/2026-06-27-onboarding-state-machine.md` | ✅ Complete    |
+| 03 – Entry Operations  | `docs/specs/entry-operations.md`  | `docs/plans/2026-06-30-entry-operations.md`         | ✅ Complete    |
+| 04 – Frontend UI       | `docs/specs/frontend-ui.md`       | `docs/plans/2026-07-01-frontend-phase-04.md`        | ⏳ Partial     |
+| 04b – Frontend UI      | —                                 | `docs/plans/2026-07-02-frontend-ui-remaining.md`    | 🔲 Not started |
+| 05 – Release           | `docs/specs/release.md`           | `docs/plans/release-phase.md`                       | ⏳ Waiting     |
+
+> Superseded plans remain in `docs/plans/` as historical records:
+> `backend-readiness-phase.md` and `entry-operations-phase.md` -- kept for architecture reference but not current execution sources. The `frontend-ui-phase.md` is a high-level summary; the dated plan is the actual step-by-step execution document.
 
 ## Notes
 
@@ -50,4 +54,4 @@ Each roadmap phase has two companion files in `docs/`:
 
 ---
 
-Last updated: June 15, 2026
+Last updated: July 2, 2026

@@ -1,5 +1,7 @@
 # 03 Entry And Operations Backend
 
+> **Status**: ✅ Complete — EntriesService, ClipboardService, walkStore, parsePassShowOutput, all entry domain types implemented and in production.
+
 ## Purpose
 
 Build the real password-management backend only after readiness is complete.

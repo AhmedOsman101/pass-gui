@@ -1,5 +1,9 @@
 # Onboarding State Machine — Quest Chain
 
+> **Status**: ✅ Complete — all 7 quests implemented. 10-state readiness model, 14 issue codes, StoreValidationService, ReadinessService orchestrator all in production at `client/src/services/`.
+
+> **Deviations**: None significant. Quest 3 (tree whitelist) was simpler than planned — one enum + one array entry. Quest 4's `validateBehavior` renamed to `validateBehaviorally` to match pass convention.
+
 > **For agentic workers:** Use superpowers:executing-plans or superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 ## Progress

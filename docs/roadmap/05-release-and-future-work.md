@@ -1,5 +1,7 @@
 # 05 Release And Future Work
 
+> **Status**: ⏳ Waiting — Phase 04 frontend must complete first.
+
 ## Purpose
 
 Finish the app for real use and define what comes after the first reliable

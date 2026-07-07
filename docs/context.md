@@ -22,13 +22,13 @@ pass-gui/
 ├── biome.json                   # Biome linter/formatter (sole lint tool, no ESLint)
 ├── neutralino.config.json       # NeutralinoJS app config
 ├── docs/
-│   ├── roadmap/                 # Strategic roadmap (read 01→05)
+│   ├── roadmap/                 # Strategic roadmap (read 01->05)
 │   ├── specs/                   # Stable scoping specs per phase
 │   ├── plans/                   # Execution plans per phase
 │   └── references/              # NeutralinoJS + j-toml API docs
 └── client/src/
     ├── main.ts                  # Entry point: mounts Vue, inits services
-    ├── App.vue                  # Root: ReadinessGate → loading/blocked/ready
+    ├── App.vue                  # Root: ReadinessGate -> loading/blocked/ready
     ├── router.ts                # Vue Router (file-based routing from pages/)
     ├── types/
     │   ├── index.ts             # Brand, Version, SecretKey, ALLOWED_COMMANDS
@@ -57,7 +57,7 @@ pass-gui/
     │   ├── gpg.ts               # Gpg singleton: gpg2/gpg detection, secret key listing (300L)
     │   ├── store.ts             # Store class: get/set/validatePath (40L)
     │   ├── store-validation.ts  # StoreValidation: parseGpgId/verifyRecipients/validateBehavior (147L)
-    │   ├── readiness.ts         # Readiness orchestrator: check() → ReadinessSnapshot (315L)
+    │   ├── readiness.ts         # Readiness orchestrator: check() -> ReadinessSnapshot (315L)
     │   ├── entries.ts           # Entries class: list/show/insert/generate/remove/copy/move/edit (252L)
     │   └── clipboard.ts         # Clipboard class: readText/writeText/clear (80L)
     ├── stores/
@@ -86,7 +86,7 @@ pass-gui/
         ├── GenerateDialog.vue       # Generate-and-save dialog (234L)
         ├── InsertDialog.vue         # Simple insert dialog (148L)
         ├── ModeToggle.vue           # Dark/light/system theme toggle (36L)
-        ├── ReadinessGate.vue        # App entry: load→evaluate→loading/blocked/ready (44L)
+        ├── ReadinessGate.vue        # App entry: load->evaluate->loading/blocked/ready (44L)
         ├── BlockedScreen.vue        # Shows blocking issue + retry (51L)
         ├── IssueCard.vue            # Maps 14 issue codes to guidance (126L)
         ├── LoadingScreen.vue        # Skeleton loading screen (13L)
@@ -100,7 +100,7 @@ pass-gui/
 ### Layering
 
 ```
-config → readiness → entry operations → state contracts → UI
+config -> readiness -> entry operations -> state contracts -> UI
 ```
 
 Each layer depends on the one before it. **All backend layers are complete.** The app is in the UI layer (Phase 04).
@@ -109,18 +109,18 @@ Each layer depends on the one before it. **All backend layers are complete.** Th
 
 All singletons, all in `client/src/services/`:
 
-| Service                  | File                  | Lines | Purpose                                                                               |
-| ------------------------ | --------------------- | ----- | ------------------------------------------------------------------------------------- |
-| `Neu`                    | `neutralino.ts`       | 242   | Command exec, binary resolution, env vars, command existence checking                 |
-| `Fs`                     | `filesystem.ts`       | 397   | mkdir, exists, readFile, writeFile, readDirectory (flat+tree), buildTree, ignore filter |
-| `Config`                 | `config.ts`           | 255   | load/save/ensure, generic getValue/setValue, platform-aware paths                     |
-| `Pass`                   | `pass.ts`             | 198   | Binary validation, version check, scoped exec with PASSWORD_STORE_DIR                 |
-| `Gpg`                    | `gpg.ts`              | 300   | gpg2/gpg detection, version parsing, secret key listing with colon-parsed output      |
-| `Store`                  | `store.ts`            | 40    | get/set/validatePath for stores from config                                           |
-| `StoreValidation`        | `store-validation.ts` | 147   | .gpg-id parsing, recipient verification, behavioral check, hasEntries                 |
-| `Readiness`              | `readiness.ts`        | 315   | check(storePath) → ReadinessSnapshot, sequential dependency checks                    |
-| `Entries`                | `entries.ts`          | 252   | list/show/insert/generate/remove/copy/move/edit with mapPassError                    |
-| `Clipboard`              | `clipboard.ts`        | 80    | readText/writeText/clear via NeutralinoJS native API                                  |
+| Service           | File                  | Lines | Purpose                                                                                 |
+| ----------------- | --------------------- | ----- | --------------------------------------------------------------------------------------- |
+| `Neu`             | `neutralino.ts`       | 242   | Command exec, binary resolution, env vars, command existence checking                   |
+| `Fs`              | `filesystem.ts`       | 397   | mkdir, exists, readFile, writeFile, readDirectory (flat+tree), buildTree, ignore filter |
+| `Config`          | `config.ts`           | 255   | load/save/ensure, generic getValue/setValue, platform-aware paths                       |
+| `Pass`            | `pass.ts`             | 198   | Binary validation, version check, scoped exec with PASSWORD_STORE_DIR                   |
+| `Gpg`             | `gpg.ts`              | 300   | gpg2/gpg detection, version parsing, secret key listing with colon-parsed output        |
+| `Store`           | `store.ts`            | 40    | get/set/validatePath for stores from config                                             |
+| `StoreValidation` | `store-validation.ts` | 147   | .gpg-id parsing, recipient verification, behavioral check, hasEntries                   |
+| `Readiness`       | `readiness.ts`        | 315   | check(storePath) -> ReadinessSnapshot, sequential dependency checks                     |
+| `Entries`         | `entries.ts`          | 252   | list/show/insert/generate/remove/copy/move/edit with mapPassError                       |
+| `Clipboard`       | `clipboard.ts`        | 80    | readText/writeText/clear via NeutralinoJS native API                                    |
 
 ### Init Flow (main.ts)
 
@@ -129,17 +129,18 @@ All singletons, all in `client/src/services/`:
 const app = createApp(App);
 app.use(createPinia());
 app.use(router);
-app.mount("#app");           // Mounts BEFORE service init
+app.mount("#app"); // Mounts BEFORE service init
 
 Neutralino.init();
-await neuInitialized;       // Resolves home directory
-await gpgInitialized;       // Detects GPG binary, reads GNUPGHOME
-await passInitialized;      // Reads PASSWORD_STORE_DIR, checks .gpg-id
+await neuInitialized; // Resolves home directory
+await gpgInitialized; // Detects GPG binary, reads GNUPGHOME
+await passInitialized; // Reads PASSWORD_STORE_DIR, checks .gpg-id
 ```
 
 **App.vue flow**:
+
 1. `ReadinessGate` mounts
-2. On mount: `activeStore.load()` → `readiness.evaluate(storePath)`
+2. On mount: `activeStore.load()` -> `readiness.evaluate(storePath)`
 3. While loading: `LoadingScreen` (skeleton)
 4. If blocked: `BlockedScreen` (issue cards + retry)
 5. If ready: `<slot>` (renders `RouterView` + `ClipboardToast`)
@@ -148,12 +149,12 @@ await passInitialized;      // Reads PASSWORD_STORE_DIR, checks .gpg-id
 
 ### Pinia Stores
 
-| Store              | File             | Lines | State                                                  | Key Actions                                                        |
-| ------------------ | ---------------- | ----- | ------------------------------------------------------ | ------------------------------------------------------------------ |
-| `readiness`        | `readiness.ts`   | 69    | snapshot, isEvaluating, error                          | evaluate(storePath), reset()                                       |
-| `active-store`     | `active-store.ts`| 126   | storePath, storeName, isValidating, error              | load(), switchTo(name), getGpgHome()                               |
-| `entries`          | `entries.ts`     | 401   | tree, currentPath, currentEntry, searchQuery, formMode | loadTree, selectEntry, insert/generate/remove/move/duplicate/edit  |
-| `clipboard`        | `clipboard.ts`   | 104   | lastAction, remainingMs, timerId, isCopied             | copy(secret, path), clear(), startTimer, stopTimer                 |
+| Store          | File              | Lines | State                                                  | Key Actions                                                       |
+| -------------- | ----------------- | ----- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `readiness`    | `readiness.ts`    | 69    | snapshot, isEvaluating, error                          | evaluate(storePath), reset()                                      |
+| `active-store` | `active-store.ts` | 126   | storePath, storeName, isValidating, error              | load(), switchTo(name), getGpgHome()                              |
+| `entries`      | `entries.ts`      | 401   | tree, currentPath, currentEntry, searchQuery, formMode | loadTree, selectEntry, insert/generate/remove/move/duplicate/edit |
+| `clipboard`    | `clipboard.ts`    | 104   | lastAction, remainingMs, timerId, isCopied             | copy(secret, path), clear(), startTimer, stopTimer                |
 
 All stores are setup stores (function form), return `Result` types from actions, and consume service contracts.
 
@@ -178,9 +179,9 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 ### Backend (Phases 02 + 03 — COMPLETE)
 
 - **Config system** — load/save/ensure/getValue/setValue with Zod validation, TOML comment preservation via `@ltd/j-toml`, cross-field validation (active_store references valid store), commented default config on first write
-- **Readiness orchestrator** — Sequential checks: pass → tree → gpg → gpgKeys → store → storeEmpty. Returns `ReadinessSnapshot` with state + issues.
+- **Readiness orchestrator** — Sequential checks: pass -> tree -> gpg -> gpgKeys -> store -> storeEmpty. Returns `ReadinessSnapshot` with state + issues.
 - **Store validation** — .gpg-id parsing (comment stripping, fingerprint detection), recipient verification (fingerprint exact + short ID suffix match), behavioral check (`pass ls`), hasEntries check
-- **Entry operations** — All CRUD: list (filesystem-based via store-walker), show (pass show parsing), insert (pass insert -m -f), generate (pass generate + memorable), remove (pass rm -rf), copy (show→insert), move (pass mv), edit (show→insert with force)
+- **Entry operations** — All CRUD: list (filesystem-based via store-walker), show (pass show parsing), insert (pass insert -m -f), generate (pass generate + memorable), remove (pass rm -rf), copy (show->insert), move (pass mv), edit (show->insert with force)
 - **Clipboard service** — writeText/clear with config-backed timeout, drift-corrected timer
 - **Shell security** — POSIX/Windows quoting, argument validation, directory traversal detection (`../`, null bytes)
 - **NeutralinoService** — Command execution with ANSI stripping, binary resolution with symlink following, env var access, command existence checking
@@ -189,7 +190,7 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 
 ### Frontend (Phase 04 — 6/7 quests complete)
 
-- **Readiness-driven app entry** — ReadinessGate → LoadingScreen/BlockedScreen/ready slot
+- **Readiness-driven app entry** — ReadinessGate -> LoadingScreen/BlockedScreen/ready slot
 - **App shell** — Resizable two-panel layout (AppSidebar + EntryDetail)
 - **Sidebar** — Search, recursive tree, context menus (copy/move/rename/delete/new folder), sort dropdown, global hotkeys (Ctrl+C/X/V, F2, Delete)
 - **Entry detail** — Secret field with show/hide/copy, metadata display with friendly labels, notes section, action bar (duplicate/edit/rename/move/delete)
@@ -218,7 +219,7 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 
 ### Phase 05 — Release (NOT STARTED)
 
-- ❌ Module-level init promises → graceful degradation (lazy init guards)
+- ❌ Module-level init promises -> graceful degradation (lazy init guards)
 - ❌ Onboarding flows (missing pass, missing GPG keys, store creation)
 - ❌ Per-store GNUPGHOME override handling
 - ❌ Session-scoped store switching UI
@@ -299,7 +300,7 @@ type MutationResult = { success: boolean; path: string; oldPath?: string };
 - **Formatting (Biome)**: 2-space indent, 80 char width, LF, ES5 trailing commas, semicolons always, double quotes for JSX/HTML
 - **Naming**: `PascalCase.vue` (components), `use*.ts` (composables), `camelCase.ts` (stores/services/utils), `UPPER_SNAKE_CASE` (constants)
 - **Imports**: Third-party at top, internal with `@/` alias
-- **Security**: Never log plaintext passwords, mask with `•••••`, clear clipboard after timeout, use GPG agent, validate all inputs
+- **Security**: Never log plaintext passwords, mask with `- - - - - `, clear clipboard after timeout, use GPG agent, validate all inputs
 
 ---
 
@@ -322,13 +323,13 @@ pnpm release          # Release build
 
 ## Roadmap Status
 
-| Phase | Description                  | Status       |
-| ----- | ---------------------------- | ------------ |
-| 01    | Current State & Direction    | ✅ Done      |
-| 02    | Backend Foundation & Readiness | ✅ Complete |
-| 03    | Entry & Operations Backend   | ✅ Complete   |
-| 04    | Frontend After Backend       | 🔄 In Progress (6/7 quests) |
-| 05    | Release & Future Work        | ⏳ Not Started |
+| Phase | Description                    | Status                      |
+| ----- | ------------------------------ | --------------------------- |
+| 01    | Current State & Direction      | ✅ Done                     |
+| 02    | Backend Foundation & Readiness | ✅ Complete                 |
+| 03    | Entry & Operations Backend     | ✅ Complete                 |
+| 04    | Frontend After Backend         | 🔄 In Progress (6/7 quests) |
+| 05    | Release & Future Work          | ⏳ Not Started              |
 
 ---
 
@@ -336,7 +337,7 @@ pnpm release          # Release build
 
 1. **Services call NeutralinoJS, not components.** Components never call Neutralino directly.
 2. **All errors use `Result<T, E>`.** No throwing for expected failures.
-3. **Backend-first.** Readiness → entry ops → state contracts → UI. Never skip layers.
+3. **Backend-first.** Readiness -> entry ops -> state contracts -> UI. Never skip layers.
 4. **Password stores are valid only in**: `$PASSWORD_STORE_DIR` (if set) or `$HOME/.password-store`. Do not search arbitrary paths.
 5. **Neutralino is already initialized in `main.ts`.** Do not reinitialize.
 6. **Multi-store from day one.** Config already supports `stores: Record<string, StoreConfig>`.

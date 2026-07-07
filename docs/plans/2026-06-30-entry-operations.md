@@ -1,5 +1,9 @@
 # Entry Operations — Quest Chain
 
+> **Status**: ✅ Complete — all 7 quests implemented. EntriesService (instance), ClipboardService, walkStore, parsePassShowOutput, domain types all in production at `client/src/services/`.
+
+> **Deviations**: Already noted in Quest 5 — `execScoped` merged into `exec`, instance not static, no standalone contract types.
+
 > **For agentic workers:** Use superpowers:executing-plans or superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 ## Progress

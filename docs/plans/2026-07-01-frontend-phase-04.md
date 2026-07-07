@@ -10,11 +10,19 @@
 - [x] Quest 4: The Entry Detail
 - [x] Quest 5: The Clipboard Ritual
 - [x] Quest 6: The Mutation Flows
-- [ ] Quest 7: The Ledger Reconciliation
+- [x] Quest 7: The Ledger Reconciliation
 
 **Goal:** Build the frontend UI that consumes Phase 02/03 backend contracts — readiness state machine, entry operations, clipboard — and delivers an end-to-end user journey: open app, understand readiness, view entries, inspect a entry, copy a value, perform mutations.
 
 **Tech Stack:** Vue 3.5 (setup script), Pinia 3, TypeScript 5.9, TailwindCSS 4, shadcn-vue 2, lib-result 5, NeutralinoJS 6.4.
+
+## Deviations from Actual Codebase
+
+- **Quest 2b (App.vue)**: Plan says replace App.vue with sidebar layout. Actual App.vue remained thin — `ReadinessGate > RouterView + ClipboardToast`. The sidebar layout lives in `pages/index.vue` instead.
+- **Quest 3 (Entry Tree)**: Plan references `EntryTree.vue` component. Actual implementation uses `Tree.vue` (flat renderer with `TransitionGroup`, keyboard nav, context menus, cut-dim/copy-pulse) driven by `useTreeState` composable — not the recursive pattern described.
+- **Quest 1b (active-store)**: Named `useActiveStoreStore` (not `useStoreContextStore` as sometimes referenced in other plans). Includes `currentStoreConfig` and `getGpgHome()` beyond the spec.
+- **Search**: Inlined in `AppSidebar.vue` with 300ms debounce via `@vueuse/core` — no separate `SearchBar.vue` component.
+- **Clipboard timer**: Inlined in `clipboard.ts` store with drift correction — no separate `useClipboardTimer` composable.
 
 ---
 

@@ -1,8 +1,10 @@
 # Release Phase — Implementation Plan
 
+> **Status**: ⏳ Waiting — Frontend Phase 04 UI (app shell, pages) must be complete before this phase begins. See `2026-07-02-frontend-ui-remaining.md`.
+
 > **Spec**: `docs/specs/release.md`
 > **Roadmap**: `docs/roadmap/05-release-and-future-work.md`
-> **Depends on**: Phase 02 (readiness), Phase 03 (entry ops), Phase 04 (frontend UI) completely implemented
+> **Depends on**: Phase 02 (readiness) ✅, Phase 03 (entry ops) ✅, Phase 04 (frontend UI) ⏳ partially complete
 
 ## Goal
 

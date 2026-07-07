@@ -1,5 +1,7 @@
 # 04 Frontend After Backend
 
+> **Status**: ⏳ Partial completion — stores (readiness, entries, clipboard, active-store) done; components (Tree, EntryDetail, dialogs, blocked screen, clipboard toast, sidebar) done; **missing**: App shell (App.vue sidebar layout), passwords.vue (two-panel), settings.vue, cleanup of old artifacts.
+
 ## Purpose
 
 Build the UI only after the backend contracts are trustworthy.

@@ -3,6 +3,15 @@
 > **Spec**: `docs/specs/entry-operations.md`
 > **Roadmap**: `docs/roadmap/03-entry-and-operations-backend.md`
 > **Depends on**: Phase 02 (backend readiness) completely implemented
+> **Status**: Historical record — implementation deviated from plan in key areas. See notes below.
+
+## Deviations from Actual Codebase
+
+- `parsePassLsOutput` was planned but never created. Filesystem traversal (`walkStore`) replaced `pass ls` parsing entirely.
+- `EntriesService` was planned as static methods but implemented as an instance class (instantiated in `services/entries.ts`).
+- `pass.execScoped()` was merged into `pass.exec()` — no separate scoped-exec method exists.
+- `EntriesStoreState` and `ClipboardStoreState` contract types were never created as standalone types — actual Pinia stores have richer state shapes.
+- `neu.execCmd()` retained its throw-on-non-zero behavior longer than planned; store-validation.ts was updated to handle exit codes explicitly.
 
 ## Goal
 
