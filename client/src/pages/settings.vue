@@ -1,36 +1,27 @@
 <script setup lang="ts">
-import { ArrowLeft, Copy, Check } from "@lucide/vue";
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { ArrowLeft } from "@lucide/vue";
+import { onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
-import type { AppConfig } from "@/types/config";
+import GeneralTab from "@/components/settings/GeneralTab.vue";
+import StoresTab from "@/components/settings/StoresTab.vue";
+import GenerationTab from "@/components/settings/GenerationTab.vue";
+import ClipboardTab from "@/components/settings/ClipboardTab.vue";
+import PreferencesTab from "@/components/settings/PreferencesTab.vue";
+import GpgTab from "@/components/settings/GpgTab.vue";
+import ExtensionsTab from "@/components/settings/ExtensionsTab.vue";
+import InfoTab from "@/components/settings/InfoTab.vue";
+import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 
-const router = useRouter();
-
 const config = ref<ParsedToml<AppConfig> | null>(null);
+const configPath = ref("");
 const isLoading = ref(true);
 const isSaving = ref(false);
-const copied = ref(false);
 
 // GPG & Pass info
 const gpgInfo = ref<{
@@ -45,25 +36,28 @@ const passInfo = ref<{
   storeDir: string;
 } | null>(null);
 
-// Form state (local reactive copies)
-const generalForm = ref({
-  activeStore: "",
-});
+// Form state
+const generalForm = ref({ activeStore: "" });
+const storesForm = ref<Record<string, StoreConfig>>({});
 const generationForm = ref({
+  memorable: false,
   defaultLength: 25,
   symbols: true,
+  characterSet: "",
+  characterSetNoSymbols: "",
 });
 const clipboardForm = ref({
   clearAfterSeconds: 45,
   selection: "clipboard" as "clipboard" | "primary" | "secondary",
 });
-
-const storeNames = computed(() => {
-  if (!config.value) return [];
-  return Object.keys(config.value.data.stores);
-});
+const preferencesForm = ref({ autoRefreshIntervalMs: 5000 });
+const gpgForm = ref({ opts: "", signingKey: "", key: "" });
+const extensionsForm = ref({ enabled: false });
 
 onMounted(async () => {
+  const pathResult = await Config.getPath();
+  if (pathResult.isOk()) configPath.value = pathResult.ok;
+
   const result = await Config.load();
   if (result.isError()) {
     toast.error("Failed to load config");
@@ -75,16 +69,31 @@ onMounted(async () => {
   const data = result.ok.data;
 
   generalForm.value.activeStore = data.core.active_store;
+  storesForm.value = JSON.parse(JSON.stringify(data.stores));
+  generationForm.value.memorable = data.generation.memorable;
   generationForm.value.defaultLength = data.generation.default_length;
   generationForm.value.symbols = data.generation.symbols;
-  clipboardForm.value.clearAfterSeconds = data.clipboard.clear_after_seconds;
+  generationForm.value.characterSet = data.generation.character_set;
+  generationForm.value.characterSetNoSymbols =
+    data.generation.character_set_no_symbols;
+  clipboardForm.value.clearAfterSeconds =
+    data.clipboard.clear_after_seconds;
   clipboardForm.value.selection = data.clipboard.selection;
+  preferencesForm.value.autoRefreshIntervalMs =
+    data.preferences.auto_refresh_interval_ms;
+  gpgForm.value.opts = Array.isArray(data.gpg.opts)
+    ? (data.gpg.opts as string[]).join(", ")
+    : "";
+  gpgForm.value.signingKey = data.gpg.signing_key ?? "";
+  gpgForm.value.key = data.gpg.key ?? "";
+  extensionsForm.value.enabled = data.extensions.enabled;
 
-  // Load GPG info
-  const binaryResult = await Gpg.validateGpgBinary();
-  const versionResult = await Gpg.checkVersion();
-  const keysResult = await Gpg.listSecretKeys();
-
+  // Load system info
+  const [binaryResult, versionResult, keysResult] = await Promise.all([
+    Gpg.validateGpgBinary(),
+    Gpg.checkVersion(),
+    Gpg.listSecretKeys(),
+  ]);
   gpgInfo.value = {
     binary: binaryResult.isOk() ? binaryResult.ok.path : "Not found",
     version: versionResult.isOk()
@@ -94,10 +103,10 @@ onMounted(async () => {
     keyCount: keysResult.isOk() ? keysResult.ok.length : 0,
   };
 
-  // Load Pass info
-  const passBinaryResult = await Pass.validatePassBinary();
-  const passVersionResult = await Pass.checkVersion();
-
+  const [passBinaryResult, passVersionResult] = await Promise.all([
+    Pass.validatePassBinary(),
+    Pass.checkVersion(),
+  ]);
   passInfo.value = {
     binary: passBinaryResult.isOk() ? passBinaryResult.ok.path : "Not found",
     version: passVersionResult.isOk()
@@ -109,110 +118,105 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
-async function saveGeneral(): Promise<void> {
-  if (!config.value) return;
+async function saveField<S extends keyof AppConfig>(
+  section: S,
+  key: keyof AppConfig[S],
+  value: AppConfig[S][keyof AppConfig[S]],
+): Promise<void> {
   isSaving.value = true;
-  const result = await Config.setValue(
-    "core",
-    "active_store",
-    generalForm.value.activeStore,
-  );
+  const result = await Config.setValue(section, key, value);
   isSaving.value = false;
   if (result.isError()) {
-    toast.error("Failed to save general settings");
+    toast.error(`Failed to save ${String(section)} settings`);
   } else {
-    toast.success("General settings saved");
+    toast.success(`${String(section)} settings saved`);
   }
 }
 
-async function saveGeneration(): Promise<void> {
-  if (!config.value) return;
+async function saveStores(): Promise<void> {
   isSaving.value = true;
+  // Rewrite all stores at once via raw
+  if (config.value) {
+    const raw = config.value._raw as AppConfig;
+    (raw.stores as Record<string, unknown>) = storesForm.value;
+    const result = await Config.save(config.value);
+    isSaving.value = false;
+    if (result.isError()) {
+      toast.error("Failed to save stores");
+    } else {
+      toast.success("Stores saved");
+    }
+  } else {
+    isSaving.value = false;
+  }
+}
 
-  await Config.setValue(
+function handleSaveGeneral(): void {
+  saveField("core", "active_store", generalForm.value.activeStore);
+}
+
+function handleSaveGeneration(): void {
+  saveField("generation", "memorable", generationForm.value.memorable);
+  saveField(
     "generation",
     "default_length",
     generationForm.value.defaultLength,
   );
-  await Config.setValue(
+  saveField("generation", "symbols", generationForm.value.symbols);
+  saveField(
     "generation",
-    "symbols",
-    generationForm.value.symbols,
+    "character_set",
+    generationForm.value.characterSet,
   );
-
-  isSaving.value = false;
-  toast.success("Generation settings saved");
+  saveField(
+    "generation",
+    "character_set_no_symbols",
+    generationForm.value.characterSetNoSymbols,
+  );
 }
 
-async function saveClipboard(): Promise<void> {
-  if (!config.value) return;
-  isSaving.value = true;
-
-  await Config.setValue(
+function handleSaveClipboard(): void {
+  saveField(
     "clipboard",
     "clear_after_seconds",
     clipboardForm.value.clearAfterSeconds,
   );
-  await Config.setValue(
-    "clipboard",
-    "selection",
-    clipboardForm.value.selection,
-  );
-
-  isSaving.value = false;
-  toast.success("Clipboard settings saved");
+  saveField("clipboard", "selection", clipboardForm.value.selection);
 }
 
-function buildInfoText(): string {
-  const lines: string[] = [];
-  if (passInfo.value) {
-    lines.push(`pass_version: ${passInfo.value.version}`);
-    lines.push(`pass_binary: ${passInfo.value.binary}`);
-    lines.push(`store_directory: ${passInfo.value.storeDir}`);
-  }
-  if (gpgInfo.value) {
-    lines.push(`gpg_version: ${gpgInfo.value.version}`);
-    lines.push(`gpg_binary: ${gpgInfo.value.binary}`);
-    lines.push(`gpg_home: ${gpgInfo.value.homeDir}`);
-    lines.push(`gpg_secret_keys: ${gpgInfo.value.keyCount}`);
-  }
-  if (config.value) {
-    lines.push(`active_store: ${config.value.data.core.active_store}`);
-  }
-  lines.push(`app_version: 0.0.1`);
-  lines.push(`license: GPL-3.0-or-later`);
-  lines.push(
-    `repository: https://github.com/AhmedOsman101/pass-gui`,
+function handleSavePreferences(): void {
+  saveField(
+    "preferences",
+    "auto_refresh_interval_ms",
+    preferencesForm.value.autoRefreshIntervalMs,
   );
-  lines.push(`author: Ahmad Othman`);
-  return lines.join("\n");
 }
 
-async function copyInfo(): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(buildInfoText());
-    copied.value = true;
-    toast.success("Info copied to clipboard");
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch {
-    toast.error("Failed to copy info");
-  }
+function handleSaveGpg(): void {
+  const opts = gpgForm.value.opts
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  saveField("gpg", "opts", opts);
+  saveField("gpg", "signing_key", gpgForm.value.signingKey || undefined);
+  saveField("gpg", "key", gpgForm.value.key || undefined);
+}
+
+function handleSaveExtensions(): void {
+  saveField("extensions", "enabled", extensionsForm.value.enabled);
 }
 </script>
 
 <template>
   <div class="h-full overflow-auto">
-    <div class="mx-auto max-w-2xl px-6 py-8">
+    <div class="mx-auto max-w-3xl px-6 py-8">
       <div class="mb-6 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          @click="router.push('/')"
+        <RouterLink
+          to="/"
+          class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <ArrowLeft class="size-4" />
-        </Button>
+        </RouterLink>
         <h1 class="text-2xl font-bold">Settings</h1>
       </div>
 
@@ -223,242 +227,93 @@ async function copyInfo(): Promise<void> {
       <Tabs v-else default-value="general" class="w-full">
         <TabsList class="w-full justify-start">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
           <TabsTrigger value="clipboard">Clipboard</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="gpg">GPG</TabsTrigger>
+          <TabsTrigger value="extensions">Extensions</TabsTrigger>
           <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>
 
-        <!-- General -->
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>General</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-4">
-              <div class="flex flex-col gap-2">
-                <Label for="active-store">Active Store</Label>
-                <Select v-model="generalForm.activeStore">
-                  <SelectTrigger id="active-store" class="w-full">
-                    <SelectValue placeholder="Select a store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem
-                        v-for="name in storeNames"
-                        :key="name"
-                        :value="name"
-                      >
-                        {{ name }}
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <p class="text-xs text-muted-foreground">
-                  Which password store is currently active.
-                </p>
-              </div>
-              <Separator />
-              <div class="flex justify-end">
-                <Button :disabled="isSaving" @click="saveGeneral">
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <div class="mt-6">
+          <TabsContent value="general">
+            <GeneralTab
+              v-model:active-store="generalForm.activeStore"
+              :config="config!"
+              :stores="storesForm"
+              :is-saving="isSaving"
+              @save="handleSaveGeneral"
+            />
+          </TabsContent>
 
-        <!-- Generation -->
-        <TabsContent value="generation">
-          <Card>
-            <CardHeader>
-              <CardTitle>Generation</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-4">
-              <div class="flex flex-col gap-2">
-                <Label for="default-length">Default Password Length</Label>
-                <Input
-                  id="default-length"
-                  v-model.number="generationForm.defaultLength"
-                  type="number"
-                  :min="8"
-                  :max="128"
-                  class="w-full"
-                />
-                <p class="text-xs text-muted-foreground">
-                  Length of generated passwords (8-128).
-                </p>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex flex-col gap-1">
-                  <Label for="symbols">Include Symbols</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Add symbols to generated passwords.
-                  </p>
-                </div>
-                <Switch
-                  id="symbols"
-                  v-model:checked="generationForm.symbols"
-                />
-              </div>
-              <Separator />
-              <div class="flex justify-end">
-                <Button :disabled="isSaving" @click="saveGeneration">
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="stores">
+            <StoresTab
+              :config="config!"
+              v-model:stores="storesForm"
+              :active-store="generalForm.activeStore"
+              :is-saving="isSaving"
+              @save="saveStores"
+              @update-stores="storesForm = $event"
+            />
+          </TabsContent>
 
-        <!-- Clipboard -->
-        <TabsContent value="clipboard">
-          <Card>
-            <CardHeader>
-              <CardTitle>Clipboard</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-4">
-              <div class="flex flex-col gap-2">
-                <Label for="clear-after">Clear After (seconds)</Label>
-                <Input
-                  id="clear-after"
-                  v-model.number="clipboardForm.clearAfterSeconds"
-                  type="number"
-                  :min="0"
-                  class="w-full"
-                />
-                <p class="text-xs text-muted-foreground">
-                  Seconds before clipboard is cleared. 0 to disable.
-                </p>
-              </div>
-              <div class="flex flex-col gap-2">
-                <Label for="selection">X Selection</Label>
-                <Select v-model="clipboardForm.selection">
-                  <SelectTrigger id="selection" class="w-full">
-                    <SelectValue placeholder="Select a selection" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="clipboard">clipboard</SelectItem>
-                      <SelectItem value="primary">primary</SelectItem>
-                      <SelectItem value="secondary">secondary</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <p class="text-xs text-muted-foreground">
-                  X11 selection to use for copying.
-                </p>
-              </div>
-              <Separator />
-              <div class="flex justify-end">
-                <Button :disabled="isSaving" @click="saveClipboard">
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="generation">
+            <GenerationTab
+              v-model:memorable="generationForm.memorable"
+              v-model:default-length="generationForm.defaultLength"
+              v-model:symbols="generationForm.symbols"
+              v-model:character-set="generationForm.characterSet"
+              v-model:character-set-no-symbols="generationForm.characterSetNoSymbols"
+              :is-saving="isSaving"
+              @save="handleSaveGeneration"
+            />
+          </TabsContent>
 
-        <!-- Info -->
-        <TabsContent value="info">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Info</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">pass</span>
-                <span class="text-sm font-mono">
-                  {{ passInfo?.version || "Unknown" }}
-                  <Badge variant="secondary" class="ml-2 text-xs">
-                    {{ passInfo?.binary || "N/A" }}
-                  </Badge>
-                </span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">gpg</span>
-                <span class="text-sm font-mono">
-                  {{ gpgInfo?.version || "Unknown" }}
-                  <Badge variant="secondary" class="ml-2 text-xs">
-                    {{ gpgInfo?.binary || "N/A" }}
-                  </Badge>
-                </span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Active Store</span>
-                <span class="text-sm font-mono">
-                  {{ config?.data.core.active_store || "N/A" }}
-                </span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Store Directory</span>
-                <span class="text-sm font-mono">
-                  {{ passInfo?.storeDir || "N/A" }}
-                </span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">GPG Home</span>
-                <span class="text-sm font-mono">
-                  {{ gpgInfo?.homeDir || "N/A" }}
-                </span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Secret Keys</span>
-                <Badge variant="secondary">
-                  {{ gpgInfo?.keyCount ?? 0 }}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="clipboard">
+            <ClipboardTab
+              v-model:clear-after-seconds="clipboardForm.clearAfterSeconds"
+              v-model:selection="clipboardForm.selection"
+              :is-saving="isSaving"
+              @save="handleSaveClipboard"
+            />
+          </TabsContent>
 
-          <Card class="mt-4">
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Version</span>
-                <span class="text-sm font-mono">0.0.1</span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">License</span>
-                <span class="text-sm font-mono">GPL-3.0-or-later</span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Author</span>
-                <span class="text-sm font-mono">Ahmad Othman</span>
-              </div>
-              <Separator />
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-muted-foreground">Repository</span>
-                <a
-                  href="https://github.com/AhmedOsman101/pass-gui"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-sm font-mono text-primary underline-offset-4 hover:underline"
-                >
-                  AhmedOsman101/pass-gui
-                </a>
-              </div>
-              <Separator />
-              <Button
-                variant="outline"
-                class="mt-2 w-full"
-                @click="copyInfo"
-              >
-                <Check v-if="copied" class="size-4 mr-2" />
-                <Copy v-else class="size-4 mr-2" />
-                {{ copied ? "Copied!" : "Copy Info to Clipboard" }}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="preferences">
+            <PreferencesTab
+              v-model:auto-refresh-interval-ms="preferencesForm.autoRefreshIntervalMs"
+              :is-saving="isSaving"
+              @save="handleSavePreferences"
+            />
+          </TabsContent>
+
+          <TabsContent value="gpg">
+            <GpgTab
+              v-model:opts="gpgForm.opts"
+              v-model:signing-key="gpgForm.signingKey"
+              v-model:key="gpgForm.key"
+              :is-saving="isSaving"
+              @save="handleSaveGpg"
+            />
+          </TabsContent>
+
+          <TabsContent value="extensions">
+            <ExtensionsTab
+              v-model:enabled="extensionsForm.enabled"
+              :is-saving="isSaving"
+              @save="handleSaveExtensions"
+            />
+          </TabsContent>
+
+          <TabsContent value="info">
+            <InfoTab
+              :config="config!"
+              :config-path="configPath"
+              :gpg-info="gpgInfo"
+              :pass-info="passInfo"
+            />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   </div>
