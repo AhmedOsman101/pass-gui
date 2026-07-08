@@ -94,13 +94,15 @@ function addStore(): void {
   emit("save");
 }
 
-async function pickFolder(target: "new" | "edit"): Promise<void> {
-  const result = await Dialog.showFolderDialog("Select password store directory");
+async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Promise<void> {
+  const result = await Dialog.showFolderDialog("Select directory");
   if (result.isOk() && result.ok) {
-    if (target === "new") {
+    if (target === "new-path") {
       newStorePath.value = result.ok;
-    } else {
+    } else if (target === "edit-path") {
       editStoreForm.value.path = result.ok;
+    } else {
+      editStoreForm.value.gnupgHome = result.ok;
     }
   }
 }
@@ -117,7 +119,15 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
         <Label for="active-store">Active Store</Label>
         <Select v-model="activeStoreModel">
           <SelectTrigger id="active-store" class="w-full">
-            <SelectValue placeholder="Select a store" />
+            <SelectValue placeholder="Select a store">
+              <template #default>
+                <span v-if="activeStoreModel && stores[activeStoreModel]" class="flex w-full items-center">
+                  <span>{{ activeStoreModel }}</span>
+                  <span class="ml-auto pl-4 text-xs text-muted-foreground">{{ stores[activeStoreModel]?.path }}</span>
+                </span>
+                <span v-else>Select a store</span>
+              </template>
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -126,9 +136,9 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
                 :key="name"
                 :value="name"
               >
-                <span class="flex w-full items-center justify-between">
+                <span class="flex w-full items-center">
                   <span>{{ name }}</span>
-                  <span class="ml-4 text-xs text-muted-foreground">{{ store.path }}</span>
+                  <span class="ml-auto pl-4 text-xs text-muted-foreground">{{ store.path }}</span>
                 </span>
               </SelectItem>
             </SelectGroup>
@@ -200,7 +210,7 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
                 variant="outline"
                 size="icon"
                 class="size-9 shrink-0"
-                @click="pickFolder('edit')"
+                @click="pickFolder('edit-path')"
               >
                 <FolderOpen class="size-4" />
               </Button>
@@ -211,11 +221,21 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
               GNUPGHOME
               <span class="text-muted-foreground">(optional)</span>
             </Label>
-            <Input
-              v-model="editStoreForm.gnupgHome"
-              class="font-mono"
-              placeholder="Default GPG home"
-            />
+            <div class="flex gap-2">
+              <Input
+                v-model="editStoreForm.gnupgHome"
+                class="flex-1 font-mono"
+                placeholder="Default GPG home"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                class="size-9 shrink-0"
+                @click="pickFolder('edit-gnupg')"
+              >
+                <FolderOpen class="size-4" />
+              </Button>
+            </div>
           </div>
           <div class="flex justify-end gap-2">
             <Button variant="outline" size="sm" @click="editingStore = null">
@@ -248,7 +268,7 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
               variant="outline"
               size="icon"
               class="size-9 shrink-0"
-              @click="pickFolder('new')"
+              @click="pickFolder('new-path')"
             >
               <FolderOpen class="size-4" />
             </Button>
@@ -272,3 +292,14 @@ async function pickFolder(target: "new" | "edit"): Promise<void> {
     </CardContent>
   </Card>
 </template>
+
+<style scoped>
+:deep([data-slot="select-item"] > span:last-child) {
+  display: block;
+  width: 100%;
+}
+:deep([data-slot="select-value"]) {
+  display: flex;
+  width: 100%;
+}
+</style>

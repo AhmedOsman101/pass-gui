@@ -19,7 +19,7 @@ import type { SecretKey } from "@/types";
 
 const opts = defineModel<string[]>("opts", { required: true });
 const signingKey = defineModel<string>("signingKey", { required: true });
-const key = defineModel<string>("key", { required: true });
+const recipientKey = defineModel<string>("recipientKey", { required: true });
 
 defineProps<{ isSaving: boolean }>();
 
@@ -71,6 +71,9 @@ function handleSigningKeyChange(raw: unknown): void {
   if (value === "__custom__") {
     signingKeyMode.value = "custom";
     signingKey.value = "";
+  } else if (value === "__none__") {
+    signingKeyMode.value = "select";
+    signingKey.value = "";
   } else {
     signingKeyMode.value = "select";
     signingKey.value = value;
@@ -81,10 +84,13 @@ function handleRecipientKeyChange(raw: unknown): void {
   const value = String(raw ?? "");
   if (value === "__custom__") {
     recipientKeyMode.value = "custom";
-    key.value = "";
+    recipientKey.value = "";
+  } else if (value === "__none__") {
+    recipientKeyMode.value = "select";
+    recipientKey.value = "";
   } else {
     recipientKeyMode.value = "select";
-    key.value = value;
+    recipientKey.value = value;
   }
 }
 
@@ -149,7 +155,7 @@ function keyLabel(k: SecretKey): string {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="">None (use default)</SelectItem>
+              <SelectItem value="__none__">None (use default)</SelectItem>
               <SelectItem
                 v-for="k in secretKeys"
                 :key="k.keyId"
@@ -180,7 +186,7 @@ function keyLabel(k: SecretKey): string {
         <Label>Recipient Key</Label>
         <Select
           v-if="recipientKeyMode === 'select'"
-          :model-value="key"
+          :model-value="recipientKey"
           @update:model-value="handleRecipientKeyChange"
         >
           <SelectTrigger class="w-full">
@@ -188,7 +194,7 @@ function keyLabel(k: SecretKey): string {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="">None (use default)</SelectItem>
+              <SelectItem value="__none__">None (use default)</SelectItem>
               <SelectItem
                 v-for="k in secretKeys"
                 :key="k.keyId"
@@ -202,7 +208,7 @@ function keyLabel(k: SecretKey): string {
         </Select>
         <div v-else class="flex gap-2">
           <Input
-            v-model="key"
+            v-model="recipientKey"
             placeholder="Enter key ID or email"
             class="flex-1 font-mono"
           />

@@ -50,7 +50,7 @@ const clipboardForm = ref({
   selection: "clipboard" as "clipboard" | "primary" | "secondary",
 });
 const preferencesForm = ref({ autoRefreshIntervalMs: 5000 });
-const gpgForm = ref({ opts: [] as string[], signingKey: "", key: "" });
+const gpgForm = ref({ opts: [] as string[], signingKey: "", recipientKey: "" });
 const extensionsForm = ref({ enabled: false });
 
 onMounted(async () => {
@@ -84,7 +84,7 @@ onMounted(async () => {
     ? [...(data.gpg.opts as string[])]
     : [];
   gpgForm.value.signingKey = data.gpg.signing_key ?? "";
-  gpgForm.value.key = data.gpg.key ?? "";
+  gpgForm.value.recipientKey = data.gpg.key ?? "";
   extensionsForm.value.enabled = data.extensions.enabled;
 
   // Load system info
@@ -194,7 +194,7 @@ function handleSavePreferences(): void {
 function handleSaveGpg(): void {
   saveField("gpg", "opts", gpgForm.value.opts);
   saveField("gpg", "signing_key", gpgForm.value.signingKey || undefined);
-  saveField("gpg", "key", gpgForm.value.key || undefined);
+  saveField("gpg", "key", gpgForm.value.recipientKey || undefined);
 }
 
 function handleSaveExtensions(): void {
@@ -219,7 +219,7 @@ function handleSaveExtensions(): void {
         <span class="text-sm text-muted-foreground">Loading settings...</span>
       </div>
 
-      <Tabs v-else default-value="general" class="w-full">
+      <Tabs v-else default-value="stores" class="w-full">
         <TabsList class="w-full justify-start">
           <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
@@ -276,7 +276,7 @@ function handleSaveExtensions(): void {
             <GpgTab
               v-model:opts="gpgForm.opts"
               v-model:signing-key="gpgForm.signingKey"
-              v-model:key="gpgForm.key"
+              v-model:recipient-key="gpgForm.recipientKey"
               :is-saving="isSaving"
               @save="handleSaveGpg"
             />
