@@ -13,6 +13,8 @@
   "dependencies": {
     "@lucide/vue": "^1.21.0",
     "@vueuse/core": "^14.2.1",
-    "reka-ui": "^2.8.0"
+    "reka-ui": "^2.8.0",
+    "sonner": "^2.0.7",
+    "vue-sonner": "^2.0.9"
   }
 }

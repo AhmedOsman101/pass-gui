@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Plus, Sparkles, Search, FolderPlus, ArrowUpDown, Check } from "@lucide/vue";
+import { Plus, Sparkles, Search, FolderPlus, ArrowUpDown, Check, Settings } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
 import { refDebounced } from "@vueuse/core";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
@@ -113,31 +114,39 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
     <SidebarHeader class="border-b px-3 py-2">
       <div class="flex items-center justify-between">
         <span class="text-sm font-semibold">pass-gui</span>
-        <DropdownMenu v-if="entries.hasEntries">
-          <DropdownMenuTrigger as-child>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-7 px-2 text-xs text-muted-foreground"
-            >
-              <ArrowUpDown class="size-3 mr-1" />
-              {{ sortOptions.find(o => o.value === entries.sortMode)?.label }}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="min-w-32">
-            <DropdownMenuItem
-              v-for="opt in sortOptions"
-              :key="opt.value"
-              @click="entries.setSortMode(opt.value)"
-            >
-              <Check
-                class="size-4 mr-2"
-                :class="entries.sortMode === opt.value ? 'opacity-100' : 'opacity-0'"
-              />
-              {{ opt.label }}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div class="flex items-center gap-1">
+          <DropdownMenu v-if="entries.hasEntries">
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 px-2 text-xs text-muted-foreground"
+              >
+                <ArrowUpDown class="size-3 mr-1" />
+                {{ sortOptions.find(o => o.value === entries.sortMode)?.label }}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="min-w-32">
+              <DropdownMenuItem
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                @click="entries.setSortMode(opt.value)"
+              >
+                <Check
+                  class="size-4 mr-2"
+                  :class="entries.sortMode === opt.value ? 'opacity-100' : 'opacity-0'"
+                />
+                {{ opt.label }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <RouterLink
+            to="/settings"
+            class="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <Settings class="size-4" />
+          </RouterLink>
+        </div>
       </div>
     </SidebarHeader>
     <ContextMenu>
