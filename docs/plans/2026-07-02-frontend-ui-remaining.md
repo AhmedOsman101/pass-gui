@@ -4,59 +4,49 @@
 
 ## Progress
 
-- [ ] Quest 1: The App Shell
-- [ ] Quest 2: The Passwords Page
+- [x] Quest 1: The App Shell — DONE (sidebar layout in `pages/index.vue`)
+- [x] Quest 2: The Passwords Page — DONE (two-panel AppSidebar + EntryDetail in `pages/index.vue`)
 - [ ] Quest 3: The Settings Page
 - [ ] Quest 4: The Clean Sweep
 
-**Goal:** Complete the remaining frontend work - app shell with sidebar layout, passwords page (two-panel tree + detail), settings page, and cleanup of old artifacts.
+**Goal:** Complete the remaining frontend work - settings page and cleanup of old artifacts.
 
 ## Prerequisites
 
 - Phase 04 stores all exist: readiness, entries, clipboard, active-store
-- Components exist: Tree (flat renderer), EntryDetail, AppSidebar, dialogs, BlockedScreen, IssueCard, ClipboardToast
+- Components exist: Tree (flat renderer), EntryDetail, AppSidebar, dialogs, BlockedScreen, IssueCard, ClipboardToast, PasteToast
 - `@vueuse/core` available for debounce (already used)
+- App shell + passwords page already functional in `pages/index.vue`
 
 ---
 
-### Quest 1: The App Shell
+### Quest 1: The App Shell ✅
 
-**Where to work:** `client/src/App.vue`
+**Status:** Complete.
 
-**What to build:**
+The sidebar layout lives in `pages/index.vue` (not `App.vue`). `App.vue` stays thin:
+`ReadinessGate > RouterView + ClipboardToast + PasteToast`.
 
-Replace the bare `ReadinessGate > RouterView + ClipboardToast` with a full shadcn-vue sidebar layout:
+`pages/index.vue` provides:
+- `SidebarProvider` wrapping `ResizablePanelGroup`
+- Left panel: `AppSidebar` (search, sort, tree, new/generate, context menu, hotkeys)
+- Right panel: `EntryDetail` (secret display, metadata, CRUD actions)
 
-- `SidebarProvider` wrapping `Sidebar` + `SidebarInset`
-- `Sidebar` contains `AppSidebar` component
-- `SidebarInset` has a header with:
-  - `SidebarTrigger` (hamburger)
-  - Search input (wired to entries store debounce)
-  - `ModeToggle`
-  - Settings button (router-link to `/settings`)
-- Main area renders `<RouterView />` inside the inset
-- `ClipboardToast` stays as a floating element
-
-**Keep** `ReadinessGate` wrapping - it controls blocked vs. ready rendering.
-
-**Done when:** App shell renders with collapsible sidebar, header with search/mode/settings, and router view below.
+**Deviation from original plan:** Search is in `AppSidebar` (not header), no separate `SidebarTrigger`/hamburger. This is fine — the sidebar is always visible via resizable panel.
 
 ---
 
-### Quest 2: The Passwords Page
+### Quest 2: The Passwords Page ✅
 
-**Where to work:** Create `client/src/pages/passwords.vue`
+**Status:** Complete.
 
-**What to build:**
+The passwords page IS `pages/index.vue`. It's the main (and only functional) page.
 
-Two-panel layout:
+Two-panel layout with:
+- Left: `AppSidebar` with `Tree` component, search, sort, context menu, hotkeys (Mod+C/X/V)
+- Right: `EntryDetail` with secret toggle, copy, metadata, notes, and action bar (duplicate, edit, rename, move, delete)
 
-- **Left panel**: scrollable area with `<Tree />` (flat renderer, already exists)
-- **Right panel**: `EntryDetail` when selected, or empty state "Select a password to view" when nothing selected
-
-**Empty state**: A centered message when `entries.currentEntry` is null - "Select a password to view its details."
-
-**Done when:** Tree shows entries on the left, clicking a file shows its detail on the right. Works with readiness gate.
+All CRUD dialogs exist: `EntryForm`, `DeleteConfirmDialog`, `RenameEntryDialog`, `MoveEntryDialog`, `DuplicateEntryDialog`, `CreateFolderDialog`, `PasswordGenerator`.
 
 ---
 
@@ -75,6 +65,8 @@ Config editing form with sections:
 
 On mount, load config via `ConfigService.load()`. Each section has a Save button that writes via `ConfigService.setValue()` + `ConfigService.save()`.
 
+**Router:** Add route for `/settings` (auto-router from `pages/` dir handles this).
+
 **Done when:** Settings loads current config, changes persist on save, re-loading shows saved values.
 
 ---
@@ -85,14 +77,13 @@ On mount, load config via `ConfigService.load()`. Each section has a Save button
 
 **What to delete:**
 
-- `about.vue` - old auto-router artifact
-- `test.vue` - old auto-router artifact (will be gitignored per user request instead)
+- `test.vue` - old auto-router artifact (empty test harness, no real functionality)
 
-**Note:** `index.vue` is the current main page with sidebar layout. Do NOT delete it.
+**Note:** `about.vue` already deleted. `index.vue` is the main page — do NOT delete it.
 
-**Verify**: No remaining imports of these files anywhere.
+**Verify**: No remaining imports of `test.vue` anywhere.
 
-**Done when:** `pages/` directory only has new pages (passwords, settings, plus any future ones).
+**Done when:** `pages/` directory only has `index.vue` (and `settings.vue` after Quest 3).
 
 ---
 
@@ -100,8 +91,8 @@ On mount, load config via `ConfigService.load()`. Each section has a Save button
 
 - `pnpm typecheck` - zero errors
 - `pnpm lint && pnpm format` - zero issues
-- App shell renders with collapsible sidebar
-- Header shows search, mode toggle, settings button
+- App shell renders with resizable sidebar
+- Sidebar shows search, sort, tree, new/generate buttons
 - Passwords page shows tree on left, detail on right
 - Clicking entry shows detail, empty state when nothing selected
 - Settings page loads config, saves changes

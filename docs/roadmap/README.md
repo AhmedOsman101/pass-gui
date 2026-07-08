@@ -40,7 +40,7 @@ Each roadmap phase has companion files in `docs/`:
 | 02 – Backend Readiness | `docs/specs/backend-readiness.md` | `docs/plans/2026-06-27-onboarding-state-machine.md` | ✅ Complete    |
 | 03 – Entry Operations  | `docs/specs/entry-operations.md`  | `docs/plans/2026-06-30-entry-operations.md`         | ✅ Complete    |
 | 04 – Frontend UI       | `docs/specs/frontend-ui.md`       | `docs/plans/2026-07-01-frontend-phase-04.md`        | ⏳ Partial     |
-| 04b – Frontend UI      | —                                 | `docs/plans/2026-07-02-frontend-ui-remaining.md`    | 🔲 Not started |
+| 04b – Frontend UI      | —                                 | `docs/plans/2026-07-02-frontend-ui-remaining.md`    | ⏳ Partial     |
 | 05 – Release           | `docs/specs/release.md`           | `docs/plans/release-phase.md`                       | ⏳ Waiting     |
 
 > Superseded plans remain in `docs/plans/` as historical records:
@@ -50,10 +50,9 @@ Each roadmap phase has companion files in `docs/`:
 
 - Older roadmap files were replaced because they assumed a bootstrap or
   UI-first phase that no longer matches the codebase.
-- `docs/archive/prompt.md` is historical context, not the execution source of truth.
 - `docs/plans/` remains the place for implementation-specific plans.
 - `docs/specs/` holds stable scoping specs that do not change during execution.
 
 ---
 
-Last updated: July 2, 2026
+Last updated: July 8, 2026
