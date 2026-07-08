@@ -3,7 +3,7 @@
   "author": "Ahmad Othman",
   "version": "0.0.1",
   "description": "GUI wrapper for GNU Pass (passowrd-store)",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",
   "scripts": {
