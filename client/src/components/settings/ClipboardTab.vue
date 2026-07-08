@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Info } from "@lucide/vue";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const clearAfterSeconds = defineModel<number>("clearAfterSeconds", { required: true });
 const selection = defineModel<"clipboard" | "primary" | "secondary">("selection", { required: true });
@@ -42,7 +49,24 @@ const emit = defineEmits<{ save: [] }>();
         </p>
       </div>
       <div class="flex flex-col gap-2">
-        <Label for="selection">Selection</Label>
+        <div class="flex items-center gap-1.5">
+          <Label for="selection">Selection</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Info class="size-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent class="max-w-80">
+                <p class="text-xs">
+                  <strong>Clipboard</strong> — standard copy/paste buffer (Ctrl+C/Ctrl+V).
+                  <strong>Primary</strong> — X11 middle-click paste buffer (select text, paste with middle mouse button).
+                  <strong>Secondary</strong> — rarely used third buffer, mostly for inter-app communication.
+                  On macOS/Windows, only <strong>clipboard</strong> is meaningful.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Select v-model="selection">
           <SelectTrigger id="selection" class="w-full">
             <SelectValue placeholder="Select a selection" />

@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
-import GeneralTab from "@/components/settings/GeneralTab.vue";
 import StoresTab from "@/components/settings/StoresTab.vue";
 import GenerationTab from "@/components/settings/GenerationTab.vue";
 import ClipboardTab from "@/components/settings/ClipboardTab.vue";
@@ -51,7 +50,7 @@ const clipboardForm = ref({
   selection: "clipboard" as "clipboard" | "primary" | "secondary",
 });
 const preferencesForm = ref({ autoRefreshIntervalMs: 5000 });
-const gpgForm = ref({ opts: "", signingKey: "", key: "" });
+const gpgForm = ref({ opts: [] as string[], signingKey: "", key: "" });
 const extensionsForm = ref({ enabled: false });
 
 onMounted(async () => {
@@ -82,8 +81,8 @@ onMounted(async () => {
   preferencesForm.value.autoRefreshIntervalMs =
     data.preferences.auto_refresh_interval_ms;
   gpgForm.value.opts = Array.isArray(data.gpg.opts)
-    ? (data.gpg.opts as string[]).join(", ")
-    : "";
+    ? [...(data.gpg.opts as string[])]
+    : [];
   gpgForm.value.signingKey = data.gpg.signing_key ?? "";
   gpgForm.value.key = data.gpg.key ?? "";
   extensionsForm.value.enabled = data.extensions.enabled;
@@ -193,11 +192,7 @@ function handleSavePreferences(): void {
 }
 
 function handleSaveGpg(): void {
-  const opts = gpgForm.value.opts
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  saveField("gpg", "opts", opts);
+  saveField("gpg", "opts", gpgForm.value.opts);
   saveField("gpg", "signing_key", gpgForm.value.signingKey || undefined);
   saveField("gpg", "key", gpgForm.value.key || undefined);
 }
@@ -226,7 +221,6 @@ function handleSaveExtensions(): void {
 
       <Tabs v-else default-value="general" class="w-full">
         <TabsList class="w-full justify-start">
-          <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
           <TabsTrigger value="clipboard">Clipboard</TabsTrigger>
@@ -237,23 +231,14 @@ function handleSaveExtensions(): void {
         </TabsList>
 
         <div class="mt-6">
-          <TabsContent value="general">
-            <GeneralTab
-              v-model:active-store="generalForm.activeStore"
-              :config="config!"
-              :stores="storesForm"
-              :is-saving="isSaving"
-              @save="handleSaveGeneral"
-            />
-          </TabsContent>
-
           <TabsContent value="stores">
             <StoresTab
               :config="config!"
               v-model:stores="storesForm"
-              :active-store="generalForm.activeStore"
+              v-model:active-store="generalForm.activeStore"
               :is-saving="isSaving"
               @save="saveStores"
+              @save-active-store="handleSaveGeneral"
               @update-stores="storesForm = $event"
             />
           </TabsContent>

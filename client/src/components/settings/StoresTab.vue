@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, Trash2, FolderOpen } from "@lucide/vue";
+import { Plus, Trash2, Pencil, FolderOpen } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,15 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Dialog } from "@/services/dialog";
 import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 
@@ -25,8 +34,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   save: [];
+  saveActiveStore: [];
+  updateActiveStore: [store: string];
   updateStores: [stores: Record<string, StoreConfig>];
 }>();
+
+const activeStoreModel = defineModel<string>("activeStore", { required: true });
 
 const newStoreName = ref("");
 const newStorePath = ref("");
@@ -80,6 +93,17 @@ function addStore(): void {
   newStorePath.value = "";
   emit("save");
 }
+
+async function pickFolder(target: "new" | "edit"): Promise<void> {
+  const result = await Dialog.showFolderDialog("Select password store directory");
+  if (result.isOk() && result.ok) {
+    if (target === "new") {
+      newStorePath.value = result.ok;
+    } else {
+      editStoreForm.value.path = result.ok;
+    }
+  }
+}
 </script>
 
 <template>
@@ -89,6 +113,34 @@ function addStore(): void {
       <CardDescription>Manage configured password stores.</CardDescription>
     </CardHeader>
     <CardContent class="flex flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <Label for="active-store">Active Store</Label>
+        <Select v-model="activeStoreModel">
+          <SelectTrigger id="active-store" class="w-full">
+            <SelectValue placeholder="Select a store" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem
+                v-for="(store, name) in stores"
+                :key="name"
+                :value="name"
+              >
+                <span class="flex w-full items-center justify-between">
+                  <span>{{ name }}</span>
+                  <span class="ml-4 text-xs text-muted-foreground">{{ store.path }}</span>
+                </span>
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <p class="text-xs text-muted-foreground">
+          Which password store is currently active.
+        </p>
+      </div>
+
+      <Separator />
+
       <div
         v-for="store in storeEntries"
         :key="store.name"
@@ -126,7 +178,7 @@ function addStore(): void {
               class="size-8"
               @click="startEditStore(store.name)"
             >
-              <FolderOpen class="size-4" />
+              <Pencil class="size-4" />
             </Button>
             <Button
               v-if="store.name !== 'default'"
@@ -142,7 +194,17 @@ function addStore(): void {
         <div v-else class="flex flex-col gap-3">
           <div class="flex flex-col gap-2">
             <Label>Path</Label>
-            <Input v-model="editStoreForm.path" class="font-mono" />
+            <div class="flex gap-2">
+              <Input v-model="editStoreForm.path" class="flex-1 font-mono" />
+              <Button
+                variant="outline"
+                size="icon"
+                class="size-9 shrink-0"
+                @click="pickFolder('edit')"
+              >
+                <FolderOpen class="size-4" />
+              </Button>
+            </div>
           </div>
           <div class="flex flex-col gap-2">
             <Label>
@@ -176,11 +238,21 @@ function addStore(): void {
             placeholder="Store name"
             class="flex-1"
           />
-          <Input
-            v-model="newStorePath"
-            placeholder="~/.password-store"
-            class="flex-1 font-mono"
-          />
+          <div class="flex flex-1 gap-2">
+            <Input
+              v-model="newStorePath"
+              placeholder="~/.password-store"
+              class="flex-1 font-mono"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              class="size-9 shrink-0"
+              @click="pickFolder('new')"
+            >
+              <FolderOpen class="size-4" />
+            </Button>
+          </div>
           <Button
             :disabled="isSaving || !newStoreName.trim() || !newStorePath.trim()"
             @click="addStore"
@@ -189,6 +261,13 @@ function addStore(): void {
             Add
           </Button>
         </div>
+      </div>
+
+      <Separator />
+      <div class="flex justify-end">
+        <Button :disabled="isSaving" @click="emit('saveActiveStore')">
+          Save
+        </Button>
       </div>
     </CardContent>
   </Card>

@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { Info } from "@lucide/vue";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const memorable = defineModel<boolean>("memorable", { required: true });
 const defaultLength = defineModel<number>("defaultLength", { required: true });
@@ -71,13 +78,50 @@ const emit = defineEmits<{ save: [] }>();
 
       <Separator />
 
-      <div class="flex flex-col gap-2">
-        <Label for="charset">Character Set (with symbols)</Label>
+      <div
+        class="flex flex-col gap-2"
+        :class="{ 'opacity-50 pointer-events-none': memorable }"
+      >
+        <div class="flex items-center gap-1.5">
+          <Label for="charset">Character Set (with symbols)</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Info class="size-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent class="max-w-80">
+                <p class="text-xs">
+                  POSIX character classes like <code>[[:alnum:]]</code> (letters + digits) and
+                  <code>[[:punct:]]</code> (punctuation). You can also use literal characters
+                  or ranges like <code>a-zA-Z0-9</code>.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Input id="charset" v-model="characterSet" class="font-mono" />
       </div>
 
-      <div class="flex flex-col gap-2">
-        <Label for="charset-no-symbols">Character Set (without symbols)</Label>
+      <div
+        class="flex flex-col gap-2"
+        :class="{ 'opacity-50 pointer-events-none': memorable }"
+      >
+        <div class="flex items-center gap-1.5">
+          <Label for="charset-no-symbols">Character Set (without symbols)</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Info class="size-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent class="max-w-80">
+                <p class="text-xs">
+                  Character set used when symbols are disabled. Default:
+                  <code>[[:alnum:]]</code> (letters + digits only).
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Input
           id="charset-no-symbols"
           v-model="characterSetNoSymbols"
