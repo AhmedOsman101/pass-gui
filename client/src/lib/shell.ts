@@ -138,9 +138,7 @@ async function validatePath(path: Stringifiable): Promise<Result<string>> {
   const strPath = String(path);
 
   const invalidChars = validateArgument(strPath);
-  if (invalidChars.isError()) {
-    return invalidChars;
-  }
+  if (invalidChars.isError()) return invalidChars;
 
   const isSneaky = await checkSneakyPath(strPath);
   if (isSneaky) {

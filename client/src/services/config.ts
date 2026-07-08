@@ -83,7 +83,7 @@ class Config {
     }
 
     // File changed (or first load) — read from disk
-    const result = await Config.loadFromDisk();
+    const result = await Config.loadFromDisk(configPath.ok);
     if (result.isError()) return Err(result.error);
 
     Config._cachedResult = result.ok;
@@ -94,11 +94,10 @@ class Config {
    * Raw disk read + parse + validate. Called by the watcher only
    * when the file's mtime has changed.
    */
-  private static async loadFromDisk(): Promise<Result<ParsedToml<AppConfig>>> {
-    const configPath = await Config.getPath();
-    if (configPath.isError()) return Err(configPath.error);
-
-    const readResult = await Fs.readFile(configPath.ok);
+  private static async loadFromDisk(
+    configPath: string
+  ): Promise<Result<ParsedToml<AppConfig>>> {
+    const readResult = await Fs.readFile(configPath);
     if (readResult.isError()) return Err(readResult.error);
 
     const configResult = toml.parse<AppConfig>(readResult.ok);
