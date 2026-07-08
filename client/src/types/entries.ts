@@ -37,7 +37,7 @@ type EntryDetail = {
   metadata: Record<string, string>;
   /** Lines that don't parse as key:value pairs. */
   other: string[];
-  /** Full raw stdout from `pass show` for debugging. */
+  /** Full raw stdout from `pass show` for raw editing mode. */
   raw: string;
 };
 

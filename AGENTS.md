@@ -161,7 +161,7 @@ Available services (all in `client/src/services/`):
 
 - `NeutralinoService` (`neutralino.ts`) — Command exec, binary resolution, env vars
 - `fs` (`filesystem.ts`) — Filesystem abstraction (mkdir, exists, readFile, writeFile)
-- `ConfigService` (`config.ts`) — Config load/save/ensure/getValue/setValue
+- `Config` (`config.ts`) — Config load/save/ensure/getValue/setValue
 - `config-validation.ts` — Zod schemas + validators
 - `PassService` (`pass.ts`) — pass binary validation, version check, scoped exec
 - `GpgService` (`gpg.ts`) — gpg/gpg2 detection, version, secret key listing

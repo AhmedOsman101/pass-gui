@@ -37,7 +37,7 @@
       "minHeight": 600,
       "fullScreen": false,
       "alwaysOnTop": false,
-      "enableInspector": true,
+      "enableInspector": false,
       "icon": "/client/dist/app_icon.png",
       "borderless": false,
       "maximize": true,

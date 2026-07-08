@@ -10,7 +10,7 @@ Scope: services, stores, lib, composables, components, pages, router, types, doc
 
 ### Bugs
 
-1. main.ts:20-22: bug top-level `await` blocks after `app.mount()` -- if any init rejects, the app hangs on a blank screen forever with no error boundary. AGENTS.md already calls this out as a known architecture debt. This is a production risk because Neutralino init failures are silent to the user.
+1. ~~main.ts:20-22: bug top-level `await` blocks after `app.mount()` -- if any init rejects, the app hangs on a blank screen forever with no error boundary. AGENTS.md already calls this out as a known architecture debt. This is a production risk because Neutralino init failures are silent to the user.~~ [Leave it as architectural debt]
 
 2. ~~services/store.ts:33-36: bug `Store.validatePath()` never checks the `isDirectory` result. If the path is a file (not a directory), it returns `Ok(undefined)` -- validation passes for non-directory paths. Every caller that relies on this to confirm a valid store directory is operating on a lie.~~ [Solved]
 
@@ -28,7 +28,7 @@ Scope: services, stores, lib, composables, components, pages, router, types, doc
 
 8. ~~services/readiness.ts:295-311: risk `resolveGnupgHome()` uses a bare `catch {}` that swallows all errors silently, including unexpected failures. The intent is "config unavailable, use default" but this hides actual bugs. Should narrow the catch to specific error types or at minimum log.~~
 
-9. services/config.ts:247-249: risk `setValue()` mutates `parsed._raw` via `as AppConfig` cast and bracket access. If the section or key doesn't exist in the raw TOML table, the assignment silently creates a dotted-key entry that j-toml may stringify differently than expected. No runtime validation after mutation. [Best to leave untouched, justify your solution first but don't execute until I approve it]
+9. ~~services/config.ts:247-249: risk `setValue()` mutates `parsed._raw` via `as AppConfig` cast and bracket access. If the section or key doesn't exist in the raw TOML table, the assignment silently creates a dotted-key entry that j-toml may stringify differently than expected. No runtime validation after mutation.~~ [Best to leave untouched, justify your solution first but don't execute until I approve it]
 
 ### UX Issues
 
@@ -54,15 +54,15 @@ Scope: services, stores, lib, composables, components, pages, router, types, doc
 
 18. ~~TODO.md + docs/plans/\*.md: risk throughout the docs, raw Unicode characters are used extensively (checkmarks, arrows, emojis). User explicitly requested "Don't use unicode characters, either use ascii or icons (lucide icons), never raw unicode characters." This preference applies to all new edits but existing content was not sanitized.~~
 
-19. AGENTS.md:165: nit `ConfigService` is referenced but the actual class is `Config` (in `config.ts`). Minor naming inconsistency.
+19. ~~AGENTS.md:165: nit `ConfigService` is referenced but the actual class is `Config` (in `config.ts`). Minor naming inconsistency.~~
 
-20. docs/roadmap/README.md: risk doc structure table references plan files by path. If files are renamed or moved, links break. Currently accurate but fragile.
+20. ~~docs/roadmap/README.md: risk doc structure table references plan files by path. If files are renamed or moved, links break. Currently accurate but fragile.~~
 
 ### Security
 
 No plaintext password leaks found. Passwords are masked in UI (`***`), clipboard has timed clear, shell injection is mitigated via quoting/validation, path traversal is blocked by `validatePath`/`checkSneakyPath`.
 
-21. One note: `Entries.show()` returns `raw: stdout` in `EntryDetail`. This raw output includes the password on line 1. The `raw` field is stored in `currentEntry.raw` (Pinia state). In production with Vue devtools, this is visible. Not a runtime leak but a devtools exposure.
+21. ~~One note: `Entries.show()` returns `raw: stdout` in `EntryDetail`. This raw output includes the password on line 1. The `raw` field is stored in `currentEntry.raw` (Pinia state). In production with Vue devtools, this is visible. Not a runtime leak but a devtools exposure.~~ [Resolved: Neutralino's `enableInspector` controls devtools access; set to `false` for production. `raw` field kept for planned raw-editing feature.]
 
 ---
 
@@ -80,3 +80,5 @@ Done
 | Risk     | 5     | Pass.exec config reload, dead code in commandExists, readiness catch, config mutation, release doc |
 | Nit      | 5     | error message leak, unscoped styles, non-null assertion, charset docs, naming                      |
 | UX       | 2     | directory click keeps old entry, paste no feedback                                                 |
+
+**All findings addressed.** See strikethrough marks above for resolution status.

@@ -21,6 +21,8 @@ before moving to the next file.
 - `04` starts frontend work only after backend contracts are stable.
 - `05` handles release polish and what comes after the first usable app.
 
+> **Note**: If you rename any plan file in `docs/plans/`, update the corresponding link references in this table and in `AGENTS.md` to avoid broken links.
+
 ## Project Direction
 
 - Backend first
