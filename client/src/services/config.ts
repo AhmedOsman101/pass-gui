@@ -7,7 +7,6 @@ import {
 } from "@/lib/errors";
 import Path from "@/lib/path";
 import toml from "@/lib/toml";
-import { type FileCache, watchFile } from "@/lib/watchFile";
 import type {
   AppConfig,
   ConfigKey,
@@ -17,6 +16,7 @@ import type {
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
 import { Fs } from "./filesystem";
+import { Watcher } from "./watcher";
 
 /**
  * Configuration service for managing application settings.
@@ -27,7 +27,6 @@ import { Fs } from "./filesystem";
  * for common operations.
  */
 class Config {
-  private static _watcher: FileCache | null = null;
   private static _cachedResult: ParsedToml<AppConfig> | null = null;
 
   /**
@@ -71,14 +70,14 @@ class Config {
     const configPath = await Config.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
-    // Lazy-init watcher for this config path
-    if (!Config._watcher) {
-      Config._watcher = watchFile(configPath.ok);
+    // Lazy-init OS-native watcher for the config directory
+    const dirResult = await Fs.getPathParts(configPath.ok);
+    if (dirResult.isOk()) {
+      await Watcher.watch("config", dirResult.ok.parentPath, "config.toml");
     }
 
     // Return cached result if file hasn't changed
-    const changed = await Config._watcher.check();
-    if (!changed && Config._cachedResult) {
+    if (!Watcher.hasChanged("config") && Config._cachedResult) {
       return Ok(Config._cachedResult);
     }
 
@@ -169,7 +168,7 @@ class Config {
     }
 
     // Invalidate cache so next load() re-reads from disk
-    Config._watcher?.invalidate();
+    Watcher.invalidate("config");
     Config._cachedResult = null;
 
     return Ok(undefined);
