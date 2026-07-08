@@ -7,6 +7,7 @@ import {
 } from "@/lib/errors";
 import Path from "@/lib/path";
 import toml from "@/lib/toml";
+import { type FileCache, watchFile } from "@/lib/watchFile";
 import type {
   AppConfig,
   ConfigKey,
@@ -26,6 +27,9 @@ import { Fs } from "./filesystem";
  * for common operations.
  */
 class Config {
+  private static _watcher: FileCache | null = null;
+  private static _cachedResult: ParsedToml<AppConfig> | null = null;
+
   /**
    * Resolves the path to the configuration file.
    * Uses platform-specific config directory:
@@ -67,7 +71,33 @@ class Config {
     const configPath = await Config.getPath();
     if (configPath.isError()) return Err(configPath.error);
 
-    // Read and parse the config file
+    // Lazy-init watcher for this config path
+    if (!Config._watcher) {
+      Config._watcher = watchFile(configPath.ok);
+    }
+
+    // Return cached result if file hasn't changed
+    const changed = await Config._watcher.check();
+    if (!changed && Config._cachedResult) {
+      return Ok(Config._cachedResult);
+    }
+
+    // File changed (or first load) — read from disk
+    const result = await Config.loadFromDisk();
+    if (result.isError()) return Err(result.error);
+
+    Config._cachedResult = result.ok;
+    return Ok(result.ok);
+  }
+
+  /**
+   * Raw disk read + parse + validate. Called by the watcher only
+   * when the file's mtime has changed.
+   */
+  private static async loadFromDisk(): Promise<Result<ParsedToml<AppConfig>>> {
+    const configPath = await Config.getPath();
+    if (configPath.isError()) return Err(configPath.error);
+
     const readResult = await Fs.readFile(configPath.ok);
     if (readResult.isError()) return Err(readResult.error);
 
@@ -81,7 +111,6 @@ class Config {
       );
     }
 
-    // Validate the parsed config
     const validationResult = validateAppConfig(configResult.ok.data);
     if (validationResult.isError()) {
       return Err(
@@ -139,6 +168,10 @@ class Config {
         )
       );
     }
+
+    // Invalidate cache so next load() re-reads from disk
+    Config._watcher?.invalidate();
+    Config._cachedResult = null;
 
     return Ok(undefined);
   }
