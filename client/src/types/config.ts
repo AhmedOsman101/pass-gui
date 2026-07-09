@@ -8,9 +8,7 @@ type CoreConfig = {
 /**
  * User preferences for application behavior.
  */
-type PreferencesConfig = {
-  auto_refresh_interval_ms: number;
-};
+type PreferencesConfig = Record<never, never>;
 
 /**
  * Password generation configuration.

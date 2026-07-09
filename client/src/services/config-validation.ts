@@ -16,12 +16,7 @@ const CoreConfigSchema = z.object({
   active_store: z.string().min(1, "active_store cannot be empty"),
 });
 
-const PreferencesConfigSchema = z.object({
-  auto_refresh_interval_ms: z
-    .number()
-    .int()
-    .nonnegative("auto_refresh_interval_ms must be a non-negative integer"),
-});
+const PreferencesConfigSchema = z.object({}).strict();
 
 const GenerationConfigSchema = z.object({
   memorable: z.boolean(),

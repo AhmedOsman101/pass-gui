@@ -26,7 +26,7 @@ const emit = defineEmits<{ save: [] }>();
             Enable pass extension support.
           </p>
         </div>
-        <Switch id="extensions-enabled" v-model:checked="enabled" />
+        <Switch id="extensions-enabled" v-model="enabled" />
       </div>
       <Separator />
       <div class="flex justify-end">

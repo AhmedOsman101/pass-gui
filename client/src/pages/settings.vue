@@ -10,7 +10,6 @@ import { Pass } from "@/services/pass";
 import StoresTab from "@/components/settings/StoresTab.vue";
 import GenerationTab from "@/components/settings/GenerationTab.vue";
 import ClipboardTab from "@/components/settings/ClipboardTab.vue";
-import PreferencesTab from "@/components/settings/PreferencesTab.vue";
 import GpgTab from "@/components/settings/GpgTab.vue";
 import ExtensionsTab from "@/components/settings/ExtensionsTab.vue";
 import InfoTab from "@/components/settings/InfoTab.vue";
@@ -49,7 +48,7 @@ const clipboardForm = ref({
   clearAfterSeconds: 45,
   selection: "clipboard" as "clipboard" | "primary" | "secondary",
 });
-const preferencesForm = ref({ autoRefreshIntervalMs: 5000 });
+// const preferencesForm = ref({});
 const gpgForm = ref({ opts: [] as string[], signingKey: "", recipientKey: "" });
 const extensionsForm = ref({ enabled: false });
 
@@ -78,8 +77,6 @@ onMounted(async () => {
   clipboardForm.value.clearAfterSeconds =
     data.clipboard.clear_after_seconds;
   clipboardForm.value.selection = data.clipboard.selection;
-  preferencesForm.value.autoRefreshIntervalMs =
-    data.preferences.auto_refresh_interval_ms;
   gpgForm.value.opts = Array.isArray(data.gpg.opts)
     ? [...(data.gpg.opts as string[])]
     : [];
@@ -183,14 +180,6 @@ function handleSaveClipboard(): void {
   saveField("clipboard", "selection", clipboardForm.value.selection);
 }
 
-function handleSavePreferences(): void {
-  saveField(
-    "preferences",
-    "auto_refresh_interval_ms",
-    preferencesForm.value.autoRefreshIntervalMs,
-  );
-}
-
 function handleSaveGpg(): void {
   saveField("gpg", "opts", gpgForm.value.opts);
   saveField("gpg", "signing_key", gpgForm.value.signingKey || undefined);
@@ -224,7 +213,6 @@ function handleSaveExtensions(): void {
           <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
           <TabsTrigger value="clipboard">Clipboard</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="gpg">GPG</TabsTrigger>
           <TabsTrigger value="extensions">Extensions</TabsTrigger>
           <TabsTrigger value="info">Info</TabsTrigger>
@@ -261,14 +249,6 @@ function handleSaveExtensions(): void {
               v-model:selection="clipboardForm.selection"
               :is-saving="isSaving"
               @save="handleSaveClipboard"
-            />
-          </TabsContent>
-
-          <TabsContent value="preferences">
-            <PreferencesTab
-              v-model:auto-refresh-interval-ms="preferencesForm.autoRefreshIntervalMs"
-              :is-saving="isSaving"
-              @save="handleSavePreferences"
             />
           </TabsContent>
 

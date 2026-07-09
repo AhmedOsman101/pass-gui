@@ -95,12 +95,6 @@ function buildDefaultConfigTable(config: AppConfig): ReadonlyTable {
         active_store: ` Which store is currently used. Default: "${config.core.active_store}".`,
       },
     }),
-    preferences: createCommentedSection(config.preferences, {
-      section: " UI behavior preferences.",
-      keys: {
-        auto_refresh_interval_ms: ` Refresh interval in ms. Default: ${config.preferences.auto_refresh_interval_ms}.`,
-      },
-    }),
     generation: createCommentedSection(config.generation, {
       section: " Default password generation options.",
       keys: {

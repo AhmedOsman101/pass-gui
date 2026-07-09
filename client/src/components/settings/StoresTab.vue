@@ -61,10 +61,26 @@ function startEditStore(name: string): void {
   };
 }
 
+function findStoreByPath(path: string): string | undefined {
+  return Object.entries(props.stores).find(
+    ([name, store]) => store.path === path
+  )?.[0];
+}
+
+function isPathUnique(path: string, excludeName?: string): boolean {
+  const existing = findStoreByPath(path);
+  return !existing || existing === excludeName;
+}
+
 function saveEditStore(): void {
   if (!editingStore.value) return;
+  const path = editStoreForm.value.path.trim();
+  if (!path) return;
+  if (!isPathUnique(path, editingStore.value)) {
+    return;
+  }
   const storeData: StoreConfig = {
-    path: editStoreForm.value.path,
+    path,
     gnupg_home: editStoreForm.value.gnupgHome || undefined,
   };
   const updated = { ...props.stores, [editingStore.value]: storeData };
@@ -87,6 +103,7 @@ function addStore(): void {
   const path = newStorePath.value.trim();
   if (!name || !path) return;
   if (props.stores[name]) return;
+  if (!isPathUnique(path)) return;
   const updated = { ...props.stores, [name]: { path } };
   emit("updateStores", updated);
   newStoreName.value = "";
@@ -191,7 +208,7 @@ async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Prom
               <Pencil class="size-4" />
             </Button>
             <Button
-              v-if="store.name !== 'default'"
+              v-if="store.name !== 'default' && store.name !== activeStore"
               variant="ghost"
               size="icon"
               class="size-8 text-destructive"
@@ -201,7 +218,7 @@ async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Prom
             </Button>
           </div>
         </div>
-        <div v-else class="flex flex-col gap-3">
+        <div v-else class="flex flex-col gap-4">
           <div class="flex flex-col gap-2">
             <Label>Path</Label>
             <div class="flex gap-2">

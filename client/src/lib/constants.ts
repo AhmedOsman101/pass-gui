@@ -30,9 +30,7 @@ const DEFAULT_CONFIG: AppConfig = {
   core: {
     active_store: "default",
   },
-  preferences: {
-    auto_refresh_interval_ms: 5000,
-  },
+  preferences: {},
   generation: {
     memorable: false,
     default_length: 25,

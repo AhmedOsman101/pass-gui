@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Plus, Sparkles, Search, FolderPlus, ArrowUpDown, Check, Settings } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { refDebounced } from "@vueuse/core";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { Button } from "@/components/ui/button";
+import { Watcher } from "@/services/watcher";
+import { Pass } from "@/services/pass";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -106,6 +108,32 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   }
   return undefined;
 }
+
+// Filesystem watcher: auto-refresh entry tree when active store changes
+let watchTimer: ReturnType<typeof setInterval> | null = null;
+
+async function startStoreWatcher(): Promise<void> {
+  if (Pass.storeDirectory) {
+    await Watcher.watch("store", Pass.storeDirectory, ".gpg-id");
+  }
+  if (watchTimer) clearInterval(watchTimer);
+  watchTimer = setInterval(() => {
+    if (Watcher.hasChanged("store")) {
+      entries.refresh();
+    }
+  }, 2000);
+}
+
+watch(
+  () => Pass.storeDirectory,
+  startStoreWatcher,
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  if (watchTimer) clearInterval(watchTimer);
+  Watcher.unwatch("store");
+});
 
 </script>
 

@@ -57,12 +57,12 @@ const emit = defineEmits<{ save: [] }>();
                 <Info class="size-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent class="max-w-80">
-                <p class="text-xs">
-                  <strong>Clipboard</strong> — standard copy/paste buffer (Ctrl+C/Ctrl+V).
-                  <strong>Primary</strong> — X11 middle-click paste buffer (select text, paste with middle mouse button).
-                  <strong>Secondary</strong> — rarely used third buffer, mostly for inter-app communication.
-                  On macOS/Windows, only <strong>clipboard</strong> is meaningful.
-                </p>
+                <div class="flex flex-col gap-1 text-xs">
+                  <span><strong>Clipboard</strong> — standard copy/paste buffer (Ctrl+C/Ctrl+V).</span>
+                  <span><strong>Primary</strong> — X11 middle-click paste buffer (select text, paste with middle mouse button).</span>
+                  <span><strong>Secondary</strong> — rarely used third buffer, mostly for inter-app communication.</span>
+                  <span class="text-muted-foreground">On macOS/Windows, only <strong>clipboard</strong> is meaningful.</span>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

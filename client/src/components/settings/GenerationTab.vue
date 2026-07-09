@@ -38,96 +38,86 @@ const emit = defineEmits<{ save: [] }>();
             Use diceware-style memorable passwords.
           </p>
         </div>
-        <Switch id="memorable" v-model:checked="memorable" />
+        <Switch id="memorable" v-model="memorable" />
       </div>
 
-      <Separator />
+      <Transition name="hide">
+        <div v-show="!memorable" class="flex flex-col gap-4">
+          <Separator />
 
-      <div
-        class="flex flex-col gap-2"
-        :class="{ 'opacity-50 pointer-events-none': memorable }"
-      >
-        <Label for="default-length">Default Password Length</Label>
-        <Input
-          id="default-length"
-          v-model.number="defaultLength"
-          type="number"
-          :min="8"
-          :max="128"
-          class="w-full"
-        />
-        <p class="text-xs text-muted-foreground">
-          Length of generated passwords (8-128).
-          <span v-if="memorable">Overridden by memorable mode.</span>
-        </p>
-      </div>
+          <div class="flex flex-col gap-2">
+            <Label for="default-length">Default Password Length</Label>
+            <Input
+              id="default-length"
+              v-model.number="defaultLength"
+              type="number"
+              :min="8"
+              :max="128"
+              class="w-full"
+            />
+            <p class="text-xs text-muted-foreground">
+              Length of generated passwords (8-128).
+            </p>
+          </div>
 
-      <div
-        class="flex items-center justify-between"
-        :class="{ 'opacity-50 pointer-events-none': memorable }"
-      >
-        <div class="flex flex-col gap-1">
-          <Label for="symbols">Include Symbols</Label>
-          <p class="text-xs text-muted-foreground">
-            Add symbols to generated passwords.
-            <span v-if="memorable">Overridden by memorable mode.</span>
-          </p>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-1">
+              <Label for="symbols">Include Symbols</Label>
+              <p class="text-xs text-muted-foreground">
+                Add symbols to generated passwords.
+              </p>
+            </div>
+            <Switch id="symbols" v-model="symbols" />
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-1.5">
+              <Label for="charset">Character Set (with symbols)</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Info class="size-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent class="max-w-80">
+                    <p class="text-xs">
+                      POSIX character classes like <code>[[:alnum:]]</code> (letters + digits) and
+                      <code>[[:punct:]]</code> (punctuation). You can also use literal characters
+                      or ranges like <code>a-zA-Z0-9</code>.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Input id="charset" v-model="characterSet" class="font-mono" />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-1.5">
+              <Label for="charset-no-symbols">Character Set (without symbols)</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Info class="size-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent class="max-w-80">
+                    <p class="text-xs">
+                      Character set used when symbols are disabled. Default:
+                      <code>[[:alnum:]]</code> (letters + digits only).
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Input
+              id="charset-no-symbols"
+              v-model="characterSetNoSymbols"
+              class="font-mono"
+            />
+          </div>
         </div>
-        <Switch id="symbols" v-model:checked="symbols" />
-      </div>
-
-      <Separator />
-
-      <div
-        class="flex flex-col gap-2"
-        :class="{ 'opacity-50 pointer-events-none': memorable }"
-      >
-        <div class="flex items-center gap-1.5">
-          <Label for="charset">Character Set (with symbols)</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Info class="size-3.5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent class="max-w-80">
-                <p class="text-xs">
-                  POSIX character classes like <code>[[:alnum:]]</code> (letters + digits) and
-                  <code>[[:punct:]]</code> (punctuation). You can also use literal characters
-                  or ranges like <code>a-zA-Z0-9</code>.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Input id="charset" v-model="characterSet" class="font-mono" />
-      </div>
-
-      <div
-        class="flex flex-col gap-2"
-        :class="{ 'opacity-50 pointer-events-none': memorable }"
-      >
-        <div class="flex items-center gap-1.5">
-          <Label for="charset-no-symbols">Character Set (without symbols)</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Info class="size-3.5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent class="max-w-80">
-                <p class="text-xs">
-                  Character set used when symbols are disabled. Default:
-                  <code>[[:alnum:]]</code> (letters + digits only).
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Input
-          id="charset-no-symbols"
-          v-model="characterSetNoSymbols"
-          class="font-mono"
-        />
-      </div>
+      </Transition>
 
       <Separator />
       <div class="flex justify-end">
@@ -136,3 +126,14 @@ const emit = defineEmits<{ save: [] }>();
     </CardContent>
   </Card>
 </template>
+
+<style scoped>
+.hide-leave-active,
+.hide-enter-active {
+  transition: all 0.2s ease;
+}
+.hide-enter-from,
+.hide-leave-to {
+  opacity: 0;
+}
+</style>

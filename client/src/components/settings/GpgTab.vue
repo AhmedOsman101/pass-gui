@@ -27,7 +27,10 @@ const emit = defineEmits<{ save: [] }>();
 
 const tagInput = ref("");
 const tagInputRef = ref<HTMLInputElement | null>(null);
+const editingTagIndex = ref<number | null>(null);
+const editingTagValue = ref("");
 const secretKeys = ref<SecretKey[]>([]);
+const secretKeysError = ref("");
 const signingKeyMode = ref<"select" | "custom">("select");
 const recipientKeyMode = ref<"select" | "custom">("select");
 
@@ -35,6 +38,8 @@ onMounted(async () => {
   const result = await Gpg.listSecretKeys();
   if (result.isOk()) {
     secretKeys.value = result.ok;
+  } else {
+    secretKeysError.value = result.error.message;
   }
 });
 
@@ -55,6 +60,26 @@ function addTag(): void {
 
 function removeTag(index: number): void {
   opts.value = opts.value.filter((_, i) => i !== index);
+}
+
+function startEditTag(index: number): void {
+  editingTagIndex.value = index;
+  editingTagValue.value = opts.value[index] ?? "";
+}
+
+function commitEditTag(): void {
+  if (editingTagIndex.value !== null && editingTagValue.value.trim()) {
+    const updated = [...opts.value];
+    updated[editingTagIndex.value] = editingTagValue.value.trim();
+    opts.value = updated;
+  }
+  editingTagIndex.value = null;
+  editingTagValue.value = "";
+}
+
+function cancelEditTag(): void {
+  editingTagIndex.value = null;
+  editingTagValue.value = "";
 }
 
 function handleTagKeydown(e: KeyboardEvent): void {
@@ -118,8 +143,20 @@ function keyLabel(k: SecretKey): string {
             v-for="(tag, index) in opts"
             :key="index"
             class="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs"
+            @click.stop="startEditTag(index)"
           >
-            {{ tag }}
+            <input
+              v-if="editingTagIndex === index"
+              v-model="editingTagValue"
+              type="text"
+              class="w-20 bg-transparent outline-none"
+              @keydown.enter="commitEditTag"
+              @keydown.escape="cancelEditTag"
+              @blur="commitEditTag"
+              @click.stop
+              autofocus
+            />
+            <template v-else>{{ tag }}</template>
             <button
               type="button"
               class="ml-0.5 rounded-full p-0.5 hover:bg-muted"
@@ -163,6 +200,9 @@ function keyLabel(k: SecretKey): string {
               >
                 {{ keyLabel(k) }}
               </SelectItem>
+              <template v-if="secretKeys.length === 0 && !secretKeysError">
+                <SelectItem value="__none__" disabled>No secret keys found</SelectItem>
+              </template>
               <SelectItem value="__custom__">Custom...</SelectItem>
             </SelectGroup>
           </SelectContent>
