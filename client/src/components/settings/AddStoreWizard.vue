@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { toast } from "sonner";
-import { FolderOpen, ChevronRight, ChevronLeft, Check, Loader2 } from "@lucide/vue";
+import { FolderOpen, ChevronRight, Loader2 } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,10 +81,11 @@ const canCreate = computed(
   () => selectedKeyId.value !== "" && !isCreating.value,
 );
 
-// Load GPG keys on open
-onMounted(async () => {
-  if (!props.open) return;
-  await loadKeys();
+// Load GPG keys when dialog opens
+watch(() => props.open, async (isOpen) => {
+  if (isOpen) {
+    await loadKeys();
+  }
 });
 
 async function loadKeys(): Promise<void> {
