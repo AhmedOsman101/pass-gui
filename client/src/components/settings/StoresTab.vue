@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Trash2, Pencil, FolderOpen } from "@lucide/vue";
+import { Trash2, Pencil, FolderOpen, Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import StoreDeleteDialog from "@/components/StoreDeleteDialog.vue";
+import AddStoreWizard from "@/components/settings/AddStoreWizard.vue";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const activeStoreModel = defineModel<string>("activeStore", { required: true });
 
 const deleteDialogOpen = ref(false);
 const deleteTarget = ref<{ name: string; path: string } | null>(null);
+const wizardOpen = ref(false);
 const editingStore = ref<string | null>(null);
 const editStoreForm = ref({ path: "", gnupgHome: "" });
 
@@ -101,6 +103,10 @@ function confirmDeleteStore(name: string): void {
   const updated = { ...props.stores };
   delete updated[name];
   emit("updateStores", updated);
+  emit("save");
+}
+
+function handleStoreCreated(): void {
   emit("save");
 }
 
@@ -257,7 +263,11 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
       </div>
 
       <Separator />
-      <div class="flex justify-end">
+      <div class="flex justify-end gap-2">
+        <Button @click="wizardOpen = true">
+          <Plus class="size-4 mr-1" />
+          Add Store
+        </Button>
         <Button :disabled="isSaving" @click="emit('saveActiveStore')">
           Save
         </Button>
@@ -269,6 +279,12 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
         :store-path="deleteTarget.path"
         v-model:open="deleteDialogOpen"
         @deleted="confirmDeleteStore"
+      />
+      <AddStoreWizard
+        :stores="stores"
+        :active-store="activeStore"
+        v-model:open="wizardOpen"
+        @created="handleStoreCreated"
       />
     </CardContent>
   </Card>
