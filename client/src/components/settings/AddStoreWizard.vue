@@ -52,6 +52,7 @@ const secretKeys = ref<SecretKey[]>([]);
 const isLoadingKeys = ref(true);
 const isCreating = ref(false);
 const creationError = ref("");
+const isExistingStore = ref(false);
 
 // Validation
 const nameError = computed(() => {
@@ -109,16 +110,26 @@ async function pickFolder(): Promise<void> {
   const result = await NeuDialog.showFolderDialog("Select store directory");
   if (result.isOk() && result.ok) {
     storePath.value = result.ok;
+    await detectExistingStore(result.ok);
   }
 }
 
-function advanceStep(): void {
+async function detectExistingStore(path: string): Promise<void> {
+  const gpgIdPath = await Fs.join(path, ".gpg-id");
+  const exists = await Fs.isFile(gpgIdPath);
+  isExistingStore.value = exists.isOk() && exists.ok;
+}
+
+async function advanceStep(): Promise<void> {
   switch (step.value) {
     case "name":
       if (canAdvanceName.value) step.value = "path";
       break;
     case "path":
-      if (canAdvancePath.value) step.value = "gpg";
+      if (canAdvancePath.value) {
+        await detectExistingStore(storePath.value.trim());
+        step.value = "gpg";
+      }
       break;
   }
 }
@@ -144,23 +155,27 @@ async function createStore(): Promise<void> {
   const path = storePath.value.trim();
   const gpgKeyId = selectedKeyId.value;
 
-  // 1. Create directory (Fs.mkdir uses std::filesystem::create_directories — recursive)
-  const mkdirResult = await Fs.mkdir(path);
-  if (mkdirResult.isError()) {
-    creationError.value = `Failed to create directory: ${mkdirResult.error.message}`;
-    isCreating.value = false;
-    step.value = "gpg";
-    return;
+  // 1. Create directory if it doesn't exist
+  if (!isExistingStore.value) {
+    const mkdirResult = await Fs.mkdir(path);
+    if (mkdirResult.isError()) {
+      creationError.value = `Failed to create directory: ${mkdirResult.error.message}`;
+      isCreating.value = false;
+      step.value = "gpg";
+      return;
+    }
   }
 
-  // 2. Run pass init with scoped PASSWORD_STORE_DIR
-  Pass.setStorePath(path);
-  const initResult = await Pass.exec(["init", gpgKeyId]);
-  if (initResult.isError()) {
-    creationError.value = `pass init failed: ${initResult.error.message}`;
-    isCreating.value = false;
-    step.value = "gpg";
-    return;
+  // 2. Run pass init only for NEW stores (existing stores already have .gpg-id)
+  if (!isExistingStore.value) {
+    Pass.setStorePath(path);
+    const initResult = await Pass.exec(["init", gpgKeyId]);
+    if (initResult.isError()) {
+      creationError.value = `pass init failed: ${initResult.error.message}`;
+      isCreating.value = false;
+      step.value = "gpg";
+      return;
+    }
   }
 
   // 3. Restore previous store path
@@ -191,7 +206,10 @@ async function createStore(): Promise<void> {
 
   // 5. Reset and close
   isCreating.value = false;
-  toast.success(`Store "${name}" created`);
+  const msg = isExistingStore.value
+    ? `Store "${name}" added`
+    : `Store "${name}" created`;
+  toast.success(msg);
   emit("created", { name, path });
   emit("update:open", false);
   resetWizard();
@@ -203,6 +221,7 @@ function resetWizard(): void {
   storePath.value = "";
   selectedKeyId.value = "";
   creationError.value = "";
+  isExistingStore.value = false;
 }
 </script>
 
@@ -265,6 +284,9 @@ function resetWizard(): void {
           </Button>
         </div>
         <p v-if="pathError" class="text-xs text-destructive">{{ pathError }}</p>
+        <p v-else-if="isExistingStore" class="text-xs text-amber-600">
+          Existing store detected — will be added as-is without re-initialization.
+        </p>
         <p v-else class="text-xs text-muted-foreground">
           The directory will be created if it doesn't exist.
         </p>
