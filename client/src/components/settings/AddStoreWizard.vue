@@ -28,6 +28,7 @@ import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
 import { Config } from "@/services/config";
 import { Fs } from "@/services/filesystem";
+import { StoreValidation } from "@/services/store-validation";
 import type { StoreConfig } from "@/types/config";
 import type { SecretKey } from "@/types";
 
@@ -115,9 +116,10 @@ async function pickFolder(): Promise<void> {
 }
 
 async function detectExistingStore(path: string): Promise<void> {
-  const gpgIdPath = await Fs.join(path, ".gpg-id");
-  const exists = await Fs.isFile(gpgIdPath);
-  isExistingStore.value = exists.isOk() && exists.ok;
+  const result = await StoreValidation.validate(path);
+  if (result.isOk()) {
+    isExistingStore.value = result.ok.initialized;
+  }
 }
 
 async function advanceStep(): Promise<void> {

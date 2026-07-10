@@ -23,6 +23,22 @@ type RecipientValidation = {
 };
 
 /**
+ * Result of full store validation.
+ * - `exists`: directory exists on disk
+ * - `initialized`: has a `.gpg-id` file (is a pass store)
+ * - `recipients`: parsed recipients from `.gpg-id` (only if initialized)
+ * - `missingKeys`: key IDs not found in the keyring (only if initialized)
+ * - `hasEntries`: store contains `.gpg` password files (only if initialized)
+ */
+type StoreValidationResult = {
+  exists: boolean;
+  initialized: boolean;
+  recipients?: ParsedRecipient[];
+  missingKeys?: string[];
+  hasEntries?: boolean;
+};
+
+/**
  * Service for validating password stores before use.
  * Handles `.gpg-id` parsing, recipient verification against the GPG keyring,
  * behavioral checks via `pass ls`, and entry scanning for `.gpg` files.
@@ -30,6 +46,54 @@ type RecipientValidation = {
  * All methods are static and return `Result` types.
  */
 class StoreValidation {
+  /**
+   * Full validation of a store path. Checks directory existence,
+   * `.gpg-id` presence, recipient verification, and entry scanning.
+   * Returns a structured result with all findings.
+   */
+  static async validate(
+    storePath: string,
+    gnupgHome?: string
+  ): Promise<Result<StoreValidationResult>> {
+    // 1. Check if directory exists
+    const dirExists = await Fs.isDirectory(storePath);
+    if (dirExists.isError()) return Err(dirExists.error);
+
+    if (!dirExists.ok) {
+      return Ok({ exists: false, initialized: false });
+    }
+
+    // 2. Check if .gpg-id exists (initialized store)
+    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
+    const gpgIdExists = await Fs.isFile(gpgIdPath);
+    if (gpgIdExists.isError()) return Err(gpgIdExists.error);
+
+    if (!gpgIdExists.ok) {
+      return Ok({ exists: true, initialized: false });
+    }
+
+    // 3. Parse .gpg-id and verify recipients
+    const recipients = await StoreValidation.parseGpgId(storePath);
+    if (recipients.isError()) return Err(recipients.error);
+
+    const verification = await StoreValidation.verifyRecipients(
+      recipients.ok,
+      gnupgHome
+    );
+    if (verification.isError()) return Err(verification.error);
+
+    // 4. Check for entries
+    const entries = await StoreValidation.hasEntries(storePath);
+    if (entries.isError()) return Err(entries.error);
+
+    return Ok({
+      exists: true,
+      initialized: true,
+      recipients: recipients.ok,
+      missingKeys: verification.ok.missingKeys,
+      hasEntries: entries.ok,
+    });
+  }
   /**
    * Parses a `.gpg-id` file and extracts recipient key IDs.
    * Strips end-of-line comments (pass uses `${gpg_id%%#*}` style),
