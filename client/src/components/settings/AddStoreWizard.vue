@@ -119,6 +119,10 @@ async function detectExistingStore(path: string): Promise<void> {
   const result = await StoreValidation.validate(path);
   if (result.isOk()) {
     isExistingStore.value = result.ok.initialized;
+  } else {
+    console.warn("Store validation failed:", result.error.message);
+    // Default to not existing — treat as new store
+    isExistingStore.value = false;
   }
 }
 
@@ -162,6 +166,7 @@ async function createStore(): Promise<void> {
     const mkdirResult = await Fs.mkdir(path);
     if (mkdirResult.isError()) {
       creationError.value = `Failed to create directory: ${mkdirResult.error.message}`;
+      toast.error(creationError.value);
       isCreating.value = false;
       step.value = "gpg";
       return;
@@ -174,6 +179,7 @@ async function createStore(): Promise<void> {
     const initResult = await Pass.exec(["init", gpgKeyId]);
     if (initResult.isError()) {
       creationError.value = `pass init failed: ${initResult.error.message}`;
+      toast.error(creationError.value);
       isCreating.value = false;
       step.value = "gpg";
       return;
@@ -190,6 +196,7 @@ async function createStore(): Promise<void> {
   const configResult = await Config.load();
   if (configResult.isError()) {
     creationError.value = "Failed to load config for update";
+    toast.error(creationError.value);
     isCreating.value = false;
     step.value = "gpg";
     return;
@@ -201,6 +208,7 @@ async function createStore(): Promise<void> {
   const saveResult = await Config.save(configResult.ok);
   if (saveResult.isError()) {
     creationError.value = "Failed to save config";
+    toast.error(creationError.value);
     isCreating.value = false;
     step.value = "gpg";
     return;
@@ -296,6 +304,7 @@ function resetWizard(): void {
 
       <!-- Step: GPG Key -->
       <div v-else-if="step === 'gpg'" class="flex flex-col gap-3">
+        <p v-if="creationError" class="text-xs text-destructive">{{ creationError }}</p>
         <Label>Encryption Key</Label>
         <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
           <Loader2 class="size-4 animate-spin" />
