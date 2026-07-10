@@ -39,7 +39,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
-  created: [];
+  created: [store: { name: string; path: string }];
 }>();
 
 // Wizard state
@@ -192,7 +192,7 @@ async function createStore(): Promise<void> {
   // 5. Reset and close
   isCreating.value = false;
   toast.success(`Store "${name}" created`);
-  emit("created");
+  emit("created", { name, path });
   emit("update:open", false);
   resetWizard();
 }

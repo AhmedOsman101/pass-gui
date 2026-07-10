@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +21,8 @@ const emit = defineEmits<{
   deleted: [storeName: string];
 }>();
 
-const isDeleting = ref(false);
-
 function handleDelete(): void {
-  isDeleting.value = true;
   emit("deleted", props.storeName);
-  isDeleting.value = false;
   emit("update:open", false);
 }
 </script>
@@ -50,11 +45,10 @@ function handleDelete(): void {
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          :disabled="isDeleting"
           class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           @click="handleDelete"
         >
-          {{ isDeleting ? "Deleting..." : "Delete" }}
+          Delete
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
