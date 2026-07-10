@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Plus, Trash2, Pencil, FolderOpen } from "@lucide/vue";
+import { Trash2, Pencil, FolderOpen } from "@lucide/vue";
 import { computed, ref } from "vue";
+import StoreDeleteDialog from "@/components/StoreDeleteDialog.vue";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,8 +42,8 @@ const emit = defineEmits<{
 
 const activeStoreModel = defineModel<string>("activeStore", { required: true });
 
-const newStoreName = ref("");
-const newStorePath = ref("");
+const deleteDialogOpen = ref(false);
+const deleteTarget = ref<{ name: string; path: string } | null>(null);
 const editingStore = ref<string | null>(null);
 const editStoreForm = ref({ path: "", gnupgHome: "" });
 
@@ -89,34 +90,24 @@ function saveEditStore(): void {
   emit("save");
 }
 
-function deleteStore(name: string): void {
-  if (name === "default") return;
-  if (name === props.activeStore) return;
+function promptDeleteStore(name: string): void {
+  const store = props.stores[name];
+  if (!store) return;
+  deleteTarget.value = { name, path: store.path };
+  deleteDialogOpen.value = true;
+}
+
+function confirmDeleteStore(name: string): void {
   const updated = { ...props.stores };
   delete updated[name];
   emit("updateStores", updated);
   emit("save");
 }
 
-function addStore(): void {
-  const name = newStoreName.value.trim();
-  const path = newStorePath.value.trim();
-  if (!name || !path) return;
-  if (props.stores[name]) return;
-  if (!isPathUnique(path)) return;
-  const updated = { ...props.stores, [name]: { path } };
-  emit("updateStores", updated);
-  newStoreName.value = "";
-  newStorePath.value = "";
-  emit("save");
-}
-
-async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Promise<void> {
+async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
   const result = await Dialog.showFolderDialog("Select directory");
   if (result.isOk() && result.ok) {
-    if (target === "new-path") {
-      newStorePath.value = result.ok;
-    } else if (target === "edit-path") {
+    if (target === "edit-path") {
       editStoreForm.value.path = result.ok;
     } else {
       editStoreForm.value.gnupgHome = result.ok;
@@ -208,11 +199,11 @@ async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Prom
               <Pencil class="size-4" />
             </Button>
             <Button
-              v-if="store.name !== 'default' && store.name !== activeStore"
+              v-if="store.name !== activeStore"
               variant="ghost"
               size="icon"
               class="size-8 text-destructive"
-              @click="deleteStore(store.name)"
+              @click="promptDeleteStore(store.name)"
             >
               <Trash2 class="size-4" />
             </Button>
@@ -266,46 +257,19 @@ async function pickFolder(target: "new-path" | "edit-path" | "edit-gnupg"): Prom
       </div>
 
       <Separator />
-
-      <div class="flex flex-col gap-3">
-        <Label>Add New Store</Label>
-        <div class="flex gap-2">
-          <Input
-            v-model="newStoreName"
-            placeholder="Store name"
-            class="flex-1"
-          />
-          <div class="flex flex-1 gap-2">
-            <Input
-              v-model="newStorePath"
-              placeholder="~/.password-store"
-              class="flex-1 font-mono"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              class="size-9 shrink-0"
-              @click="pickFolder('new-path')"
-            >
-              <FolderOpen class="size-4" />
-            </Button>
-          </div>
-          <Button
-            :disabled="isSaving || !newStoreName.trim() || !newStorePath.trim()"
-            @click="addStore"
-          >
-            <Plus class="size-4 mr-1" />
-            Add
-          </Button>
-        </div>
-      </div>
-
-      <Separator />
       <div class="flex justify-end">
         <Button :disabled="isSaving" @click="emit('saveActiveStore')">
           Save
         </Button>
       </div>
+
+      <StoreDeleteDialog
+        v-if="deleteTarget"
+        :store-name="deleteTarget.name"
+        :store-path="deleteTarget.path"
+        v-model:open="deleteDialogOpen"
+        @deleted="confirmDeleteStore"
+      />
     </CardContent>
   </Card>
 </template>
