@@ -49,12 +49,18 @@ const wizardOpen = ref(false);
 const editingStore = ref<string | null>(null);
 const editStoreForm = ref({ path: "", gnupgHome: "" });
 
-const storeEntries = computed(() =>
-  Object.entries(props.stores).map(([name, data]) => ({
+const storeEntries = computed(() => {
+  const entries = Object.entries(props.stores).map(([name, data]) => ({
     name,
     ...data,
-  })),
-);
+  }));
+  // Sort: active store first, then alphabetically by name
+  return entries.sort((a, b) => {
+    if (a.name === props.activeStore) return -1;
+    if (b.name === props.activeStore) return 1;
+    return a.name.localeCompare(b.name);
+  });
+});
 
 function startEditStore(name: string): void {
   editingStore.value = name;
