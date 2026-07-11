@@ -1,27 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, watch, toRef } from "vue";
+import { ref, computed, watch } from "vue";
 import {
   Eye,
   EyeOff,
-  RefreshCw,
   Plus,
   Trash2,
   ArrowLeft,
   Save,
 } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
-import {
-  generateMemorablePassword,
-  generatePassword,
-} from "@/lib/generate-password";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useEntryFormStore } from "@/stores/entry-form";
-import { useGenerationConfig } from "@/composables/use-generation-config";
+import { usePasswordGenerator } from "@/composables/use-password-generator";
+import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
 
 const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
-const gen = useGenerationConfig();
-
 const isEdit = computed(() => formStore.formMode === "edit");
 // Path — editable in create mode, read-only in edit mode
 const path = ref("");
@@ -41,16 +35,15 @@ watch(
 const secret = ref("");
 const isSecretVisible = ref(true);
 const showGeneratorOptions = ref(false);
-const genMemorable = toRef(gen.options, "memorable");
-const genLength = toRef(gen.options, "length");
-const genSymbols = toRef(gen.options, "symbols");
+const genOptions = usePasswordGenerator();
 
 // Auto-generate when form opens in create mode
 watch(
   () => formStore.formMode,
   (mode) => {
     if (mode === "create" && !formStore.formPresetPassword) {
-      regeneratePassword();
+      secret.value = genOptions.generated;
+      isSecretVisible.value = true;
     }
   },
   { immediate: true },
@@ -118,18 +111,18 @@ const duplicateKeys = computed(() => {
 
 const hasDuplicateKeys = computed(() => duplicateKeys.value.size > 0);
 
-// Generate password with current options
-function regeneratePassword(): void {
-  if (genMemorable.value) {
-    secret.value = generateMemorablePassword();
-  } else {
-    const charset = genSymbols.value
-      ? "[[:alnum:]][[:punct:]]"
-      : "[[:alnum:]]";
-    secret.value = generatePassword(genLength.value, charset);
-  }
+function onRegenerate(): void {
+  genOptions.regenerate();
+  secret.value = genOptions.generated;
   isSecretVisible.value = true;
 }
+
+watch(() => genOptions.generated, (val) => {
+  if (showGeneratorOptions.value && val) {
+    secret.value = val;
+    isSecretVisible.value = true;
+  }
+});
 
 // Build content string from form fields
 function buildContent(): string {
@@ -228,7 +221,6 @@ async function handleSubmit(): Promise<void> {
             class="h-7 px-2 text-xs"
             @click="showGeneratorOptions = !showGeneratorOptions"
           >
-            <RefreshCw class="size-3 mr-1" />
             {{ showGeneratorOptions ? "Hide Generator" : "Generate" }}
           </Button>
         </div>
@@ -254,80 +246,11 @@ async function handleSubmit(): Promise<void> {
           </Button>
         </div>
 
-        <!-- Inline generator options -->
-        <div v-if="showGeneratorOptions" class="rounded-lg border p-4 space-y-4">
-          <!-- Memorable toggle -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm font-medium">Memorable</label>
-            <button
-              type="button"
-              role="switch"
-              :aria-checked="genMemorable"
-              class="peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              :class="genMemorable ? 'bg-primary' : 'bg-input'"
-              @click="genMemorable = !genMemorable"
-            >
-              <span
-                class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform"
-                :class="genMemorable ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
-          </div>
-
-          <!-- Length slider + numeric -->
-          <div v-if="!genMemorable" class="space-y-2">
-            <label class="text-sm font-medium">Length</label>
-            <div class="flex items-center gap-3">
-              <input
-                v-model.number="genLength"
-                type="range"
-                min="8"
-                max="64"
-                class="flex-1"
-              />
-              <input
-                v-model.number="genLength"
-                type="number"
-                min="8"
-                max="64"
-                class="w-16 rounded-md border border-input bg-background px-2 py-1 text-sm text-center font-mono ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              />
-            </div>
-          </div>
-
-          <!-- Symbols toggle -->
-          <div v-if="!genMemorable" class="flex items-center justify-between">
-            <label class="text-sm font-medium">Symbols</label>
-            <button
-              type="button"
-              role="switch"
-              :aria-checked="genSymbols"
-              class="peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              :class="genSymbols ? 'bg-primary' : 'bg-input'"
-              @click="genSymbols = !genSymbols"
-            >
-              <span
-                class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform"
-                :class="genSymbols ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
-          </div>
-
-          <p v-if="genMemorable" class="text-xs text-muted-foreground">
-            Format: NNNN-word-word-word (4 digits + 3 EFF words)
-          </p>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            class="w-full"
-            @click="regeneratePassword"
-          >
-            <RefreshCw class="size-4 mr-2" />
-            Generate New Password
-          </Button>
-        </div>
+        <GeneratorOptionsPanel
+          v-if="showGeneratorOptions"
+          v-model:gen-state="genOptions"
+          @regenerate="onRegenerate"
+        />
       </div>
 
       <!-- Metadata -->
