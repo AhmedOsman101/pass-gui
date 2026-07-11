@@ -16,13 +16,13 @@
 // password store or GPG keyring.
 // ---------------------------------------------------------------------------
 
-import { describe, it, expect, beforeAll } from "vitest";
-import { execSync, type ExecSyncOptions, type StdioOptions } from "node:child_process";
+import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { beforeAll, describe, expect, it } from "vitest";
 
-const TEST_ID = "pass-gui-int-" + Date.now();
+const TEST_ID = `pass-gui-int-${Date.now()}`;
 const testRoot = join(tmpdir(), TEST_ID);
 
 const GNUPGHOME = join(testRoot, ".gnupg");
@@ -61,10 +61,10 @@ beforeAll(() => {
   // Verify required binaries exist
   for (const bin of ["gpg", "pass", "git"]) {
     try {
-      execSync("which " + bin, { stdio: "pipe" });
+      execSync(`which ${bin}`, { stdio: "pipe" });
     } catch {
       throw new Error(
-        bin + " is not installed. Run inside the Podman container or install it locally.",
+        `${bin} is not installed. Run inside the Podman container or install it locally.`
       );
     }
   }
@@ -104,7 +104,7 @@ describe("pass store initialization", () => {
   });
 
   it(".gpg-id contains the recipient email", () => {
-    const gpgId = run("cat " + join(PASSWORD_STORE_DIR, ".gpg-id"));
+    const gpgId = run(`cat ${join(PASSWORD_STORE_DIR, ".gpg-id")}`);
     expect(gpgId).toBe("test@pass-gui.local");
   });
 });
@@ -183,7 +183,7 @@ describe("Multiple GNUPGHOME overrides", () => {
 
     // Second store should be isolated from the first
     const firstList = run("pass ls");
-    const firstGpgId = run("cat " + join(PASSWORD_STORE_DIR, ".gpg-id"));
+    const firstGpgId = run(`cat ${join(PASSWORD_STORE_DIR, ".gpg-id")}`);
 
     expect(firstGpgId).toBe("test@pass-gui.local");
     expect(firstList).not.toContain("alt-test");
@@ -192,9 +192,7 @@ describe("Multiple GNUPGHOME overrides", () => {
 
 describe("pass git integration", () => {
   it("creates a git repo in the store", () => {
-    const gitLog = run(
-      'git -C "' + PASSWORD_STORE_DIR + '" log --oneline',
-    );
+    const gitLog = run(`git -C "${PASSWORD_STORE_DIR}" log --oneline`);
     expect(gitLog).toBeTruthy();
     expect(gitLog.split("\n").length).toBeGreaterThanOrEqual(1);
   });

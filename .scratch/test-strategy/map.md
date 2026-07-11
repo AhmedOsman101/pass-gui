@@ -31,10 +31,10 @@ A **Test Strategy Document** — the finalized specification of framework choice
 - [CI/CD provider](issues/06-ci-cd-workflow-yaml) — GitHub Actions. Docker in CI, Podman locally. CI/CD YAML handled as a separate implementation ticket after the strategy doc is complete.
 - [Component test scope](issues/03-define-component-test-scope) — **Resolved via task-1-report.** 7 core components warrant full mount tests (EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail) + 3 lightweight dialog tests (CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog). All others exempt: dialog passthroughs, shadcn-vue wrappers, form-binding tabs, readiness screens, pages, and icons. See `.scratch/test-strategy/reports/task-1-report.md` for full per-component analysis.
 - [Vitest config implemented](issues/04-configure-vitest-setup) — **Resolved via task-2.** Separate `vitest.config.ts`, happy-dom environment, `vi.hoisted()` mock factory in setup.ts, test scripts added. See `.scratch/test-strategy/reports/task-2-report.md`.
+- [Store test patterns](issues/05-define-store-test-patterns) — **Resolved via task-3.** 5 patterns defined: setup store (ActiveStore, service-level mock), CRUD store (EntryTree, `vi.mock("@/services/entries")`), timer store (Clipboard, `vi.useFakeTimers()`), composable with store coupling (useTreeState, `createTestingPinia`), crypto composable (usePasswordGenerator, `vi.stubGlobal`). See `.scratch/test-strategy/reports/task-3-report.md`.
 
 ## Not yet specified
 - **Vitest config specifics** — (graduated to ticket 04)
-- **Store test patterns** — (graduated to ticket 05)
 - **CI workflow YAML** — (graduated to ticket 06)
 - **Mock helper library** — whether to create shared mock factories for `@neutralinojs/lib` exports (e.g., `createMockNeu()`, `createMockFs()`) or inline per test file. Suspect shared factory but needs a decision.
 - **Fixture management** — how to organize test fixtures (sample GPG output, sample entry data) for the Podman integration suite.

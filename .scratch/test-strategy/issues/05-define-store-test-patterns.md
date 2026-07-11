@@ -1,30 +1,51 @@
 # 05: Define Pinia store and composable test patterns
 
 Type: research
-Status: open
-Blocked by:
+Status: resolved
 
-## Question
+## Resolution
 
-How should the 5 Pinia stores and 4 composables be tested?
+All store and composable test patterns documented. See `reports/task-3-report.md` for full code examples.
 
-Key questions:
+## Inventory
 
-1. **`@pinia/testing`** — How does it work with Pinia 3's setup stores? Can we inject a mocked service layer?
-2. **Service injection** — Stores import services directly (`import { Pass } from "@/services/pass"`). Can `vi.mock` handle this? Do we need to mock at the service module level?
-3. **EntryTree store** — This is the largest store (212L) with CRUD operations, search, sort. How do we test tree mutations? Mock the `Entries` service?
-4. **Clipboard store** (109L) — Timer-based with drift correction. How to test `setTimeout`/`clearTimeout` interactions with fake timers?
-5. **ActiveStore store** (126L) — Config + Pass service orchestration. Integration-style test?
-6. **Composables** — `useTreeState` (148L, complex keyboard nav + tree state). How to test composables in isolation vs coupled to EntryTree store?
-7. **`usePasswordGenerator`** — Depends on crypto.getRandomValues. Mock the crypto API?
+### Stores (565 LOC)
 
-## Deliverables
+| Store | LOC | Deps | Timer? | Test Pattern |
+|-------|-----|------|--------|-------------|
+| ActiveStore | 126 | Config, Pass, Path | No | Service-level `vi.mock`, test `load()`/`switchTo()` with mock return values |
+| Clipboard | 109 | Clipboard | Yes (setTimeout) | `vi.useFakeTimers()`, `vi.advanceTimersByTime()`, never `setTimeout` in assertions |
+| EntryForm | 49 | None | No | Pure Pinia: just set refs directly, test getters |
+| EntryTree | 212 | Entries, Fs, Pass | No | `vi.mock("@/services/entries")`, test CRUD + refresh/selectEntry chains |
+| Readiness | 69 | Readiness | No | `vi.mock("@/services/readiness")`, test `evaluate()`/`reset()` |
 
-Test pattern templates for each store/composable type in the strategy doc:
-- Setup store test (ActiveStore)
-- Store with service mocks (EntryTree)
-- Timer-based store (Clipboard)
-- Composable with store coupling (useTreeState)
-- Crypto-dependent composable (usePasswordGenerator)
+### Composables (264 LOC)
 
-Include code examples where needed.
+| Composable | LOC | Deps | Test Pattern |
+|------------|-----|------|-------------|
+| useClipboardBuffer | 61 | Fs, useEntryTreeStore | `createTestingPinia`, set store refs, call `copyEntry`/`pasteEntry` |
+| useGenerationConfig | 25 | Config | `vi.mock("@/services/config")`, test that `options` loads from Config.getValue |
+| usePasswordGenerator | 30 | useGenerationConfig, generate-password lib | `vi.mock` both deps, test `regenerate()` with known return values |
+| useTreeState | 148 | useEntryTreeStore, tree-index, tree-state | `createTestingPinia`, set `treeStore.tree`, test keyboard nav functions |
+
+## Key Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Service mocking | `vi.mock("@/services/...")` at module level | Stores import services directly; Vitest's module-level mock is the cleanest approach |
+| Store coupling in composables | `createTestingPinia({ createSpy: vi.fn })` | Composable calls `useEntryTreeStore()` internally — need an active Pinia instance |
+| Timer tests | `vi.useFakeTimers()` | Avoids real wait; `vi.advanceTimersByTime()` for tick-by-tick control |
+| Crypto mocking | `vi.stubGlobal("crypto", ...)` | `crypto.getRandomValues` is a Web API global in NeutralinoJS context |
+| Helper pattern | `ok()`/`err()` factory functions | Services return `Result` types — need `{ isError: () => false, ok: value }` shape |
+| EntryForm store | Direct ref manipulation | Pure state store, no services — simplest test class |
+| Pinia watchers | `store.$subscribe(spy)` / `store.$onAction(spy)` | Built-in Pinia methods work with `@pinia/testing` |
+| `useRouter`/`useRoute` | Create real `vue-router` instance, pass as plugin | Pinia's plugin system needed for stores that call `useRouter()` internally |
+
+## Code Examples
+
+Full code examples for each pattern are in `reports/task-3-report.md`:
+- 5a: ActiveStore — service-level mock with `ok()`/`err()` helpers
+- 5b: EntryTree — CRUD mock with refresh/selection chain assertions
+- 5c: Clipboard — fake timers, drift correction, expiry, error handling
+- 5d: useTreeState — Pinia instance + store ref assignment, keyboard nav
+- 5e: usePasswordGenerator — composable mock + crypto substitute
