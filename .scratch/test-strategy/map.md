@@ -22,16 +22,16 @@ A **Test Strategy Document** — the finalized specification of framework choice
 
 - [Framework choices per layer](issues/04-configure-vitest-setup) — Vitest for all: lib (pure functions), services (mocked I/O), stores (@pinia/testing), components (Vue Test Utils). One recommended approach per layer with reasoning inline.
 - [NeutralinoJS mock strategy](issues/01-investigate-neu-api-surface) — `vi.mock("@neutralinojs/lib")` at module level (Option B). Zero code changes, clean boundary, Vitest's native mocking.
+- [Mock surface documented](.scratch/test-strategy/mock-surface.md) — Full inventory of all 10 source files importing from `@neutralinojs/lib`, exact signatures, auto-mock file template, and gotchas (init side-effects, NL_OS global, error shape). Ticket #15 resolved.
 - [Sandbox and integration strategy](issues/02-design-podman-containerfile) — Hybrid: mocked unit tests for speed, Podman-backed integration tests for real GPG/pass verification. Node.js `child_process` as test harness inside container (NeutralinoJS can't run in Node.js context).
+- [Container design resolved](issues/02-design-podman-containerfile) — Alpine-based `Containerfile.test` at project root, GPG/pass/git/pnpm preinstalled, 38.7 MiB image. `tests/integration/gpg-pass.test.ts` proof-of-concept test verifies full GPG→pass flow. Ticket #16 resolved.
 - [File organization](issues/04-configure-vitest-setup) — Co-located `.test.ts` files next to source modules. Integration tests in separate `tests/integration/` directory.
 - [Priority order](issues/04-configure-vitest-setup) — P0 (pure lib) → P1 (shell/path) → P2 (service orchestration) → P3 (stores/composables) → P4 (core services) → P5 (components) → P6 (Podman integration).
 - [Coverage thresholds](issues/04-configure-vitest-setup) — Warning < 60% total (CI log, non-blocking), PR Block < 75% new code (blocks merge), Target 80% total (quarterly aspirational), Integration 100% pass (hard block). Exemptions: generated code, shadcn-vue UI components, type-only files.
 - [CI/CD provider](issues/06-ci-cd-workflow-yaml) — GitHub Actions. Docker in CI, Podman locally. CI/CD YAML handled as a separate implementation ticket after the strategy doc is complete.
-- [Component test scope](issues/03-define-component-test-scope) — Not all components warrant tests. Only components with non-trivial logic: EntryForm, Tree, AppSidebar, and settings tabs with complex interaction (AddStoreWizard, GpgTab, StoresTab). Dialog passthroughs and shadcn-vue wrappers are exempt.
+- [Component test scope](issues/03-define-component-test-scope) — **Resolved via task-1-report.** 7 core components warrant full mount tests (EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail) + 3 lightweight dialog tests (CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog). All others exempt: dialog passthroughs, shadcn-vue wrappers, form-binding tabs, readiness screens, pages, and icons. See `.scratch/test-strategy/reports/task-1-report.md` for full per-component analysis.
 
 ## Not yet specified
-
-- **Podman container specifics** — (graduated to ticket 02)
 - **Vitest config specifics** — (graduated to ticket 04)
 - **Store test patterns** — (graduated to ticket 05)
 - **CI workflow YAML** — (graduated to ticket 06)
