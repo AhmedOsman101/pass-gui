@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config";
-import vue from "@vitejs/plugin-vue";
 import path from "node:path";
+import vue from "@vitejs/plugin-vue";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [vue()],
@@ -13,10 +13,7 @@ export default defineConfig({
     globals: true,
     environment: "happy-dom",
     setupFiles: ["./src/test/setup.ts"],
-    include: [
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx",
-    ],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],

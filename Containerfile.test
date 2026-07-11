@@ -1,0 +1,28 @@
+# Containerfile.test — Integration test environment for pass-gui
+#
+# Build:   podman build -t pass-gui-test -f Containerfile.test .
+# Run:     podman run --rm -v $(pwd):/app -w /app pass-gui-test \
+#            bash -c "pnpm install && pnpm --filter=client vitest run tests/integration/"
+#
+# The container has Node.js 24, pnpm, GPG, and pass pre-installed.
+# Mount the project root at /app, then run pnpm install + integration tests.
+#
+# Alpine base = smaller image, faster builds than Debian slim
+
+FROM node:24-alpine
+
+# Install system dependencies
+# gnupg — GPG encryption for pass
+# pass  — the standard Unix password store
+# git   — pass uses git internally; pnpm may need it for some packages
+RUN apk add --no-cache gnupg pass git
+
+# Install pnpm at the project's pinned version
+RUN npm install -g pnpm@11.9.0
+
+# Create a non-root user with writable home for GPG
+RUN addgroup -S testuser && adduser -S testuser -G testuser -h /home/testuser
+USER testuser
+WORKDIR /app
+
+CMD ["sh"]

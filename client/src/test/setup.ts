@@ -30,7 +30,7 @@ import { vi } from "vitest";
 
 const { createMockNeu } = vi.hoisted(() => {
   const defaultExecCommandResult = {
-    pid: 12345,
+    pid: 12_345,
     stdOut: "",
     stdErr: "",
     exitCode: 0,
@@ -38,7 +38,9 @@ const { createMockNeu } = vi.hoisted(() => {
 
   function createMockNeu() {
     const os = {
-      execCommand: vi.fn(() => Promise.resolve({ ...defaultExecCommandResult })),
+      execCommand: vi.fn(() =>
+        Promise.resolve({ ...defaultExecCommandResult })
+      ),
       getEnv: vi.fn(() => Promise.resolve("")),
       getEnvs: vi.fn(() => Promise.resolve({})),
       getLocale: vi.fn(() =>
@@ -53,7 +55,7 @@ const { createMockNeu } = vi.hoisted(() => {
       showNotification: vi.fn(() => Promise.resolve()),
       showOpenDialog: vi.fn(() => Promise.resolve([])),
       showSaveDialog: vi.fn(() => Promise.resolve("")),
-      spawnProcess: vi.fn(() => Promise.resolve({ id: 1, pid: 12345 })),
+      spawnProcess: vi.fn(() => Promise.resolve({ id: 1, pid: 12_345 })),
       trashItem: vi.fn(() => Promise.resolve("")),
       updateSpawnedProcess: vi.fn(() => Promise.resolve()),
     };
@@ -145,15 +147,9 @@ const { createMockNeu } = vi.hoisted(() => {
     };
 
     const events = {
-      on: vi.fn(() =>
-        Promise.resolve({ success: true, message: "ok" })
-      ),
-      off: vi.fn(() =>
-        Promise.resolve({ success: true, message: "ok" })
-      ),
-      dispatch: vi.fn(() =>
-        Promise.resolve({ success: true, message: "ok" })
-      ),
+      on: vi.fn(() => Promise.resolve({ success: true, message: "ok" })),
+      off: vi.fn(() => Promise.resolve({ success: true, message: "ok" })),
+      dispatch: vi.fn(() => Promise.resolve({ success: true, message: "ok" })),
       broadcast: vi.fn(() => Promise.resolve()),
     };
 
