@@ -165,7 +165,11 @@ describe("Multiple GNUPGHOME overrides", () => {
 
     run("gpg --batch --gen-key /dev/stdin", {
       input: batchConfig,
-      env: { GNUPGHOME: altGnupgHome, HOME: testRoot, PATH: process.env.PATH! },
+      env: {
+        GNUPGHOME: altGnupgHome,
+        HOME: testRoot,
+        PATH: process.env.PATH ?? "/usr/bin",
+      },
     });
 
     const altPasswordStoreDir = join(testRoot, ".password-store-alt");
@@ -174,7 +178,7 @@ describe("Multiple GNUPGHOME overrides", () => {
         GNUPGHOME: altGnupgHome,
         PASSWORD_STORE_DIR: altPasswordStoreDir,
         HOME: testRoot,
-        PATH: process.env.PATH!,
+        PATH: process.env.PATH ?? "/usr/bin",
       },
     });
 

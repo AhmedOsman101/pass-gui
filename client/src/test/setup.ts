@@ -36,7 +36,7 @@ const { createMockNeu } = vi.hoisted(() => {
     exitCode: 0,
   };
 
-  function createMockNeu() {
+  function buildMockNeu() {
     const os = {
       execCommand: vi.fn(() =>
         Promise.resolve({ ...defaultExecCommandResult })
@@ -285,7 +285,7 @@ const { createMockNeu } = vi.hoisted(() => {
     };
   }
 
-  return { createMockNeu };
+  return { createMockNeu: buildMockNeu };
 });
 
 vi.mock("@neutralinojs/lib", () => createMockNeu());
