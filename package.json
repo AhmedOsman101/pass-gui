@@ -30,7 +30,7 @@
   "dependencies": {
     "@ltd/j-toml": "^1.38.0",
     "@lucide/vue": "^1.22.0",
-    "@neutralinojs/lib": "^6.8.0",
+    "@neutralinojs/lib": "github:AhmedOsman101/neutralino.js#main",
     "@tanstack/vue-hotkeys": "^0.10.0",
     "@vueuse/core": "^14.2.1",
     "class-variance-authority": "^0.7.1",
