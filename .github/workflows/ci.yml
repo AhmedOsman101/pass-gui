@@ -1,0 +1,67 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Level 1: Quick check (all pushes)
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      # Level 2: Full check (PR to main or tag push)
+      - name: Coverage
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
+        run: pnpm test:coverage
+
+      - name: Build Docker image for integration tests
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
+        run: docker build -t pass-gui-test -f Containerfile.test .
+
+      - name: Run integration tests
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
+        run: >
+          docker run --rm
+          -v ${{ github.workspace }}:/app
+          -w /app
+          pass-gui-test
+          bash -c "pnpm install --frozen-lockfile && pnpm --filter=client vitest run tests/integration/"
+
+      # Level 3: Release (tag push only)
+      - name: Build
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: pnpm build
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: pnpm release

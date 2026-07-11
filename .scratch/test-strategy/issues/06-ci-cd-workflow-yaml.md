@@ -1,26 +1,44 @@
 # 06: Implement GitHub Actions CI/CD workflow
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 04, 02
 
-## Question
+## Resolution
 
-Create the GitHub Actions workflow YAML for the test suite.
+Created `.github/workflows/ci.yml` with a single-job workflow covering three trigger levels:
 
-This is blocked until:
-- **Ticket 04** is resolved (Vitest config is designed — needed to know what commands to run)
-- **Ticket 02** is resolved (Podman Containerfile — needed for the integration test job)
+### Level 1: Quick Check (push to any branch)
+Trigger: `push` (any branch)
+Steps:
+- Checkout
+- pnpm/action-setup@v4 (v11.9.0)
+- setup-node@v4 (Node 24, pnpm cache)
+- pnpm install --frozen-lockfile
+- pnpm typecheck
+- pnpm lint
+- pnpm test:unit
 
-When unblocked, implement `.github/workflows/ci.yml` with:
+### Level 2: Full Check (PR to main or tag push)
+All of Level 1 plus:
+- pnpm test:coverage (via `vitest run --coverage`)
+- Build Docker image from Containerfile.test
+- Run integration tests inside container
 
-1. **Quick check (push to any branch):** `pnpm typecheck` + `pnpm lint` + `pnpm test:unit`
-2. **Full check (PR to main):** Quick + `pnpm test:coverage` + `pnpm test:integration` (Docker-based)
-3. **Release (tag push):** Full + `pnpm build` + `neu build --release`
+### Level 3: Release (tag push v*)
+All of Level 2 plus:
+- pnpm build
+- pnpm release
 
-Needs to handle:
-- Docker-based integration tests (Docker-in-GHA; Podman-locally with compatible Containerfile)
-- Coverage reporting with threshold gates (75% new code)
-- Cancelling in-progress runs on new pushes
-- Caching pnpm store + node_modules
-- Matrix strategy? (macOS/Windows/Linux? — NeutralinoJS is cross-platform)
+### Design decisions
+- **Single job** — simpler than multi-job, no shared-artifact complexity
+- **Conditional steps** — `if:` expressions gate Level 2/3 steps by event type
+- **Concurrency** — `concurrency.group` by ref, `cancel-in-progress: true`
+- **Docker in CI** — direct `docker build`/`docker run` (Docker is available on ubuntu-latest)
+- **Coverage threshold** — not enforced in CI YAML (configured in vitest.config.ts)
+- **No matrix** — NeutralinoJS builds are cross-platform but CI runs on Linux only; binutils for neutralino only available on ubuntu-latest
+
+### Files
+- Created: `.github/workflows/ci.yml`
+- Updated: `map.md` (decision entry)
+- Report: `reports/task-4-report.md`

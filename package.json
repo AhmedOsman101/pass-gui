@@ -21,6 +21,8 @@
     "release": "pnpm clean && pnpm build:frontend && neu build --release --clean",
     "clean": "rm -rf client/dist && rm -rf dist/*",
     "test": "pnpm --filter=client test:unit",
+    "test:unit": "pnpm --filter=client test:unit",
+    "test:coverage": "pnpm --filter=client test:coverage",
     "test:integration": "echo 'Integration tests: run inside Podman container'",
     "update:neu": "neu update"
   },
