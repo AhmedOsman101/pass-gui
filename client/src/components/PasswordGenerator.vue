@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from "vue";
+import { ref, computed, watchEffect, toRef } from "vue";
 import { Copy, RefreshCw } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,17 +25,10 @@ const emit = defineEmits<{
 }>();
 
 const isOpen = ref(false);
-const memorable = gen.memorable;
-const length = gen.length;
-const symbols = gen.symbols;
+const memorable = toRef(gen.options, "memorable");
+const length = toRef(gen.options, "length");
+const symbols = toRef(gen.options, "symbols");
 const generated = ref("");
-
-// Load fresh config each time dialog opens
-watchEffect(async () => {
-  if (isOpen.value) {
-    await gen.load();
-  }
-});
 
 const charset = computed(() => {
   const alpha = "[[:alnum:]]";

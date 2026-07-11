@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, toRef } from "vue";
 import {
   Eye,
   EyeOff,
@@ -41,27 +41,19 @@ watch(
 const secret = ref("");
 const isSecretVisible = ref(true);
 const showGeneratorOptions = ref(false);
-const genMemorable = gen.memorable;
-const genLength = gen.length;
-const genSymbols = gen.symbols;
+const genMemorable = toRef(gen.options, "memorable");
+const genLength = toRef(gen.options, "length");
+const genSymbols = toRef(gen.options, "symbols");
 
-// Load config + auto-generate when form opens in create mode
-let configLoaded = false;
+// Auto-generate when form opens in create mode
 watch(
   () => formStore.formMode,
-  async (mode) => {
-    if (mode === "create") {
-      await gen.load();
-      configLoaded = true;
-      // Auto-generate if no preset password was provided
-      if (!formStore.formPresetPassword) {
-        regeneratePassword();
-      }
-    } else {
-      configLoaded = false;
+  (mode) => {
+    if (mode === "create" && !formStore.formPresetPassword) {
+      regeneratePassword();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Initialize secret from entry or preset

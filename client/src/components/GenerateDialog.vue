@@ -16,7 +16,7 @@ import {
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useGenerationConfig } from "@/composables/use-generation-config";
-import { computed, ref, watchEffect } from "vue";
+import { computed, ref, watchEffect, toRef } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -46,9 +46,9 @@ const isOpen = computed({
   },
 });
 const path = ref("");
-const memorable = gen.memorable;
-const length = gen.length;
-const symbols = gen.symbols;
+const memorable = toRef(gen.options, "memorable");
+const length = toRef(gen.options, "length");
+const symbols = toRef(gen.options, "symbols");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
 const generated = ref("");
@@ -56,13 +56,6 @@ const generated = ref("");
 const charset = computed(() =>
   symbols.value ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]",
 );
-
-// Load fresh config each time dialog opens
-watchEffect(async () => {
-  if (isOpen.value) {
-    await gen.load();
-  }
-});
 
 // Auto-regenerate when any option changes
 watchEffect(() => {
