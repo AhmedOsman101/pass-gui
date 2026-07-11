@@ -10,14 +10,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   currentPath: string;
   currentContent: string;
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 
 const isOpen = ref(false);
 const content = ref(props.currentContent);
@@ -40,7 +40,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.editEntry(props.currentPath, content.value);
+  const result = await treeStore.editEntry(props.currentPath, content.value);
 
   isSubmitting.value = false;
 

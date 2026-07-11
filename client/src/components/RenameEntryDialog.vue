@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   currentPath: string;
@@ -22,7 +22,7 @@ const emit = defineEmits<{
   "update:open": [value: boolean];
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 
 const newName = ref("");
 const isSubmitting = ref(false);
@@ -78,7 +78,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.moveEntry(
+  const result = await treeStore.moveEntry(
     props.currentPath,
     fullPath,
     props.nodeType

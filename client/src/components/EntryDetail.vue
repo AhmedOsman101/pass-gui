@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRightLeft, Copy, Eye, EyeOff, Files, Pencil, Plus, Scissors, Sparkles, SquarePen, Trash2, X } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import DuplicateEntryDialog from "@/components/DuplicateEntryDialog.vue";
@@ -9,18 +10,55 @@ import MoveEntryDialog from "@/components/MoveEntryDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import { useClipboardStore } from "@/stores/clipboard";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
+import { useEntryFormStore } from "@/stores/entry-form";
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
+const formStore = useEntryFormStore();
 const clipboard = useClipboardStore();
 
 const isSecretVisible = ref(false);
 const isDeleteOpen = ref(false);
 const isRenameOpen = ref(false);
 
-const entry = computed(() => entries.currentEntry);
-const showSkeleton = computed(() => entries.showEntrySkeleton);
-const editPath = computed(() => entries.currentPath ?? "");
+const entry = computed(() => treeStore.currentEntry);
+
+const showSkeleton = ref(false);
+let skeletonTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => treeStore.currentPath,
+  () => {
+    showSkeleton.value = false;
+    if (skeletonTimer) {
+      clearTimeout(skeletonTimer);
+      skeletonTimer = null;
+    }
+
+    if (treeStore.currentPath) {
+      skeletonTimer = setTimeout(() => {
+        if (treeStore.currentEntry?.path !== treeStore.currentPath) {
+          showSkeleton.value = true;
+        }
+      }, 500);
+    }
+  },
+);
+
+watch(
+  () => treeStore.currentEntry,
+  (entry) => {
+    if (entry && entry.path === treeStore.currentPath) {
+      showSkeleton.value = false;
+      if (skeletonTimer) {
+        clearTimeout(skeletonTimer);
+        skeletonTimer = null;
+      }
+    }
+  },
+);
+
+const editPath = computed(() => treeStore.currentPath ?? "");
 
 const metadataEntries = computed(() => {
   if (!entry.value) return [];
@@ -46,19 +84,39 @@ function toggleSecret(): void {
   isSecretVisible.value = !isSecretVisible.value;
 }
 
-function copySecret(): void {
-  if (!entry.value || !entries.currentPath) return;
-  clipboard.copy(entry.value.secret, entries.currentPath);
+async function copySecret(): Promise<void> {
+  if (!entry.value || !treeStore.currentPath) return;
+  const action = await clipboard.copy(entry.value.secret, treeStore.currentPath);
+  if (action) {
+    toast("Password copied", {
+      description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
+      action: {
+        label: "Clear",
+        onClick: () => clipboard.clear(),
+      },
+      duration: action.timerSeconds * 1000,
+    });
+  }
 }
 
-function copyValue(value: string): void {
-  clipboard.copy(value, entries.currentPath ?? "");
+async function copyValue(value: string): Promise<void> {
+  const action = await clipboard.copy(value, treeStore.currentPath ?? "");
+  if (action) {
+    toast("Password copied", {
+      description: `Clears in ${action.timerSeconds}s`,
+      action: {
+        label: "Clear",
+        onClick: () => clipboard.clear(),
+      },
+      duration: action.timerSeconds * 1000,
+    });
+  }
 }
 </script>
 
 <template>
   <!-- Entry form (create or edit) -->
-  <EntryForm v-if="entries.isFormOpen" />
+  <EntryForm v-if="formStore.isFormOpen" />
 
   <!-- Loading -->
   <div v-else-if="showSkeleton" class="p-6 space-y-4">
@@ -77,11 +135,11 @@ function copyValue(value: string): void {
       <p class="text-xs">Choose an entry from the sidebar or create a new one.</p>
     </div>
     <div class="flex items-center gap-2">
-      <Button variant="outline" size="sm" @click="entries.openCreateForm()">
+      <Button variant="outline" size="sm" @click="formStore.openCreateForm()">
         <Plus class="size-4 mr-1" />
         New Entry
       </Button>
-      <PasswordGenerator @save="(pw: string) => entries.openCreateForm(pw)">
+      <PasswordGenerator @save="(pw: string) => formStore.openCreateForm(pw)">
         <Button variant="outline" size="sm">
           <Sparkles class="size-4 mr-1" />
           Generate
@@ -99,7 +157,7 @@ function copyValue(value: string): void {
         variant="ghost"
         size="icon"
         class="size-8 shrink-0"
-        @click="entries.clearSelection()"
+        @click="treeStore.clearSelection()"
       >
         <X class="size-4" />
       </Button>
@@ -187,24 +245,24 @@ function copyValue(value: string): void {
 
     <!-- Actions bar -->
     <div class="flex items-center gap-2 px-2 py-5 border-t">
-      <DuplicateEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
+      <DuplicateEntryDialog v-if="treeStore.currentPath" :current-path="treeStore.currentPath">
         <Button variant="outline" size="sm">
           <Files class="size-4 mr-1" />
           Duplicate
         </Button>
       </DuplicateEntryDialog>
       <Button
-        v-if="entries.currentPath && entry"
+        v-if="treeStore.currentPath && entry"
         variant="outline"
         size="sm"
-        @click="entries.openEditForm(editPath)"
+        @click="formStore.openEditForm(editPath)"
       >
         <SquarePen class="size-4 mr-1" />
         Edit
       </Button>
       <RenameEntryDialog
-        v-if="entries.currentPath"
-        :current-path="entries.currentPath"
+        v-if="treeStore.currentPath"
+        :current-path="treeStore.currentPath"
         v-model:open="isRenameOpen"
       >
         <Button
@@ -216,15 +274,15 @@ function copyValue(value: string): void {
           Rename
         </Button>
       </RenameEntryDialog>
-      <MoveEntryDialog v-if="entries.currentPath" :current-path="entries.currentPath">
+      <MoveEntryDialog v-if="treeStore.currentPath" :current-path="treeStore.currentPath">
         <Button variant="outline" size="sm">
           <ArrowRightLeft class="size-4 mr-1" />
           Move
         </Button>
       </MoveEntryDialog>
       <DeleteConfirmDialog
-        v-if="entries.currentPath"
-        :entry-path="entries.currentPath"
+        v-if="treeStore.currentPath"
+        :entry-path="treeStore.currentPath"
         v-model:open="isDeleteOpen"
       >
         <Button

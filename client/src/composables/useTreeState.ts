@@ -1,16 +1,16 @@
-import { computed, ref, shallowRef, toRef, watch } from "vue";
+import { computed, type Ref, ref, shallowRef, toRef, watch } from "vue";
 import { buildIndex } from "@/lib/tree-index";
 import { buildSearchResults, buildVisible, toggleSet } from "@/lib/tree-state";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 import type { TreeIndex } from "@/types/entries";
 
-export function useTreeState() {
-  const entries = useEntriesStore();
+export function useTreeState(searchQuery?: Ref<string>) {
+  const treeStore = useEntryTreeStore();
 
-  const index = shallowRef<TreeIndex>(buildIndex(entries.tree));
+  const index = shallowRef<TreeIndex>(buildIndex(treeStore.tree));
 
   watch(
-    () => entries.tree,
+    () => treeStore.tree,
     newTree => {
       const newIndex = buildIndex(newTree);
       index.value = newIndex;
@@ -29,13 +29,15 @@ export function useTreeState() {
   const expandedDirs = ref(new Set<string>());
   const focusedPath = ref<string | null>(null);
 
-  const mode = computed(() => (entries.searchQuery ? "search" : "tree"));
+  const query = computed(() => searchQuery?.value ?? "");
+
+  const mode = computed(() => (query.value ? "search" : "tree"));
 
   const visibleNodes = computed(() => {
     if (mode.value === "search") {
-      return buildSearchResults(index.value, entries.searchQuery);
+      return buildSearchResults(index.value, query.value);
     }
-    return buildVisible(index.value, expandedDirs.value, entries.sortMode);
+    return buildVisible(index.value, expandedDirs.value, treeStore.sortMode);
   });
 
   function toggleDir(path: string): void {
@@ -47,9 +49,9 @@ export function useTreeState() {
     if (!node) return;
 
     if (node.type === "FILE") {
-      entries.selectEntry(path);
+      treeStore.selectEntry(path);
     } else {
-      entries.setCurrentPath(path);
+      treeStore.setCurrentPath(path);
     }
   }
 
@@ -131,7 +133,7 @@ export function useTreeState() {
     visibleNodes,
     expandedDirs,
     focusedPath,
-    selectedPath: toRef(entries, "currentPath"),
+    selectedPath: toRef(treeStore, "currentPath"),
     mode,
     index,
     toggleDir,

@@ -64,7 +64,7 @@ function regenerate(): void {
 
 function copyToClipboard(): void {
   if (generated.value) {
-    clipboard.copy(generated.value, "password-generator");
+    void clipboard.copy(generated.value, "password-generator");
   }
 }
 

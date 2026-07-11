@@ -14,13 +14,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
+import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
 import { useTreeState } from "@/composables/useTreeState";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
+const { buffer: copyBuffer, pasteEntry, copyEntry, cutEntry } = useClipboardBuffer();
+
+const props = defineProps<{
+  searchQuery?: string;
+}>();
+
+const searchQueryRef = computed(() => props.searchQuery ?? "");
 
 const {
   visibleNodes,
@@ -33,7 +41,7 @@ const {
   focusSelect,
   arrowRight,
   arrowLeft,
-} = useTreeState();
+} = useTreeState(searchQueryRef);
 
 const isRenameOpen = ref(false);
 const renamePath = ref<string | null>(null);
@@ -78,11 +86,16 @@ function isFocusedNode(path: string): boolean {
 }
 
 function isCutDimmed(path: string): boolean {
-  return entries.copyBuffer?.mode === "cut" && entries.copyBuffer.path === path;
+  return copyBuffer.value?.mode === "cut" && copyBuffer.value?.path === path;
 }
 
 function hasCopyBuffer(path: string): boolean {
-  return !!entries.copyBuffer && entries.copyBuffer.path === path;
+  return !!copyBuffer.value && copyBuffer.value.path === path;
+}
+
+function isSearchMatch(path: string): boolean {
+  if (!props.searchQuery) return false;
+  return path.toLowerCase().includes(props.searchQuery.toLowerCase());
 }
 
 // Hotkeys — global for the tree
@@ -128,6 +141,7 @@ useHotkey("Enter", () => { focusSelect(); });
               'bg-accent/30': isFocusedNode(node.path) && !isSelectedNode(node.path),
               'cut-dimmed': isCutDimmed(node.path),
               'copy-pulse': hasCopyBuffer(node.path),
+              'search-highlight': isSearchMatch(node.path),
             }"
             :style="{ paddingLeft: `${12 + node.depth * 16}px` }"
             :title="nodeName(node.path)"
@@ -147,7 +161,7 @@ useHotkey("Enter", () => { focusSelect(); });
 
         <!-- Directory context menu -->
         <ContextMenuContent v-if="node.isDirectory" class="min-w-64 p-2">
-          <ContextMenuItem v-if="entries.copyBuffer" @click="entries.pasteEntry(node.path)">
+          <ContextMenuItem v-if="copyBuffer" @click="pasteEntry(node.path)">
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
@@ -171,17 +185,17 @@ useHotkey("Enter", () => { focusSelect(); });
 
         <!-- File context menu -->
         <ContextMenuContent v-else class="min-w-64 p-2">
-          <ContextMenuItem v-if="entries.copyBuffer" @click="entries.pasteEntry(dirPath(node.path))">
+          <ContextMenuItem v-if="copyBuffer" @click="pasteEntry(dirPath(node.path))">
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="entries.copyEntry(node.path, 'FILE')">
+          <ContextMenuItem @click="copyEntry(node.path, 'FILE')">
             <Copy class="size-4 mr-2" />
             Copy
             <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="entries.cutEntry(node.path, 'FILE')">
+          <ContextMenuItem @click="cutEntry(node.path, 'FILE')">
             <Scissors class="size-4 mr-2" />
             Cut
             <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
@@ -231,6 +245,11 @@ useHotkey("Enter", () => { focusSelect(); });
 
 .cut-dimmed {
   opacity: 0.4;
+}
+
+.search-highlight {
+  background-color: hsl(var(--accent) / 0.5);
+  border-radius: calc(var(--radius) - 2px);
 }
 
 /* Expand/collapse slide animation for tree nodes */

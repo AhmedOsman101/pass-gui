@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   parentPath?: string;
@@ -21,7 +21,7 @@ const emit = defineEmits<{
   "update:open": [value: boolean];
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 
 const folderName = ref("");
 const isSubmitting = ref(false);
@@ -54,7 +54,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.createFolder(buildFullPath());
+  const result = await treeStore.createFolder(buildFullPath());
 
   isSubmitting.value = false;
 

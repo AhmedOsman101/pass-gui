@@ -14,7 +14,7 @@ import {
   generatePassword,
 } from "@/lib/generate-password";
 import { useActiveStoreStore } from "@/stores/active-store";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useGenerationConfig } from "@/composables/use-generation-config";
 import { computed, ref, watchEffect } from "vue";
 
@@ -33,7 +33,7 @@ const emit = defineEmits<{
   (e: "update:open", value: boolean): void;
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 const activeStore = useActiveStoreStore();
 const gen = useGenerationConfig();
 
@@ -96,10 +96,10 @@ async function handleSubmit(): Promise<void> {
 
   if (props.presetPassword) {
     // Insert the pre-generated password directly
-    result = await entries.insertEntry(path.value, props.presetPassword);
+    result = await treeStore.insertEntry(path.value, props.presetPassword);
   } else {
     // Insert the locally generated password
-    result = await entries.insertEntry(path.value, generated.value);
+    result = await treeStore.insertEntry(path.value, generated.value);
   }
 
   isSubmitting.value = false;

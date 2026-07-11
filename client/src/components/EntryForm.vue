@@ -14,24 +14,24 @@ import {
   generateMemorablePassword,
   generatePassword,
 } from "@/lib/generate-password";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
+import { useEntryFormStore } from "@/stores/entry-form";
 import { useGenerationConfig } from "@/composables/use-generation-config";
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
+const formStore = useEntryFormStore();
 const gen = useGenerationConfig();
 
-const isEdit = computed(() => entries.formMode === "edit");
-const entry = computed(() => entries.currentEntry);
-
+const isEdit = computed(() => formStore.formMode === "edit");
 // Path — editable in create mode, read-only in edit mode
 const path = ref("");
 watch(
-  () => entries.formMode,
+  () => formStore.formMode,
   (mode) => {
     if (mode === "create") {
       path.value = "";
-    } else if (mode === "edit" && entry.value) {
-      path.value = entry.value.path;
+    } else if (mode === "edit" && treeStore.currentEntry) {
+      path.value = treeStore.currentEntry.path;
     }
   },
   { immediate: true }
@@ -48,13 +48,13 @@ const genSymbols = gen.symbols;
 // Load config + auto-generate when form opens in create mode
 let configLoaded = false;
 watch(
-  () => entries.formMode,
+  () => formStore.formMode,
   async (mode) => {
     if (mode === "create") {
       await gen.load();
       configLoaded = true;
       // Auto-generate if no preset password was provided
-      if (!entries.formPresetPassword) {
+      if (!formStore.formPresetPassword) {
         regeneratePassword();
       }
     } else {
@@ -66,13 +66,13 @@ watch(
 
 // Initialize secret from entry or preset
 watch(
-  () => [entries.formMode, entries.formPresetPassword, entry.value],
+  () => [formStore.formMode, formStore.formPresetPassword, treeStore.currentEntry],
   () => {
-    if (entries.formMode === "create" && entries.formPresetPassword) {
-      secret.value = entries.formPresetPassword;
+    if (formStore.formMode === "create" && formStore.formPresetPassword) {
+      secret.value = formStore.formPresetPassword;
       isSecretVisible.value = true;
-    } else if (entries.formMode === "edit" && entry.value) {
-      secret.value = entry.value.secret;
+    } else if (formStore.formMode === "edit" && treeStore.currentEntry) {
+      secret.value = treeStore.currentEntry.secret;
       isSecretVisible.value = false;
     }
     // create-without-preset is handled by the config load watcher above
@@ -85,10 +85,10 @@ type MetaEntry = { key: string; value: string };
 const metadata = ref<MetaEntry[]>([]);
 
 watch(
-  () => [entries.formMode, entry.value],
+  () => [formStore.formMode, treeStore.currentEntry],
   () => {
-    if (entries.formMode === "edit" && entry.value) {
-      metadata.value = Object.entries(entry.value.metadata).map(
+    if (formStore.formMode === "edit" && treeStore.currentEntry) {
+      metadata.value = Object.entries(treeStore.currentEntry.metadata).map(
         ([key, value]) => ({ key, value })
       );
     } else {
@@ -174,9 +174,9 @@ async function handleSubmit(): Promise<void> {
   let result: string | null;
 
   if (isEdit.value) {
-    result = await entries.editEntry(path.value, content);
+    result = await treeStore.editEntry(path.value, content);
   } else {
-    result = await entries.insertEntry(path.value, content);
+    result = await treeStore.insertEntry(path.value, content);
   }
 
   isSubmitting.value = false;
@@ -186,7 +186,7 @@ async function handleSubmit(): Promise<void> {
     return;
   }
 
-  entries.closeForm();
+  formStore.closeForm();
 }
 </script>
 
@@ -194,7 +194,7 @@ async function handleSubmit(): Promise<void> {
   <div class="p-6 space-y-6 max-w-2xl">
     <!-- Header -->
     <div class="flex items-center gap-3">
-      <Button variant="ghost" size="icon" class="size-8" @click="entries.closeForm()">
+      <Button variant="ghost" size="icon" class="size-8" @click="formStore.closeForm()">
         <ArrowLeft class="size-4" />
       </Button>
       <h2 class="text-lg font-semibold">
@@ -401,7 +401,7 @@ async function handleSubmit(): Promise<void> {
         <Button
           type="button"
           variant="outline"
-          @click="entries.closeForm()"
+          @click="formStore.closeForm()"
         >
           Cancel
         </Button>

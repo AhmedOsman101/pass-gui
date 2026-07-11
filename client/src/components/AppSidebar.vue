@@ -23,7 +23,7 @@ import Tree from "@/components/Tree.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import type { SidebarProps } from "@/components/ui/sidebar";
-import type { SortMode } from "@/stores/entries";
+import type { SortMode } from "@/stores/entry-tree";
 import {
   Sidebar,
   SidebarContent,
@@ -34,22 +34,23 @@ import {
   SidebarMenu,
 } from "@/components/ui/sidebar";
 import { useActiveStoreStore } from "@/stores/active-store";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
+import { useEntryFormStore } from "@/stores/entry-form";
+import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
 import type { EntryTree, EntryNode } from "@/types/entries";
 
 const props = defineProps<SidebarProps>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
+const formStore = useEntryFormStore();
+const clipboard = useClipboardBuffer();
 const activeStore = useActiveStoreStore();
 
-const hasSelection = computed(() => !!entries.currentPath);
+const hasSelection = computed(() => !!treeStore.currentPath);
 const isCreateFolderOpen = ref(false);
 
-const localSearchQuery = ref(entries.searchQuery);
-const debouncedSearch = refDebounced(localSearchQuery, 300);
-watch(debouncedSearch, (val) => {
-  entries.searchQuery = val;
-});
+const searchQuery = ref("");
+const debouncedSearch = refDebounced(searchQuery, 300);
 
 const sortOptions: { value: SortMode; label: string }[] = [
   { value: "alphabetical", label: "A-Z" },
@@ -57,46 +58,46 @@ const sortOptions: { value: SortMode; label: string }[] = [
 ];
 
 function onPasswordSave(password: string): void {
-  entries.openCreateForm(password);
+  formStore.openCreateForm(password);
 }
 
 watch(
   () => activeStore.hasStore,
   (ready) => {
-    if (ready) entries.loadTree();
+    if (ready) treeStore.loadTree();
   },
   { immediate: true }
 );
 
 // Global hotkeys
 useHotkey("Mod+C", () => {
-  if (entries.currentPath) {
-    const node = findNode(entries.tree, entries.currentPath);
-    entries.copyEntry(entries.currentPath, node?.type);
+  if (treeStore.currentPath) {
+    const node = findNode(treeStore.tree, treeStore.currentPath);
+    clipboard.copyEntry(treeStore.currentPath, node?.type);
   }
 }, { enabled: hasSelection });
 
 useHotkey("Mod+X", () => {
-  if (entries.currentPath) {
-    const node = findNode(entries.tree, entries.currentPath);
-    entries.cutEntry(entries.currentPath, node?.type);
+  if (treeStore.currentPath) {
+    const node = findNode(treeStore.tree, treeStore.currentPath);
+    clipboard.cutEntry(treeStore.currentPath, node?.type);
   }
 }, { enabled: hasSelection });
 
 useHotkey("Mod+V", () => {
-  if (entries.copyBuffer) {
-    const selected = entries.currentPath;
+  if (clipboard.buffer.value) {
+    const selected = treeStore.currentPath;
     if (selected) {
-      const node = findNode(entries.tree, selected);
+      const node = findNode(treeStore.tree, selected);
       const destDir = node?.type === "DIRECTORY"
         ? selected
         : selected.split("/").slice(0, -1).join("/");
-      entries.pasteEntry(destDir);
+      clipboard.pasteEntry(destDir);
     } else {
-      entries.pasteEntry("");
+      clipboard.pasteEntry("");
     }
   }
-}, { enabled: computed(() => !!entries.copyBuffer) });
+}, { enabled: computed(() => !!clipboard.buffer.value) });
 
 function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   for (const node of nodes) {
@@ -119,7 +120,7 @@ async function startStoreWatcher(): Promise<void> {
   if (watchTimer) clearInterval(watchTimer);
   watchTimer = setInterval(() => {
     if (Watcher.hasChanged("store")) {
-      entries.refresh();
+      treeStore.refresh();
     }
   }, 2000);
 }
@@ -143,7 +144,7 @@ onUnmounted(() => {
       <div class="flex items-center justify-between">
         <span class="text-sm font-semibold">pass-gui</span>
         <div class="flex items-center gap-1">
-          <DropdownMenu v-if="entries.hasEntries">
+          <DropdownMenu v-if="treeStore.hasEntries">
             <DropdownMenuTrigger as-child>
               <Button
                 variant="ghost"
@@ -151,18 +152,18 @@ onUnmounted(() => {
                 class="h-7 px-2 text-xs text-muted-foreground"
               >
                 <ArrowUpDown class="size-3 mr-1" />
-                {{ sortOptions.find(o => o.value === entries.sortMode)?.label }}
+                {{ sortOptions.find(o => o.value === treeStore.sortMode)?.label }}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="min-w-32">
               <DropdownMenuItem
                 v-for="opt in sortOptions"
                 :key="opt.value"
-                @click="entries.setSortMode(opt.value)"
+                @click="treeStore.setSortMode(opt.value)"
               >
                 <Check
                   class="size-4 mr-2"
-                  :class="entries.sortMode === opt.value ? 'opacity-100' : 'opacity-0'"
+                  :class="treeStore.sortMode === opt.value ? 'opacity-100' : 'opacity-0'"
                 />
                 {{ opt.label }}
               </DropdownMenuItem>
@@ -187,7 +188,7 @@ onUnmounted(() => {
                   variant="outline"
                   size="sm"
                   class="h-7 px-2 text-xs"
-                  @click="entries.openCreateForm()"
+                  @click="formStore.openCreateForm()"
                 >
                   <Plus class="size-3 mr-1" />
                   New
@@ -207,20 +208,20 @@ onUnmounted(() => {
                     class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
                   />
                   <input
-                    v-model="localSearchQuery"
+                    v-model="searchQuery"
                     type="text"
                     placeholder="Search..."
                     class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   />
                 </div>
               </div>
-              <Tree v-if="entries.hasEntries" />
+              <Tree v-if="treeStore.hasEntries" :search-query="debouncedSearch" />
               <div
-                v-else-if="!entries.isLoadingTree"
+                v-else-if="!treeStore.isLoadingTree"
                 class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"
               >
                 <p>No entries yet.</p>
-                <Button variant="outline" size="sm" @click="entries.openCreateForm()">
+                <Button variant="outline" size="sm" @click="formStore.openCreateForm()">
                   <Plus class="size-4 mr-1" />
                   Create your first entry
                 </Button>
@@ -230,7 +231,7 @@ onUnmounted(() => {
         </SidebarContent>
       </ContextMenuTrigger>
       <ContextMenuContent class="min-w-48 p-2">
-        <ContextMenuItem @click="entries.openCreateForm()">
+        <ContextMenuItem @click="formStore.openCreateForm()">
           <Plus class="size-4 mr-2" />
           New Entry
         </ContextMenuItem>

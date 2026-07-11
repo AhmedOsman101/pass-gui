@@ -12,13 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import DirectoryTree from "@/components/DirectoryTree.vue";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   currentPath: string;
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 
 const isOpen = ref(false);
 const newPath = ref("");
@@ -68,7 +68,7 @@ async function createNewFolder(): Promise<void> {
   isCreatingFolder.value = true;
   folderError.value = null;
 
-  const result = await entries.createFolder(fullPath);
+  const result = await treeStore.createFolder(fullPath);
 
   isCreatingFolder.value = false;
 
@@ -97,7 +97,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.duplicateEntry(props.currentPath, fullPath);
+  const result = await treeStore.duplicateEntry(props.currentPath, fullPath);
 
   isSubmitting.value = false;
 
@@ -142,7 +142,7 @@ async function handleSubmit(): Promise<void> {
               <span class="truncate">(root)</span>
             </button>
             <DirectoryTree
-              :nodes="entries.tree"
+              :nodes="treeStore.tree"
               :selected-path="selectedFolder"
               @select="(p: string) => (selectedFolder = p)"
             />

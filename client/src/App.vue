@@ -4,16 +4,16 @@ import { RouterView } from "vue-router";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import ReadinessGate from "@/components/readiness/ReadinessGate.vue";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 
 watch(
-  () => entries.error,
+  () => treeStore.error,
   (msg) => {
     if (msg) {
       toast.error(msg);
-      entries.error = null;
+      treeStore.error = null;
     }
   },
 );

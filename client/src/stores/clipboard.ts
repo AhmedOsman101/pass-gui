@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { toast } from "sonner";
 import { computed, ref } from "vue";
 import { Clipboard } from "@/services/clipboard";
 import type { ClipboardAction } from "@/types/entries";
@@ -61,27 +60,23 @@ const useClipboardStore = defineStore("clipboard", () => {
     remainingMs.value = 0;
   }
 
-  async function copy(secret: string, entryPath: string): Promise<void> {
+  async function copy(
+    secret: string,
+    entryPath: string
+  ): Promise<ClipboardAction | null> {
     error.value = null;
 
     const result = await Clipboard.writeText(secret, entryPath);
     if (result.isError()) {
       error.value = `Clipboard write failed: ${result.error.message}`;
-      return;
+      return null;
     }
 
     lastAction.value = result.ok;
     isCopied.value = true;
     startTimer(result.ok.expiresAt);
 
-    toast("Password copied", {
-      description: `Clears in ${result.ok.timerSeconds}s${entryPath ? ` · ${entryPath}` : ""}`,
-      action: {
-        label: "Clear",
-        onClick: () => clear(),
-      },
-      duration: result.ok.timerSeconds * 1000,
-    });
+    return result.ok;
   }
 
   async function clear(): Promise<void> {

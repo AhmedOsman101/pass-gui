@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useActiveStoreStore } from "@/stores/active-store";
-import { useEntriesStore } from "@/stores/entries";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = withDefaults(
   defineProps<{
@@ -25,7 +25,7 @@ const emit = defineEmits<{
   (e: "update:open", value: boolean): void;
 }>();
 
-const entries = useEntriesStore();
+const treeStore = useEntryTreeStore();
 const activeStore = useActiveStoreStore();
 
 const isOpen = ref(props.open);
@@ -68,7 +68,7 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await entries.insertEntry(path.value, content.value);
+  const result = await treeStore.insertEntry(path.value, content.value);
 
   isSubmitting.value = false;
 
