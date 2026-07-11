@@ -4,9 +4,8 @@ import { computed, ref, watch } from "vue";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
-import DuplicateEntryDialog from "@/components/DuplicateEntryDialog.vue";
 import EntryForm from "@/components/EntryForm.vue";
-import MoveEntryDialog from "@/components/MoveEntryDialog.vue";
+import MoveOrDuplicateDialog from "@/components/MoveOrDuplicateDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import { useClipboardStore } from "@/stores/clipboard";
@@ -245,12 +244,12 @@ async function copyValue(value: string): Promise<void> {
 
     <!-- Actions bar -->
     <div class="flex items-center gap-2 px-2 py-5 border-t">
-      <DuplicateEntryDialog v-if="treeStore.currentPath" :current-path="treeStore.currentPath">
+      <MoveOrDuplicateDialog v-if="treeStore.currentPath" mode="duplicate" :current-path="treeStore.currentPath">
         <Button variant="outline" size="sm">
           <Files class="size-4 mr-1" />
           Duplicate
         </Button>
-      </DuplicateEntryDialog>
+      </MoveOrDuplicateDialog>
       <Button
         v-if="treeStore.currentPath && entry"
         variant="outline"
@@ -274,12 +273,12 @@ async function copyValue(value: string): Promise<void> {
           Rename
         </Button>
       </RenameEntryDialog>
-      <MoveEntryDialog v-if="treeStore.currentPath" :current-path="treeStore.currentPath">
+      <MoveOrDuplicateDialog v-if="treeStore.currentPath" mode="move" :current-path="treeStore.currentPath">
         <Button variant="outline" size="sm">
           <ArrowRightLeft class="size-4 mr-1" />
           Move
         </Button>
-      </MoveEntryDialog>
+      </MoveOrDuplicateDialog>
       <DeleteConfirmDialog
         v-if="treeStore.currentPath"
         :entry-path="treeStore.currentPath"

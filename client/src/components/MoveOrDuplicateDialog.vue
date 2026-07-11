@@ -16,6 +16,7 @@ import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   currentPath: string;
+  mode: "move" | "duplicate";
 }>();
 
 const treeStore = useEntryTreeStore();
@@ -34,6 +35,26 @@ const folderError = ref<string | null>(null);
 const currentName = computed(() => {
   const parts = props.currentPath.split("/");
   return parts[parts.length - 1] ?? "";
+});
+
+const dialogTitle = computed(() => {
+  return props.mode === "move" ? "Move Entry" : "Duplicate Entry";
+});
+
+const actionVerb = computed(() => {
+  return props.mode === "move" ? "Move" : "Copy";
+});
+
+const submitLabel = computed(() => {
+  return props.mode === "move" ? "Move" : "Duplicate";
+});
+
+const submittingLabel = computed(() => {
+  return props.mode === "move" ? "Moving..." : "Copying...";
+});
+
+const inputId = computed(() => {
+  return props.mode === "move" ? "new-name" : "dup-name";
 });
 
 function buildFullDestination(): string {
@@ -77,7 +98,6 @@ async function createNewFolder(): Promise<void> {
     return;
   }
 
-  // Select the newly created folder
   selectedFolder.value = fullPath;
   newFolderName.value = "";
 }
@@ -98,7 +118,10 @@ async function handleSubmit(): Promise<void> {
   isSubmitting.value = true;
   formError.value = null;
 
-  const result = await treeStore.moveEntry(props.currentPath, fullPath);
+  const result =
+    props.mode === "move"
+      ? await treeStore.moveEntry(props.currentPath, fullPath)
+      : await treeStore.duplicateEntry(props.currentPath, fullPath);
 
   isSubmitting.value = false;
 
@@ -118,9 +141,9 @@ async function handleSubmit(): Promise<void> {
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Move Entry</DialogTitle>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
         <DialogDescription>
-          Move <code class="font-mono">{{ currentPath }}</code> to a new location
+          {{ actionVerb }} <code class="font-mono">{{ currentPath }}</code> to a new location
         </DialogDescription>
       </DialogHeader>
 
@@ -178,9 +201,9 @@ async function handleSubmit(): Promise<void> {
 
         <!-- New name -->
         <div class="space-y-2">
-          <label for="new-name" class="text-sm font-medium">New name</label>
+          <label :for="inputId" class="text-sm font-medium">New name</label>
           <input
-            id="new-name"
+            :id="inputId"
             v-model="newPath"
             type="text"
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -206,7 +229,7 @@ async function handleSubmit(): Promise<void> {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? "Moving..." : "Move" }}
+            {{ isSubmitting ? submittingLabel : submitLabel }}
           </Button>
         </DialogFooter>
       </form>
