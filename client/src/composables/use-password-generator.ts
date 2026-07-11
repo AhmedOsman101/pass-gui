@@ -17,7 +17,7 @@ export function usePasswordGenerator() {
         ? generateMemorablePassword()
         : generatePassword(
             length,
-            symbols ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]",
+            symbols ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]"
           );
     },
   });
