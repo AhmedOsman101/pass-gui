@@ -1,6 +1,6 @@
 import { reactive } from "vue";
-import { Config } from "@/services/config";
 import { DEFAULT_CONFIG } from "@/lib/constants";
+import { Config } from "@/services/config";
 
 export function useGenerationConfig() {
   const options = reactive({
