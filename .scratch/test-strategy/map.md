@@ -30,6 +30,7 @@ A **Test Strategy Document** — the finalized specification of framework choice
 - [Coverage thresholds](issues/04-configure-vitest-setup) — Warning < 60% total (CI log, non-blocking), PR Block < 75% new code (blocks merge), Target 80% total (quarterly aspirational), Integration 100% pass (hard block). Exemptions: generated code, shadcn-vue UI components, type-only files.
 - [CI/CD provider](issues/06-ci-cd-workflow-yaml) — GitHub Actions. Docker in CI, Podman locally. CI/CD YAML handled as a separate implementation ticket after the strategy doc is complete.
 - [Component test scope](issues/03-define-component-test-scope) — **Resolved via task-1-report.** 7 core components warrant full mount tests (EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail) + 3 lightweight dialog tests (CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog). All others exempt: dialog passthroughs, shadcn-vue wrappers, form-binding tabs, readiness screens, pages, and icons. See `.scratch/test-strategy/reports/task-1-report.md` for full per-component analysis.
+- [Vitest config implemented](issues/04-configure-vitest-setup) — **Resolved via task-2.** Separate `vitest.config.ts`, happy-dom environment, `vi.hoisted()` mock factory in setup.ts, test scripts added. See `.scratch/test-strategy/reports/task-2-report.md`.
 
 ## Not yet specified
 - **Vitest config specifics** — (graduated to ticket 04)

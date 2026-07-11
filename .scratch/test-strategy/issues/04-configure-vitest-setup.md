@@ -1,30 +1,96 @@
 # 04: Configure Vitest setup and project structure
 
-Type: research
-Status: open
-Blocked by:
+Type: implementation
+Status: resolved
 
-## Question
+## Resolution
 
-Design the Vitest configuration and project structure for the test suite.
+Vitest infrastructure fully configured. See `reports/task-2-report.md` for details.
 
-Needs to resolve:
+## Final Config Snapshot
 
-1. **Config file** — Separate `vitest.config.ts` vs inline in `vite.config.ts`? (vite.config.ts already exists with VueRouter + Vue + Tailwind + Neutralino plugins — may want separation to avoid plugin conflicts during test runs.)
-2. **Environment** — `node` for lib tests, `jsdom` or `happy-dom` for component tests? The app uses NeutralinoJS (not browser DOM), so what makes sense?
-3. **Globals** — `globals: true` (describe/it/expect without imports) or explicit imports?
-4. **Plugins** — Which Vite plugins to disable during test (vueDevTools, neutralino)?
-5. **Coverage config** — Provider (v8/istanbul), reporters, `include` patterns, `exclude` patterns, thresholds
-6. **Setup file** — What goes in `setupFiles`: global mock initialization, cleanup hooks?
-7. **Projects** — Monorepo-style Vitest projects for unit vs integration: `vitest.workspace.ts` or `projects` config?
-8. **Pool** — `forks` (default in v5) vs `threads` vs `vmForks`? `@neutralinojs/lib` mocking may need isolation.
-9. **Type testing** — Whether to use Vitest's `expectTypeOf` for type-level tests on the lib layer.
+### `client/vitest.config.ts`
 
-## Deliverables
+```ts
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
+import path from "node:path";
 
-Concrete `vitest.config.ts` file content (as an appendix in the strategy doc), including:
-- Full config object with all options
-- Setup file contents
-- `package.json` script entries
-- `.gitignore` additions (`.vitest/`)
-- Coverage configuration
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  test: {
+    globals: true,
+    environment: "happy-dom",
+    setupFiles: ["./src/test/setup.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "html"],
+      include: ["src/**"],
+      exclude: [
+        "src/test/**",
+        "src/**/*.d.ts",
+        "src/**/*.test.ts",
+        "src/components/ui/**",
+      ],
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
+    },
+  },
+});
+```
+
+### Directory Layout
+
+```
+client/
+├── vitest.config.ts              # Separate from vite.config.ts
+├── src/
+│   ├── test/
+│   │   ├── setup.ts              # Global NeutralinoJS mock + cleanup
+│   │   ├── vitest.d.ts           # Vitest type declarations
+│   │   └── smoke.test.ts         # Minimal smoke test
+│   └── __mocks__/                # (future use for auto-mock files)
+└── package.json                  # test:unit, test:watch, test:coverage scripts
+```
+
+### Decisions Applied
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Config file | Separate `vitest.config.ts` | Avoids neutralino/vueDevTools plugin conflicts |
+| Environment | `happy-dom` | Lightweight, enough DOM for Vue Test Utils |
+| Globals | `true` | `describe`/`it`/`expect` without imports |
+| Plugins | `vue()` only | No vueDevTools or neutralino in test config |
+| Coverage | `v8` provider | Built-in, zero extra deps |
+| Pool | `forks` (default) | Isolates `vi.mock` per worker |
+| Setup | `setup.ts` with `vi.hoisted()` | Factory function avoids hoisting issues |
+
+### Scripts
+
+```jsonc
+// client/package.json
+"test:unit": "vitest run",
+"test:watch": "vitest",
+"test:coverage": "vitest run --coverage"
+
+// root package.json
+"test": "pnpm --filter=client test:unit",
+"test:integration": "echo 'Integration tests: run inside Podman container'"
+```
+
+### Mock Strategy
+
+- `setup.ts` uses `vi.hoisted()` factory + `vi.mock("@neutralinojs/lib")`
+- Covers all 70+ exports (init, os, filesystem, clipboard, events, debug + stubs)
+- `window.NL_OS` mocked as global separately (not from module import)
+- Error shape: `{ code: ErrorCode, message: string }`

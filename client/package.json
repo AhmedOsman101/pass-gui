@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "test": "echo No tests yet",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "vue-tsc --build"
   },
   "dependencies": {
@@ -17,5 +20,11 @@
     "reka-ui": "^2.8.0",
     "sonner": "^2.0.7",
     "vue-sonner": "^2.0.9"
+  },
+  "devDependencies": {
+    "@pinia/testing": "^1.0.3",
+    "@vue/test-utils": "^2.4.11",
+    "happy-dom": "^20.10.6",
+    "vitest": "^4.1.10"
   }
 }
