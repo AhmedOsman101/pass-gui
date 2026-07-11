@@ -4,7 +4,7 @@
 
 **Goal:** Add a delete button with confirmation dialog for each store (including default), and replace the 2-input "Add Store" form with a multi-step wizard that creates the store directory and runs `pass init`.
 
-**Architecture:** Two independent features sharing the `StoresTab.vue` component. Feature 1 (deletion) uses a reusable `StoreDeleteDialog.vue` wrapping `AlertDialog`. Feature 2 (wizard) introduces `AddStoreWizard.vue` — a multi-step `Dialog` with internal state machine (name → path → GPG key → confirm/create). Both features emit `updateStores` + `save` to the parent. The wizard calls `pass init` with scoped `PASSWORD_STORE_DIR` via the existing `PassService.exec()`.
+**Architecture:** Two independent features sharing the `StoresTab.vue` component. Feature 1 (deletion) uses a reusable `StoreDeleteDialog.vue` wrapping `AlertDialog`. Feature 2 (wizard) introduces `AddStoreWizard.vue` — a multi-step `Dialog` with internal state machine (name -> path -> GPG key -> confirm/create). Both features emit `updateStores` + `save` to the parent. The wizard calls `pass init` with scoped `PASSWORD_STORE_DIR` via the existing `PassService.exec()`.
 
 **Tech Stack:** Vue 3.5 Composition API, shadcn-vue AlertDialog/Dialog, lib-result, NeutralinoJS OS dialogs, `pass init` CLI, Zod validation.
 
@@ -25,10 +25,12 @@
 ### Task 1: Create StoreDeleteDialog Component
 
 **Files:**
+
 - Create: `client/src/components/StoreDeleteDialog.vue`
 - Reference: `client/src/components/DeleteConfirmDialog.vue` (pattern)
 
 **Interfaces:**
+
 - Consumes: `storeName: string`, `storePath: string`, `open: boolean` (v-model)
 - Produces: emits `update:open` (boolean), `deleted` (storeName: string)
 
@@ -79,10 +81,10 @@ function handleDelete(): void {
       <AlertDialogHeader>
         <AlertDialogTitle>Delete Store</AlertDialogTitle>
         <AlertDialogDescription>
-          Delete store <code class="font-mono">{{ storeName }}</code>
-          at <code class="font-mono">{{ storePath }}</code>?
-          This will remove it from the config but will NOT delete
-          the directory on disk.
+          Delete store <code class="font-mono">{{ storeName }}</code> at
+          <code class="font-mono">{{ storePath }}</code
+          >? This will remove it from the config but will NOT delete the
+          directory on disk.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -117,20 +119,24 @@ git commit -m "feat: add StoreDeleteDialog component"
 ### Task 2: Wire StoreDeleteDialog into StoresTab
 
 **Files:**
+
 - Modify: `client/src/components/settings/StoresTab.vue` (lines 1-126 script, 171-219 template)
 
 **Interfaces:**
+
 - Consumes: `StoreDeleteDialog.vue` from Task 1
 - Produces: updated `deleteStore()` function emits `deleted` event
 
 - [ ] **Step 1: Add import and state to StoresTab script**
 
 Add to imports (after line 2):
+
 ```typescript
 import StoreDeleteDialog from "@/components/StoreDeleteDialog.vue";
 ```
 
 Add state refs (after line 47):
+
 ```typescript
 const deleteDialogOpen = ref(false);
 const deleteTarget = ref<{ name: string; path: string } | null>(null);
@@ -211,9 +217,11 @@ git commit -m "feat: add store deletion with confirmation dialog"
 ### Task 3: Create AddStoreWizard Component
 
 **Files:**
+
 - Create: `client/src/components/settings/AddStoreWizard.vue`
 
 **Interfaces:**
+
 - Consumes: `stores: Record<string, StoreConfig>`, `activeStore: string`
 - Produces: emits `created` with `{ name: string, path: string, gnupgHome?: string }`
 - Uses: `Gpg.listSecretKeys()` for key selection, `Dialog.showFolderDialog()` for path, `Pass.exec(["init", ...])` for store creation, `Config` for config updates
@@ -224,7 +232,13 @@ git commit -m "feat: add store deletion with confirmation dialog"
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { toast } from "sonner";
-import { FolderOpen, ChevronRight, ChevronLeft, Check, Loader2 } from "@lucide/vue";
+import {
+  FolderOpen,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Loader2,
+} from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -289,19 +303,19 @@ const nameError = computed(() => {
 const pathError = computed(() => {
   const path = storePath.value.trim();
   if (!path) return "";
-  const existing = Object.values(props.stores).find((s) => s.path === path);
+  const existing = Object.values(props.stores).find(s => s.path === path);
   if (existing) return "A store with this path already exists";
   return "";
 });
 
 const canAdvanceName = computed(
-  () => storeName.value.trim() !== "" && !nameError.value,
+  () => storeName.value.trim() !== "" && !nameError.value
 );
 const canAdvancePath = computed(
-  () => storePath.value.trim() !== "" && !pathError.value,
+  () => storePath.value.trim() !== "" && !pathError.value
 );
 const canCreate = computed(
-  () => selectedKeyId.value !== "" && !isCreating.value,
+  () => selectedKeyId.value !== "" && !isCreating.value
 );
 
 // Load GPG keys on open
@@ -440,11 +454,20 @@ function resetWizard(): void {
 
       <!-- Step indicators -->
       <div class="flex items-center gap-2 text-xs text-muted-foreground">
-        <Badge :variant="step === 'name' ? 'default' : 'outline'">1. Name</Badge>
+        <Badge :variant="step === 'name' ? 'default' : 'outline'"
+          >1. Name</Badge
+        >
         <ChevronRight class="size-3" />
-        <Badge :variant="step === 'path' ? 'default' : 'outline'">2. Path</Badge>
+        <Badge :variant="step === 'path' ? 'default' : 'outline'"
+          >2. Path</Badge
+        >
         <ChevronRight class="size-3" />
-        <Badge :variant="step === 'gpg' || step === 'creating' ? 'default' : 'outline'">3. GPG Key</Badge>
+        <Badge
+          :variant="
+            step === 'gpg' || step === 'creating' ? 'default' : 'outline'
+          "
+          >3. GPG Key</Badge
+        >
       </div>
 
       <Separator />
@@ -461,7 +484,8 @@ function resetWizard(): void {
         />
         <p v-if="nameError" class="text-xs text-destructive">{{ nameError }}</p>
         <p v-else class="text-xs text-muted-foreground">
-          A unique identifier for this store (letters, numbers, hyphens, underscores).
+          A unique identifier for this store (letters, numbers, hyphens,
+          underscores).
         </p>
       </div>
 
@@ -499,7 +523,10 @@ function resetWizard(): void {
           <Loader2 class="size-4 animate-spin" />
           <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
         </div>
-        <div v-else-if="secretKeys.length === 0" class="py-4 text-sm text-muted-foreground">
+        <div
+          v-else-if="secretKeys.length === 0"
+          class="py-4 text-sm text-muted-foreground"
+        >
           No GPG secret keys found. Create one with
           <code class="font-mono">gpg --gen-key</code> first.
         </div>
@@ -525,10 +552,15 @@ function resetWizard(): void {
       </div>
 
       <!-- Step: Creating -->
-      <div v-else-if="step === 'creating'" class="flex flex-col items-center gap-3 py-6">
+      <div
+        v-else-if="step === 'creating'"
+        class="flex flex-col items-center gap-3 py-6"
+      >
         <Loader2 class="size-8 animate-spin text-muted-foreground" />
         <span class="text-sm text-muted-foreground">Creating store...</span>
-        <p v-if="creationError" class="text-xs text-destructive">{{ creationError }}</p>
+        <p v-if="creationError" class="text-xs text-destructive">
+          {{ creationError }}
+        </p>
       </div>
 
       <DialogFooter>
@@ -537,7 +569,7 @@ function resetWizard(): void {
           variant="outline"
           @click="step === 'name' ? emit('update:open', false) : goBack()"
         >
-          {{ step === 'name' ? 'Cancel' : 'Back' }}
+          {{ step === "name" ? "Cancel" : "Back" }}
         </Button>
         <Button
           v-if="step === 'name' || step === 'path'"
@@ -576,20 +608,24 @@ git commit -m "feat: add AddStoreWizard component with pass init"
 ### Task 4: Wire AddStoreWizard into StoresTab
 
 **Files:**
+
 - Modify: `client/src/components/settings/StoresTab.vue`
 
 **Interfaces:**
+
 - Consumes: `AddStoreWizard.vue` from Task 3
 - Produces: emits `created` triggers config reload in parent
 
 - [ ] **Step 1: Add import and state**
 
 Add to imports (after `StoreDeleteDialog` import):
+
 ```typescript
 import AddStoreWizard from "@/components/settings/AddStoreWizard.vue";
 ```
 
 Add state (after `deleteTarget` ref):
+
 ```typescript
 const wizardOpen = ref(false);
 ```
@@ -645,10 +681,12 @@ git commit -m "feat: wire AddStoreWizard into StoresTab"
 ### Task 5: Add Wizard Props to StoresTab and Update Settings Page
 
 **Files:**
+
 - Modify: `client/src/components/settings/StoresTab.vue` (props)
 - Modify: `client/src/pages/settings.vue` (storesForm passthrough)
 
 **Interfaces:**
+
 - Consumes: `stores` prop already exists on StoresTab
 - Produces: wizard receives stores for validation
 
@@ -677,6 +715,7 @@ git status
 ### Task 6: Integration Testing — Manual Verification
 
 **Files:**
+
 - None (manual testing)
 
 - [ ] **Step 1: Start dev server**
@@ -685,28 +724,28 @@ Run: `pnpm --filter client dev`
 
 - [ ] **Step 2: Test store deletion**
 
-1. Navigate to Settings → Stores
+1. Navigate to Settings -> Stores
 2. Verify delete button (trash icon) appears for ALL stores including "default"
 3. Verify delete button is HIDDEN for the active store
-4. Click delete on a non-active store → verify confirmation dialog appears
-5. Click Cancel → verify store is NOT deleted
-6. Click Delete → verify store is removed from the list
-7. Click Save → verify config file is updated
+4. Click delete on a non-active store -> verify confirmation dialog appears
+5. Click Cancel -> verify store is NOT deleted
+6. Click Delete -> verify store is removed from the list
+7. Click Save -> verify config file is updated
 
 - [ ] **Step 3: Test Add Store wizard**
 
-1. Click "Add Store" button → verify wizard dialog opens
+1. Click "Add Store" button -> verify wizard dialog opens
 2. Verify step indicator shows "1. Name" highlighted
-3. Leave name empty → verify "Next" is disabled
-4. Enter a name → verify "Next" is enabled
-5. Enter duplicate name → verify error message appears
-6. Click Next → verify step advances to "Path"
+3. Leave name empty -> verify "Next" is disabled
+4. Enter a name -> verify "Next" is enabled
+5. Enter duplicate name -> verify error message appears
+6. Click Next -> verify step advances to "Path"
 7. Verify folder picker button works (opens native dialog)
-8. Enter duplicate path → verify error message
-9. Click Next → verify step advances to "GPG Key"
+8. Enter duplicate path -> verify error message
+9. Click Next -> verify step advances to "GPG Key"
 10. Verify GPG keys are loaded and displayed
-11. Select a key → verify "Create Store" is enabled
-12. Click "Create Store" → verify loading state, then success toast
+11. Select a key -> verify "Create Store" is enabled
+12. Click "Create Store" -> verify loading state, then success toast
 13. Verify new store appears in the store list
 14. Verify `.gpg-id` file exists in the created directory
 15. Verify config file contains the new store
@@ -714,25 +753,25 @@ Run: `pnpm --filter client dev`
 - [ ] **Step 4: Test wizard back navigation**
 
 1. Open wizard, advance to step 2
-2. Click "Back" → verify returns to step 1 with name preserved
-3. Advance to step 3, click "Back" → verify returns to step 2 with path preserved
+2. Click "Back" -> verify returns to step 1 with name preserved
+3. Advance to step 3, click "Back" -> verify returns to step 2 with path preserved
 
 - [ ] **Step 5: Test edge cases**
 
-1. Try creating a store with a path that doesn't exist as parent → verify directory is created
-2. Try creating a store while `pass` is not installed → verify error message in wizard
-3. Cancel wizard mid-creation → verify no partial state left
+1. Try creating a store with a path that doesn't exist as parent -> verify directory is created
+2. Try creating a store while `pass` is not installed -> verify error message in wizard
+3. Cancel wizard mid-creation -> verify no partial state left
 
 ---
 
 ## File Summary
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `client/src/components/StoreDeleteDialog.vue` | Create | Confirmation dialog for store deletion |
-| `client/src/components/settings/AddStoreWizard.vue` | Create | Multi-step wizard for adding stores |
-| `client/src/components/settings/StoresTab.vue` | Modify | Wire dialog + wizard, remove old add form, allow default deletion |
-| `client/src/pages/settings.vue` | No change | Already passes correct props |
+| File                                                | Action    | Purpose                                                           |
+| --------------------------------------------------- | --------- | ----------------------------------------------------------------- |
+| `client/src/components/StoreDeleteDialog.vue`       | Create    | Confirmation dialog for store deletion                            |
+| `client/src/components/settings/AddStoreWizard.vue` | Create    | Multi-step wizard for adding stores                               |
+| `client/src/components/settings/StoresTab.vue`      | Modify    | Wire dialog + wizard, remove old add form, allow default deletion |
+| `client/src/pages/settings.vue`                     | No change | Already passes correct props                                      |
 
 ## Dependency Order
 

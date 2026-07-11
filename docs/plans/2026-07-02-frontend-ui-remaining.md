@@ -28,6 +28,7 @@ The sidebar layout lives in `pages/index.vue` (not `App.vue`). `App.vue` stays t
 `ReadinessGate > RouterView + ClipboardToast + PasteToast`.
 
 `pages/index.vue` provides:
+
 - `SidebarProvider` wrapping `ResizablePanelGroup`
 - Left panel: `AppSidebar` (search, sort, tree, new/generate, context menu, hotkeys)
 - Right panel: `EntryDetail` (secret display, metadata, CRUD actions)
@@ -43,6 +44,7 @@ The sidebar layout lives in `pages/index.vue` (not `App.vue`). `App.vue` stays t
 The passwords page IS `pages/index.vue`. It's the main (and only functional) page.
 
 Two-panel layout with:
+
 - Left: `AppSidebar` with `Tree` component, search, sort, context menu, hotkeys (Mod+C/X/V)
 - Right: `EntryDetail` with secret toggle, copy, metadata, notes, and action bar (duplicate, edit, rename, move, delete)
 
