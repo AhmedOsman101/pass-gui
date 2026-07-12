@@ -11,11 +11,11 @@
 pass-gui is a desktop GUI wrapper for GNU Pass built with Vue 3.5 + Pinia 3 +
 NeutralinoJS 6.4. Three testing layers cover the stack:
 
-| Layer | What | Runner |
-|-------|------|--------|
-| **Unit** | Pure lib functions, shell/path utilities, services | Vitest (happy-dom) |
-| **Component** | Vue SFC behavior via VTU mount | Vitest + Vue Test Utils |
-| **Integration** | Real GPG/pass commands inside container | Vitest (Podman/Docker) |
+| Layer           | What                                               | Runner                  |
+| --------------- | -------------------------------------------------- | ----------------------- |
+| **Unit**        | Pure lib functions, shell/path utilities, services | Vitest (happy-dom)      |
+| **Component**   | Vue SFC behavior via VTU mount                     | Vitest + Vue Test Utils |
+| **Integration** | Real GPG/pass commands inside container            | Vitest (Podman/Docker)  |
 
 ### Priority Order (implement in this sequence)
 
@@ -33,30 +33,30 @@ P6  Integration tests (Podman container — see §7)
 
 ## 2. Tech Stack
 
-| Concern | Choice |
-|---------|--------|
-| Test runner | Vitest v4.1.10 |
-| Test environment | happy-dom (lightweight, enough DOM API for VTU) |
-| Component testing | Vue Test Utils v2 (`mount()/shallowMount()`) |
-| State testing | @pinia/testing v1 (`createTestingPinia`) |
-| Mock strategy | `vi.mock()` at module level |
-| Coverage | v8 provider (built-in) |
-| Assertions | Vitest built-in (`expect`, `vi.fn()`) + optional `@testing-library/vue` |
-| Linting | Biome 2.5.0 (linter + formatter) |
-| Type checking | vue-tsc 3.2 |
-| CI | GitHub Actions |
-| Integration | Alpine-based Containerfile.test (Docker in CI, Podman locally) |
+| Concern           | Choice                                                                  |
+| ----------------- | ----------------------------------------------------------------------- |
+| Test runner       | Vitest v4.1.10                                                          |
+| Test environment  | happy-dom (lightweight, enough DOM API for VTU)                         |
+| Component testing | Vue Test Utils v2 (`mount()/shallowMount()`)                            |
+| State testing     | @pinia/testing v1 (`createTestingPinia`)                                |
+| Mock strategy     | `vi.mock()` at module level                                             |
+| Coverage          | v8 provider (built-in)                                                  |
+| Assertions        | Vitest built-in (`expect`, `vi.fn()`) + optional `@testing-library/vue` |
+| Linting           | Biome 2.5.0 (linter + formatter)                                        |
+| Type checking     | vue-tsc 3.2                                                             |
+| CI                | GitHub Actions                                                          |
+| Integration       | Alpine-based Containerfile.test (Docker in CI, Podman locally)          |
 
 ### Package manager scripts
 
 ```jsonc
 // root package.json
-"test": "pnpm --filter=client test:unit",
-"test:unit": "pnpm --filter=client test:unit",
-"test:coverage": "pnpm --filter=client test:coverage",
+"test": "pnpm test:unit",
+"test:unit": "pnpm test:unit",
+"test:coverage": "pnpm test:coverage",
 "test:integration": "echo 'Integration tests: run inside Podman container'"
 "lint": "unset BIOME_CONFIG_PATH; biome lint .",
-"typecheck": "pnpm --filter=client typecheck"
+"typecheck": "pnpm typecheck"
 
 // client/package.json
 "test:unit": "vitest run",
@@ -77,14 +77,14 @@ a `vi.hoisted()` factory function `createMockNeu()`.
 
 **What's mocked:**
 
-| Namespace | Used functions | Default return |
-|-----------|---------------|----------------|
-| `init()` | standalone default export | `vi.fn()` — no-op (prevents WebSocket connection) |
-| `os` | execCommand, getEnv, getPath, showOpenDialog, showSaveDialog, showFolderDialog, showNotification, showMessageBox | All return `Promise.resolve()` with sensible defaults |
-| `filesystem` | createDirectory, writeFile, readFile, getNormalizedPath, getJoinedPath, getPathParts, getRelativePath, readDirectory, getStats, createWatcher, removeWatcher | All return `Promise.resolve()` |
-| `clipboard` | readText, writeText, clear | All return `Promise.resolve()` |
-| `events` | on, off | `Promise.resolve({ success: true, message: "ok" })` |
-| `debug` | log | `Promise.resolve()` |
+| Namespace    | Used functions                                                                                                                                               | Default return                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `init()`     | standalone default export                                                                                                                                    | `vi.fn()` — no-op (prevents WebSocket connection)     |
+| `os`         | execCommand, getEnv, getPath, showOpenDialog, showSaveDialog, showFolderDialog, showNotification, showMessageBox                                             | All return `Promise.resolve()` with sensible defaults |
+| `filesystem` | createDirectory, writeFile, readFile, getNormalizedPath, getJoinedPath, getPathParts, getRelativePath, readDirectory, getStats, createWatcher, removeWatcher | All return `Promise.resolve()`                        |
+| `clipboard`  | readText, writeText, clear                                                                                                                                   | All return `Promise.resolve()`                        |
+| `events`     | on, off                                                                                                                                                      | `Promise.resolve({ success: true, message: "ok" })`   |
+| `debug`      | log                                                                                                                                                          | `Promise.resolve()`                                   |
 
 **Extra namespaces stubbed:** app, computer, storage, resources, server,
 updater, custom — all `vi.fn()` to prevent errors if accidentally accessed.
@@ -141,16 +141,7 @@ vi.mock("@/services/config", () => ({
 }));
 ```
 
-Services return `Result` types. Use `ok()` / `err()` helper pattern:
-
-```ts
-function ok<T>(value: T) {
-  return { isError: () => false, ok: value };
-}
-function err(msg: string) {
-  return { isError: () => true, error: { message: msg } };
-}
-```
+Services return `Result` types. Use `Ok()` / `Err()` from `lib-result` directly:
 
 ---
 
@@ -198,14 +189,14 @@ export default defineConfig({
 
 ### Key decisions
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Separate config file | `vitest.config.ts` | Avoids neutralino/vueDevTools plugin conflicts |
-| Environment | `happy-dom` | Lighter than jsdom, enough DOM for VTU |
-| Globals | `true` | describe/it/expect without imports |
-| Plugins | `vue()` only | No vueDevTools, no neutralino in test |
-| Pool | `forks` (default) | Isolates vi.mock per worker |
-| Setup file | `setup.ts` with `vi.hoisted()` | Factory avoids hoisting issues |
+| Decision             | Choice                         | Why                                            |
+| -------------------- | ------------------------------ | ---------------------------------------------- |
+| Separate config file | `vitest.config.ts`             | Avoids neutralino/vueDevTools plugin conflicts |
+| Environment          | `happy-dom`                    | Lighter than jsdom, enough DOM for VTU         |
+| Globals              | `true`                         | describe/it/expect without imports             |
+| Plugins              | `vue()` only                   | No vueDevTools, no neutralino in test          |
+| Pool                 | `forks` (default)              | Isolates vi.mock per worker                    |
+| Setup file           | `setup.ts` with `vi.hoisted()` | Factory avoids hoisting issues                 |
 
 ### Run commands
 
@@ -265,7 +256,9 @@ import { os } from "@neutralinojs/lib";
 import { Neu } from "./neutralino";
 
 describe("Neu.execCommand", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("executes a command and returns the result", async () => {
     vi.mocked(os.execCommand).mockResolvedValue({
@@ -336,9 +329,11 @@ describe("active-store", () => {
 
   it("loads active store from config and resolves path", async () => {
     vi.mocked(Config.getValue).mockResolvedValue(ok("work"));
-    vi.mocked(Config.load).mockResolvedValue(ok({
-      data: { stores: { work: { path: "~/.password-store/work" } } },
-    }));
+    vi.mocked(Config.load).mockResolvedValue(
+      ok({
+        data: { stores: { work: { path: "~/.password-store/work" } } },
+      })
+    );
 
     const store = useActiveStoreStore();
     await store.load();
@@ -356,7 +351,15 @@ describe("active-store", () => {
 import { createTestingPinia } from "@pinia/testing";
 
 vi.mock("@/services/entries", () => ({
-  Entries: { list: vi.fn(), show: vi.fn(), insert: vi.fn(), remove: vi.fn(), move: vi.fn(), copy: vi.fn(), edit: vi.fn() },
+  Entries: {
+    list: vi.fn(),
+    show: vi.fn(),
+    insert: vi.fn(),
+    remove: vi.fn(),
+    move: vi.fn(),
+    copy: vi.fn(),
+    edit: vi.fn(),
+  },
 }));
 vi.mock("@/services/filesystem", () => ({
   Fs: { join: vi.fn((...p) => Promise.resolve(p.join("/"))), mkdir: vi.fn() },
@@ -375,7 +378,9 @@ describe("entry-tree", () => {
   });
 
   it("loads tree from Entries.list()", async () => {
-    vi.mocked(Entries.list).mockResolvedValue(ok([{ name: "Email", path: "Email", type: "DIRECTORY", children: [] }]));
+    vi.mocked(Entries.list).mockResolvedValue(
+      ok([{ name: "Email", path: "Email", type: "DIRECTORY", children: [] }])
+    );
 
     const store = useEntryTreeStore();
     await store.loadTree();
@@ -386,14 +391,27 @@ describe("entry-tree", () => {
 
   it("insertEntry calls Entries.insert then refreshes", async () => {
     vi.mocked(Entries.list).mockResolvedValue(ok([]));
-    vi.mocked(Entries.insert).mockResolvedValue(ok({ success: true, path: "Email/new-entry" }));
-    vi.mocked(Entries.show).mockResolvedValue(ok({ name: "new-entry", path: "Email/new-entry", body: "pass123\n", raw: "pass123\n", fields: {} }));
+    vi.mocked(Entries.insert).mockResolvedValue(
+      ok({ success: true, path: "Email/new-entry" })
+    );
+    vi.mocked(Entries.show).mockResolvedValue(
+      ok({
+        name: "new-entry",
+        path: "Email/new-entry",
+        body: "pass123\n",
+        raw: "pass123\n",
+        fields: {},
+      })
+    );
 
     const store = useEntryTreeStore();
     const errMsg = await store.insertEntry("Email/new-entry", "pass123\n");
 
     expect(errMsg).toBeNull();
-    expect(Entries.insert).toHaveBeenCalledWith({ path: "Email/new-entry", content: "pass123\n" });
+    expect(Entries.insert).toHaveBeenCalledWith({
+      path: "Email/new-entry",
+      content: "pass123\n",
+    });
     expect(Entries.list).toHaveBeenCalled();
   });
 
@@ -427,12 +445,16 @@ describe("clipboard store timer", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => { vi.useRealTimers(); });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it("decrements remainingMs via drift-correction timer ticks", async () => {
     const now = Date.now();
     const expiresAt = now + 30_000;
-    vi.mocked(Clipboard.writeText).mockResolvedValue(ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt }));
+    vi.mocked(Clipboard.writeText).mockResolvedValue(
+      ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt })
+    );
 
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -444,7 +466,14 @@ describe("clipboard store timer", () => {
 
   it("clears clipboard when timer expires and resets state", async () => {
     const now = Date.now();
-    vi.mocked(Clipboard.writeText).mockResolvedValue(ok({ path: "x", selection: "clipboard", timerSeconds: 10, expiresAt: now + 10_000 }));
+    vi.mocked(Clipboard.writeText).mockResolvedValue(
+      ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 10,
+        expiresAt: now + 10_000,
+      })
+    );
     vi.mocked(Clipboard.clear).mockResolvedValue(ok(undefined));
 
     const store = useClipboardStore();
@@ -483,18 +512,30 @@ import { useTreeState } from "@/composables/useTreeState";
 
 function makeTree() {
   return [
-    { name: "Email", path: "Email", type: "DIRECTORY", children: [
-      { name: "work", path: "Email/work", type: "FILE", fields: {} },
-      { name: "personal", path: "Email/personal", type: "FILE", fields: {} },
-    ]},
-    { name: "Social", path: "Social", type: "DIRECTORY", children: [
-      { name: "twitter", path: "Social/twitter", type: "FILE", fields: {} },
-    ]},
+    {
+      name: "Email",
+      path: "Email",
+      type: "DIRECTORY",
+      children: [
+        { name: "work", path: "Email/work", type: "FILE", fields: {} },
+        { name: "personal", path: "Email/personal", type: "FILE", fields: {} },
+      ],
+    },
+    {
+      name: "Social",
+      path: "Social",
+      type: "DIRECTORY",
+      children: [
+        { name: "twitter", path: "Social/twitter", type: "FILE", fields: {} },
+      ],
+    },
   ];
 }
 
 describe("useTreeState", () => {
-  beforeEach(() => { createTestingPinia({ createSpy: vi.fn }); });
+  beforeEach(() => {
+    createTestingPinia({ createSpy: vi.fn });
+  });
 
   it("initializes visible nodes from tree store", () => {
     const treeStore = useEntryTreeStore();
@@ -609,36 +650,36 @@ const router = createRouter({
 
 #### 7 core — full Vue Test Utils mount with mocked stores/services
 
-| Component | LOC | What to test | Mock strategy |
-|-----------|-----|-------------|--------------|
-| **EntryForm** | 330 | Form validation, buildContent() format, create vs edit dispatch, error display, password auto-gen, secret visibility | Mock entryTreeStore + entryFormStore via @pinia/testing |
-| **Tree** | 271 | Hotkey F2/Delete open dialogs, arrow keys focusNext/focusPrev, isCutDimmed/hasCopyBuffer/isSearchMatch computed, nodeName/dirPath parsers | Mock entryTreeStore + useTreeState via @pinia/testing |
-| **AppSidebar** | 247 | Search debounce (300ms), store watcher start/stop lifecycle, hotkeys Mod+C/X/V, findNode traversal, sort mode dispatch | Mock activeStore, treeStore, clipboard, Watcher, Pass |
-| **AddStoreWizard** | 370 | Multi-step navigation, name/path validation, createStore() orchestration (mkdir → pass init → config save), GPG key loading, wizard reset | Mock Gpg, Pass, Config, Fs |
-| **GpgTab** | 270 | Tag add/remove/edit with keyboard (Enter/comma/Backspace/Escape), signing/recipient key mode switching | Mock Gpg service |
-| **StoresTab** | 308 | storeEntries sorting (active first), isPathUnique, saveEditStore validation + emit, confirmDeleteStore | Provided stores prop |
-| **EntryDetail** | 299 | toggleSecret, copySecret/copyValue clipboard + toast, skeleton timer (500ms), getLabel friendly names | Mock clipboard store, fake timers for skeleton |
+| Component          | LOC | What to test                                                                                                                              | Mock strategy                                           |
+| ------------------ | --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **EntryForm**      | 330 | Form validation, buildContent() format, create vs edit dispatch, error display, password auto-gen, secret visibility                      | Mock entryTreeStore + entryFormStore via @pinia/testing |
+| **Tree**           | 271 | Hotkey F2/Delete open dialogs, arrow keys focusNext/focusPrev, isCutDimmed/hasCopyBuffer/isSearchMatch computed, nodeName/dirPath parsers | Mock entryTreeStore + useTreeState via @pinia/testing   |
+| **AppSidebar**     | 247 | Search debounce (300ms), store watcher start/stop lifecycle, hotkeys Mod+C/X/V, findNode traversal, sort mode dispatch                    | Mock activeStore, treeStore, clipboard, Watcher, Pass   |
+| **AddStoreWizard** | 370 | Multi-step navigation, name/path validation, createStore() orchestration (mkdir → pass init → config save), GPG key loading, wizard reset | Mock Gpg, Pass, Config, Fs                              |
+| **GpgTab**         | 270 | Tag add/remove/edit with keyboard (Enter/comma/Backspace/Escape), signing/recipient key mode switching                                    | Mock Gpg service                                        |
+| **StoresTab**      | 308 | storeEntries sorting (active first), isPathUnique, saveEditStore validation + emit, confirmDeleteStore                                    | Provided stores prop                                    |
+| **EntryDetail**    | 299 | toggleSecret, copySecret/copyValue clipboard + toast, skeleton timer (500ms), getLabel friendly names                                     | Mock clipboard store, fake timers for skeleton          |
 
 #### 3 lightweight — pure function extraction + shallow mount
 
-| Component | LOC | What to test |
-|-----------|-----|-------------|
-| **CreateFolderDialog** | 102 | buildFullPath() joining, handleSubmit() empty-name validation |
-| **RenameEntryDialog** | 135 | currentName/parentDir path parsing, buildNewPath(), same-name guard |
+| Component                 | LOC | What to test                                                                 |
+| ------------------------- | --- | ---------------------------------------------------------------------------- |
+| **CreateFolderDialog**    | 102 | buildFullPath() joining, handleSubmit() empty-name validation                |
+| **RenameEntryDialog**     | 135 | currentName/parentDir path parsing, buildNewPath(), same-name guard          |
 | **MoveOrDuplicateDialog** | 238 | buildFullDestination() joining, mode-dependent labels, handleSubmit() guards |
 
 ### Exempt (no tests)
 
-| Category | Files | Rationale |
-|----------|-------|-----------|
-| Dialog passthroughs | DeleteConfirmDialog, StoreDeleteDialog | Single-action AlertDialog passthrough |
-| Thin wrappers | EditEntryDialog, InsertDialog, PasswordGenerator, GenerateDialog | Trivial validation, form passthrough |
-| Recursive display | DirectoryTree | Trivial expand/collapse |
-| Settings form tabs | ClipboardTab, ExtensionsTab, GenerationTab, InfoTab, PreferencesTab | Pure model bindings |
-| Mode toggle | ModeToggle | Trivial dropdown |
-| Readiness | ReadinessGate, BlockedScreen, IssueCard, LoadingScreen | Tested at integration level |
-| Pages | index.vue, settings.vue, test.vue | Integration-level orchestration |
-| Icons | 5 Icon*.vue files | Pure SVG stubs |
+| Category            | Files                                                               | Rationale                             |
+| ------------------- | ------------------------------------------------------------------- | ------------------------------------- |
+| Dialog passthroughs | DeleteConfirmDialog, StoreDeleteDialog                              | Single-action AlertDialog passthrough |
+| Thin wrappers       | EditEntryDialog, InsertDialog, PasswordGenerator, GenerateDialog    | Trivial validation, form passthrough  |
+| Recursive display   | DirectoryTree                                                       | Trivial expand/collapse               |
+| Settings form tabs  | ClipboardTab, ExtensionsTab, GenerationTab, InfoTab, PreferencesTab | Pure model bindings                   |
+| Mode toggle         | ModeToggle                                                          | Trivial dropdown                      |
+| Readiness           | ReadinessGate, BlockedScreen, IssueCard, LoadingScreen              | Tested at integration level           |
+| Pages               | index.vue, settings.vue, test.vue                                   | Integration-level orchestration       |
+| Icons               | 5 Icon\*.vue files                                                  | Pure SVG stubs                        |
 
 ### Component test pattern
 
@@ -708,11 +749,11 @@ podman run --rm -v $(pwd):/app -w /app pass-gui-test \
 
 ### Key environment variables
 
-| Var | Purpose |
-|-----|---------|
-| `GNUPGHOME` | GPG keyring directory |
-| `PASSWORD_STORE_DIR` | pass store location |
-| `HOME` | Must be writable for GPG |
+| Var                  | Purpose                  |
+| -------------------- | ------------------------ |
+| `GNUPGHOME`          | GPG keyring directory    |
+| `PASSWORD_STORE_DIR` | pass store location      |
+| `HOME`               | Must be writable for GPG |
 
 ---
 
@@ -722,33 +763,33 @@ podman run --rm -v $(pwd):/app -w /app pass-gui-test \
 
 Three conditional trigger levels in a single job:
 
-| Level | Trigger | Steps |
-|-------|---------|-------|
-| **Quick** | Push (any branch) | typecheck → lint → test:unit |
-| **Full** | PR to main or tag push | Quick + test:coverage + Docker integration tests |
-| **Release** | Tag push `v*` | Full + build + release |
+| Level       | Trigger                | Steps                                            |
+| ----------- | ---------------------- | ------------------------------------------------ |
+| **Quick**   | Push (any branch)      | typecheck → lint → test:unit                     |
+| **Full**    | PR to main or tag push | Quick + test:coverage + Docker integration tests |
+| **Release** | Tag push `v*`          | Full + build + release                           |
 
 ### Key design decisions
 
-| Decision | Choice |
-|----------|--------|
-| Strategy | Single job with conditional steps (no multi-job artifact complexity) |
-| Concurrency | Group by ref, cancel-in-progress on new pushes |
-| pnpm | `pnpm/action-setup@v4` with version 11.9.0 |
-| Node | `actions/setup-node@v4` with Node 24, pnpm cache |
-| Docker in CI | `docker build` + `docker run` (Docker available on ubuntu-latest) |
-| Coverage | Thresholds enforced in vitest.config.ts (not CI YAML) |
+| Decision     | Choice                                                               |
+| ------------ | -------------------------------------------------------------------- |
+| Strategy     | Single job with conditional steps (no multi-job artifact complexity) |
+| Concurrency  | Group by ref, cancel-in-progress on new pushes                       |
+| pnpm         | `pnpm/action-setup@v4` with version 11.9.0                           |
+| Node         | `actions/setup-node@v4` with Node 24, pnpm cache                     |
+| Docker in CI | `docker build` + `docker run` (Docker available on ubuntu-latest)    |
+| Coverage     | Thresholds enforced in vitest.config.ts (not CI YAML)                |
 
 ---
 
 ## 9. Coverage Targets
 
-| Threshold | Level | Enforcement |
-|-----------|-------|-------------|
-| Warning < 60% | Total | CI log message, non-blocking |
-| PR Block < 75% | New code | Blocks merge |
-| Target 80% | Total | Quarterly aspirational |
-| 100% pass | Integration | Hard block (all must pass) |
+| Threshold      | Level       | Enforcement                  |
+| -------------- | ----------- | ---------------------------- |
+| Warning < 60%  | Total       | CI log message, non-blocking |
+| PR Block < 75% | New code    | Blocks merge                 |
+| Target 80%     | Total       | Quarterly aspirational       |
+| 100% pass      | Integration | Hard block (all must pass)   |
 
 ### Exempt from coverage
 
@@ -817,10 +858,7 @@ pnpm test
 # 2. Run with coverage
 pnpm test:coverage
 
-# 3. Run in watch mode (for development)
-pnpm --filter=client test:watch
-
-# 4. Build and run integration tests (requires Podman/Docker)
+# 3. Build and run integration tests (requires Podman/Docker)
 podman build -t pass-gui-test -f Containerfile.test .
 podman run --rm -v $(pwd):/app -w /app pass-gui-test \
   bash -c "pnpm install --frozen-lockfile && pnpm --filter=client vitest run tests/integration/"
