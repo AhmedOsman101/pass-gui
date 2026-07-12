@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Ok, Err } from "lib-result";
+import { Err, Ok } from "lib-result";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandFailedError } from "@/lib/errors";
-import { Readiness } from "./readiness";
-import { Pass } from "@/services/pass";
-import { Neu } from "@/services/neutralino";
-import { Gpg } from "@/services/gpg";
-import { Fs } from "@/services/filesystem";
-import { StoreValidation } from "@/services/store-validation";
 import { Config } from "@/services/config";
+import { Fs } from "@/services/filesystem";
+import { Gpg } from "@/services/gpg";
+import { Neu } from "@/services/neutralino";
+import { Pass } from "@/services/pass";
+import { StoreValidation } from "@/services/store-validation";
+import { Readiness } from "./readiness";
 
 vi.mock("@/services/pass", () => ({
   Pass: {
@@ -82,18 +82,16 @@ beforeEach(() => {
   vi.mocked(Fs.exists).mockResolvedValue(Ok(true));
   vi.mocked(Fs.isDirectory).mockResolvedValue(Ok(true));
   vi.mocked(StoreValidation.parseGpgId).mockResolvedValue(
-    Ok([{ raw: "DEADBEEF1234", keyId: "DEADBEEF1234", isFingerprint: false }]),
+    Ok([{ raw: "DEADBEEF1234", keyId: "DEADBEEF1234", isFingerprint: false }])
   );
   vi.mocked(StoreValidation.verifyRecipients).mockResolvedValue(
-    Ok({ recipients: [], missingKeys: [] }),
+    Ok({ recipients: [], missingKeys: [] })
   );
   vi.mocked(Pass.exec).mockResolvedValue(
-    Ok({ pid: 1, stdOut: "", stdErr: "", exitCode: 0 }),
+    Ok({ pid: 1, stdOut: "", stdErr: "", exitCode: 0 })
   );
   vi.mocked(StoreValidation.hasEntries).mockResolvedValue(Ok(true));
-  vi.mocked(Config.load).mockResolvedValue(
-    Err(new Error("config not found")),
-  );
+  vi.mocked(Config.load).mockResolvedValue(Err(new Error("config not found")));
 });
 
 describe("check", () => {
@@ -155,7 +153,7 @@ describe("check", () => {
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]!.code).toBe("PASS_VERSION_TOO_OLD");
     const issue = result.issues[0] as Extract<
-      typeof result.issues[number],
+      (typeof result.issues)[number],
       { code: "PASS_VERSION_TOO_OLD" }
     >;
     expect(issue.found).toEqual({ major: 1, minor: 6, patch: 0 });
@@ -234,7 +232,7 @@ describe("check", () => {
   it("returns STORE_NO_GPG_ID when .gpg-id file is missing", async () => {
     vi.mocked(Fs.exists)
       .mockReset()
-      .mockResolvedValueOnce(Ok(true))   // store exists
+      .mockResolvedValueOnce(Ok(true)) // store exists
       .mockResolvedValueOnce(Ok(false)); // .gpg-id missing
 
     const result = await Readiness.check(STORE_PATH);
@@ -246,7 +244,7 @@ describe("check", () => {
 
   it("returns STORE_GPG_ID_EMPTY when parseGpgId errors", async () => {
     vi.mocked(StoreValidation.parseGpgId).mockResolvedValue(
-      Err(new Error("parse failed")),
+      Err(new Error("parse failed"))
     );
 
     const result = await Readiness.check(STORE_PATH);
@@ -258,7 +256,7 @@ describe("check", () => {
 
   it("returns STORE_GPG_ID_KEY_MISSING when recipients have missing keys", async () => {
     vi.mocked(StoreValidation.verifyRecipients).mockResolvedValue(
-      Ok({ recipients: [], missingKeys: ["MISSINGKEY"] }),
+      Ok({ recipients: [], missingKeys: ["MISSINGKEY"] })
     );
 
     const result = await Readiness.check(STORE_PATH);
@@ -270,7 +268,7 @@ describe("check", () => {
 
   it("returns STORE_GPG_ID_KEY_MISSING when verifyRecipients errors", async () => {
     vi.mocked(StoreValidation.verifyRecipients).mockResolvedValue(
-      Err(new Error("verify failed")),
+      Err(new Error("verify failed"))
     );
 
     const result = await Readiness.check(STORE_PATH);
@@ -290,8 +288,8 @@ describe("check", () => {
           stdOut: "",
           stdErr: "stderr content",
           pid: 1,
-        }),
-      ),
+        })
+      )
     );
 
     const result = await Readiness.check(STORE_PATH);
@@ -323,14 +321,14 @@ describe("check", () => {
           },
         },
         _raw: {},
-      } as any),
+      } as any)
     );
 
     await Readiness.check(STORE_PATH);
 
     expect(StoreValidation.verifyRecipients).toHaveBeenCalledWith(
       expect.any(Array),
-      "/custom/gnupg",
+      "/custom/gnupg"
     );
   });
 });

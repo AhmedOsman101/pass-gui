@@ -1,5 +1,5 @@
 import { Icon, MessageBoxChoice, os } from "@neutralinojs/lib";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dialog } from "./dialog";
 
 describe("Dialog", () => {
@@ -55,7 +55,11 @@ describe("Dialog", () => {
   describe("showNotification", () => {
     it("shows notification", async () => {
       vi.mocked(os.showNotification).mockResolvedValue(undefined);
-      const result = await Dialog.showNotification("Title", "Content", Icon.INFO);
+      const result = await Dialog.showNotification(
+        "Title",
+        "Content",
+        Icon.INFO
+      );
       expect(result.isOk()).toBe(true);
     });
 
@@ -64,7 +68,7 @@ describe("Dialog", () => {
       const result = await Dialog.showNotification(
         "Title",
         "Content",
-        Icon.INFO,
+        Icon.INFO
       );
       expect(result.isError()).toBe(true);
     });
@@ -77,7 +81,7 @@ describe("Dialog", () => {
         "Title",
         "Content",
         MessageBoxChoice.YES_NO,
-        Icon.QUESTION,
+        Icon.QUESTION
       );
       expect(result.isOk()).toBe(true);
       expect(result.unwrap()).toBe("YES");

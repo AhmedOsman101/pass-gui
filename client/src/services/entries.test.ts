@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Ok, Err } from "lib-result";
+import { Err, Ok } from "lib-result";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CommandFailedError,
-  MutationError,
-  EntryNotFoundError,
   EntryAlreadyExistsError,
+  EntryNotFoundError,
   EntryParseError,
+  MutationError,
 } from "@/lib/errors";
 import { Pass } from "@/services/pass";
 
@@ -25,9 +25,9 @@ vi.mock("@/lib/parse-pass-show", () => ({
   parsePassShowOutput: vi.fn(),
 }));
 
-import { Entries } from "./entries";
-import { walkStore } from "@/lib/store-walker";
 import { parsePassShowOutput } from "@/lib/parse-pass-show";
+import { walkStore } from "@/lib/store-walker";
+import { Entries } from "./entries";
 
 const mockEntryTree = [
   {
@@ -80,7 +80,7 @@ describe("Entries", () => {
 
     it("returns error when walkStore fails", async () => {
       vi.mocked(walkStore).mockResolvedValue(
-        Err(new MutationError(1, "store walk error")),
+        Err(new MutationError(1, "store walk error"))
       );
 
       const result = await Entries.list();
@@ -139,7 +139,7 @@ describe("Entries", () => {
     it("returns MutationError when parsePassShowOutput fails", async () => {
       vi.mocked(Pass.exec).mockResolvedValue(Ok(mockExecSuccess));
       vi.mocked(parsePassShowOutput).mockReturnValue(
-        Err(new EntryParseError("", "parse error")),
+        Err(new EntryParseError("", "parse error"))
       );
 
       const result = await Entries.show("bad-parse");
@@ -150,7 +150,7 @@ describe("Entries", () => {
 
     it("handles non-CommandFailedError from Pass.exec", async () => {
       vi.mocked(Pass.exec).mockResolvedValue(
-        Err(new Error("something went wrong")),
+        Err(new Error("something went wrong"))
       );
 
       const result = await Entries.show("weird-error");
@@ -172,10 +172,9 @@ describe("Entries", () => {
 
       expect(result.isOk()).toBe(true);
       expect(result.ok!).toEqual({ success: true, path: "Email/new" });
-      expect(Pass.exec).toHaveBeenCalledWith(
-        ["insert", "-m", "Email/new"],
-        { stdIn: input.content },
-      );
+      expect(Pass.exec).toHaveBeenCalledWith(["insert", "-m", "Email/new"], {
+        stdIn: input.content,
+      });
     });
 
     it("passes -f flag when force is true", async () => {
@@ -185,7 +184,7 @@ describe("Entries", () => {
 
       expect(Pass.exec).toHaveBeenCalledWith(
         ["insert", "-f", "-m", "Email/new"],
-        { stdIn: input.content },
+        { stdIn: input.content }
       );
     });
 
@@ -240,7 +239,7 @@ describe("Entries", () => {
       expect(result.isOk()).toBe(true);
       expect(Pass.exec).toHaveBeenCalledWith(
         ["insert", "-f", "Email/new"],
-        expect.objectContaining({ stdIn: expect.any(String) }),
+        expect.objectContaining({ stdIn: expect.any(String) })
       );
     });
 
@@ -356,8 +355,8 @@ describe("Entries", () => {
               stdOut: "",
               stdErr: "already exists",
               pid: 0,
-            }),
-          ),
+            })
+          )
         );
       vi.mocked(parsePassShowOutput).mockReturnValue(Ok(mockDetail));
 
@@ -438,7 +437,7 @@ describe("Entries", () => {
       expect(Pass.exec).toHaveBeenNthCalledWith(
         2,
         ["insert", "-f", "-m", "Email/work"],
-        { stdIn: content },
+        { stdIn: content }
       );
     });
 
@@ -469,8 +468,8 @@ describe("Entries", () => {
               stdOut: "",
               stdErr: "could not write",
               pid: 0,
-            }),
-          ),
+            })
+          )
         );
       vi.mocked(parsePassShowOutput).mockReturnValue(Ok(mockDetail));
 
@@ -482,7 +481,7 @@ describe("Entries", () => {
 
     it("returns error when show fails with non-CommandFailedError", async () => {
       vi.mocked(Pass.exec).mockResolvedValue(
-        Err(new Error("unexpected failure")),
+        Err(new Error("unexpected failure"))
       );
 
       const result = await Entries.edit("weird", content);

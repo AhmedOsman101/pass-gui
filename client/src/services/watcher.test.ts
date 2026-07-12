@@ -1,5 +1,5 @@
 import { events, filesystem } from "@neutralinojs/lib";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Watcher } from "./watcher";
 
 describe("Watcher", () => {
@@ -17,15 +17,15 @@ describe("Watcher", () => {
       const result = await Watcher.watch(
         "store:default",
         "/store",
-        "config.toml",
+        "config.toml"
       );
       expect(result.isOk()).toBe(true);
       expect(vi.mocked(filesystem.createWatcher)).toHaveBeenCalledWith(
-        "/store",
+        "/store"
       );
       expect(vi.mocked(events.on)).toHaveBeenCalledWith(
         "watchFile",
-        expect.any(Function),
+        expect.any(Function)
       );
     });
 
@@ -41,7 +41,7 @@ describe("Watcher", () => {
 
     it("returns error when createWatcher throws", async () => {
       vi.mocked(filesystem.createWatcher).mockRejectedValueOnce(
-        new Error("fail"),
+        new Error("fail")
       );
       const result = await Watcher.watch("err", "/dir", "f.txt");
       expect(result.isError()).toBe(true);
@@ -57,8 +57,9 @@ describe("Watcher", () => {
   describe("event handling", () => {
     it("sets changed flag when matching event fires", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
-      const handler = vi.mocked(events.on).mock
-        .calls[0]![1] as (ev: CustomEvent) => void;
+      const handler = vi.mocked(events.on).mock.calls[0]![1] as (
+        ev: CustomEvent
+      ) => void;
       handler({
         detail: { id: 42, filename: "file.gpg" },
       } as CustomEvent);
@@ -67,8 +68,9 @@ describe("Watcher", () => {
 
     it("ignores non-matching events", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
-      const handler = vi.mocked(events.on).mock
-        .calls[0]![1] as (ev: CustomEvent) => void;
+      const handler = vi.mocked(events.on).mock.calls[0]![1] as (
+        ev: CustomEvent
+      ) => void;
       handler({
         detail: { id: 42, filename: "other.gpg" },
       } as CustomEvent);
@@ -77,8 +79,9 @@ describe("Watcher", () => {
 
     it("ignores events with non-matching watcher id", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
-      const handler = vi.mocked(events.on).mock
-        .calls[0]![1] as (ev: CustomEvent) => void;
+      const handler = vi.mocked(events.on).mock.calls[0]![1] as (
+        ev: CustomEvent
+      ) => void;
       handler({
         detail: { id: 999, filename: "file.gpg" },
       } as CustomEvent);
@@ -89,8 +92,9 @@ describe("Watcher", () => {
   describe("hasChanged", () => {
     it("returns true then resets", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
-      const handler = vi.mocked(events.on).mock
-        .calls[0]![1] as (ev: CustomEvent) => void;
+      const handler = vi.mocked(events.on).mock.calls[0]![1] as (
+        ev: CustomEvent
+      ) => void;
       handler({
         detail: { id: 42, filename: "file.gpg" },
       } as CustomEvent);
@@ -122,10 +126,7 @@ describe("Watcher", () => {
       const handler = vi.mocked(events.on).mock.calls[0]![1];
       const result = await Watcher.unwatch("test");
       expect(result.isOk()).toBe(true);
-      expect(vi.mocked(events.off)).toHaveBeenCalledWith(
-        "watchFile",
-        handler,
-      );
+      expect(vi.mocked(events.off)).toHaveBeenCalledWith("watchFile", handler);
       expect(vi.mocked(filesystem.removeWatcher)).toHaveBeenCalledWith(42);
     });
 
@@ -144,7 +145,7 @@ describe("Watcher", () => {
     it("returns error when removeWatcher throws", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
       vi.mocked(filesystem.removeWatcher).mockRejectedValueOnce(
-        new Error("fail"),
+        new Error("fail")
       );
       const result = await Watcher.unwatch("test");
       expect(result.isError()).toBe(true);
