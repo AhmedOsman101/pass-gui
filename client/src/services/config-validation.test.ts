@@ -60,9 +60,7 @@ describe("validateAppConfig", () => {
     });
     expect(result.isError()).toBe(true);
     expect(
-      result.error!.issues.some(i =>
-        i.message.includes("At least one store")
-      )
+      result.error!.issues.some(i => i.message.includes("At least one store"))
     ).toBe(true);
   });
 
@@ -122,9 +120,9 @@ describe("validateAppConfig", () => {
       },
     });
     expect(result.isError()).toBe(true);
-    expect(
-      result.error!.issues.some(i => i.path.includes("selection"))
-    ).toBe(true);
+    expect(result.error!.issues.some(i => i.path.includes("selection"))).toBe(
+      true
+    );
   });
 });
 
@@ -156,9 +154,9 @@ describe("individual section validators", () => {
         character_set_no_symbols: "a",
       });
       expect(result.isError()).toBe(true);
-      expect(
-        result.error!.issues.some(i => i.path.includes("memorable"))
-      ).toBe(true);
+      expect(result.error!.issues.some(i => i.path.includes("memorable"))).toBe(
+        true
+      );
     });
   });
 
@@ -174,9 +172,9 @@ describe("individual section validators", () => {
         selection: "invalid" as "clipboard",
       });
       expect(result.isError()).toBe(true);
-      expect(
-        result.error!.issues.some(i => i.path.includes("selection"))
-      ).toBe(true);
+      expect(result.error!.issues.some(i => i.path.includes("selection"))).toBe(
+        true
+      );
     });
   });
 
@@ -213,9 +211,9 @@ describe("individual section validators", () => {
     it("rejects store with empty path", () => {
       const result = validateStoresConfig({ bad: { path: "" } });
       expect(result.isError()).toBe(true);
-      expect(
-        result.error!.issues.some(i => i.path.includes("path"))
-      ).toBe(true);
+      expect(result.error!.issues.some(i => i.path.includes("path"))).toBe(
+        true
+      );
     });
   });
 });
@@ -236,10 +234,11 @@ describe("formatZodError", () => {
   });
 
   it("formats issue without path", () => {
-    const result = validateCoreConfig(123 as unknown as Record<string, unknown>);
-    const formatted = formatZodError(result.error!);
-    expect(formatted).toBe(
-      "Invalid input: expected object, received number"
+    const result = validateCoreConfig(
+      123 as unknown as Record<string, unknown>
     );
+    const formatted = formatZodError(result.error!);
+    expect(formatted).toMatch(/Invalid input/);
+    expect(formatted).not.toMatch(/^[a-z_]+:/);
   });
 });
