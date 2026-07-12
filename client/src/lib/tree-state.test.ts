@@ -61,6 +61,11 @@ describe("sortPaths", () => {
 });
 
 describe("buildVisible", () => {
+  it("returns empty array for empty TreeIndex", () => {
+    const emptyIndex = buildIndex([]);
+    expect(buildVisible(emptyIndex, new Set())).toEqual([]);
+  });
+
   it("shows only root-level nodes when no dirs are expanded", () => {
     const result = buildVisible(index, new Set());
     expect(result).toEqual([
@@ -226,6 +231,13 @@ describe("buildSearchResults", () => {
       },
     ]);
   });
+
+  it("matches directory names and includes their children", () => {
+    const results = buildSearchResults(index, "Email");
+    expect(results.some(n => n.path === "Email")).toBe(true);
+    expect(results.some(n => n.path === "Email/work")).toBe(true);
+    expect(results.some(n => n.path === "Email/personal")).toBe(true);
+  });
 });
 
 describe("expandSet", () => {
@@ -286,6 +298,13 @@ describe("collapseSet", () => {
     expect(result.has("Email")).toBe(false);
     expect(result.has("Social")).toBe(true);
     expect(result.has("notes")).toBe(true);
+  });
+
+  it("is no-op when path is not in the set", () => {
+    const expanded = new Set(["Email"]);
+    const result = collapseSet(index, expanded, "nonexistent");
+    expect(result.has("Email")).toBe(true);
+    expect(result.size).toBe(1);
   });
 });
 
