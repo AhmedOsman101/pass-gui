@@ -36,7 +36,10 @@ const configPayload: any = {
     gpg: { opts: [] },
     extensions: { enabled: false },
     stores: {
-      work: { path: "~/.password-store/work", gnupg_home: "/home/user/.gnupg-work" },
+      work: {
+        path: "~/.password-store/work",
+        gnupg_home: "/home/user/.gnupg-work",
+      },
       personal: { path: "~/.password-store/personal" },
     },
   },
@@ -86,7 +89,9 @@ describe("active-store store", () => {
   });
 
   it("load() with Config.getValue error sets error", async () => {
-    vi.mocked(Config.getValue).mockResolvedValue(Err(new Error("config not found")));
+    vi.mocked(Config.getValue).mockResolvedValue(
+      Err(new Error("config not found"))
+    );
     vi.mocked(Config.load).mockResolvedValue(Ok(configPayload));
 
     const store = useActiveStoreStore();
@@ -123,7 +128,9 @@ describe("active-store store", () => {
   it("load() with path resolution error sets error", async () => {
     vi.mocked(Config.getValue).mockResolvedValue(Ok("work"));
     vi.mocked(Config.load).mockResolvedValue(Ok(configPayload));
-    vi.mocked(Path.resolveUserPath).mockResolvedValue(Err(new Error("bad path")));
+    vi.mocked(Path.resolveUserPath).mockResolvedValue(
+      Err(new Error("bad path"))
+    );
 
     const store = useActiveStoreStore();
     await store.load();
@@ -166,11 +173,17 @@ describe("active-store store", () => {
     expect(store.error).toBeNull();
     expect(store.hasStore).toBe(true);
     expect(Pass.setStorePath).toHaveBeenCalledWith(resolvedPath);
-    expect(Config.setValue).toHaveBeenCalledWith("core", "active_store", "work");
+    expect(Config.setValue).toHaveBeenCalledWith(
+      "core",
+      "active_store",
+      "work"
+    );
   });
 
   it("switchTo() with Config.setValue error sets error", async () => {
-    vi.mocked(Config.setValue).mockResolvedValue(Err(new Error("permission denied")));
+    vi.mocked(Config.setValue).mockResolvedValue(
+      Err(new Error("permission denied"))
+    );
 
     const store = useActiveStoreStore();
     await store.switchTo("work");

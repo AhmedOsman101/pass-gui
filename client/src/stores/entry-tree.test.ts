@@ -1,5 +1,5 @@
-import { Err, Ok } from "lib-result";
 import { createTestingPinia } from "@pinia/testing";
+import { Err, Ok } from "lib-result";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/services/entries", () => ({
@@ -33,9 +33,7 @@ const mockTree = [
     name: "Email",
     path: "Email",
     type: "DIRECTORY" as const,
-    children: [
-      { name: "work.gpg", path: "Email/work", type: "FILE" as const },
-    ],
+    children: [{ name: "work.gpg", path: "Email/work", type: "FILE" as const }],
   },
   { name: "Social", path: "Social", type: "DIRECTORY" as const, children: [] },
 ];
@@ -290,7 +288,11 @@ describe("entry-tree store", () => {
     vi.mocked(Entries.list).mockResolvedValue(Ok(mockTree));
     const store = useEntryTreeStore();
 
-    const result = await store.moveEntry("Social", "Social/renamed", "DIRECTORY");
+    const result = await store.moveEntry(
+      "Social",
+      "Social/renamed",
+      "DIRECTORY"
+    );
 
     expect(result).toBeNull();
     expect(Entries.show).not.toHaveBeenCalled();

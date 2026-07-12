@@ -1,14 +1,14 @@
 import { createTestingPinia } from "@pinia/testing";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { Err, Ok } from "lib-result";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/services/clipboard", () => ({
   Clipboard: { writeText: vi.fn(), clear: vi.fn() },
 }));
 
+import { ClipboardError } from "@/lib/errors";
 import { Clipboard } from "@/services/clipboard";
 import { useClipboardStore } from "@/stores/clipboard";
-import { ClipboardError } from "@/lib/errors";
 import type { ClipboardAction } from "@/types/entries";
 
 describe("clipboard store", () => {
@@ -35,7 +35,12 @@ describe("clipboard store", () => {
 
   it("copy() sets state on success", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -65,7 +70,12 @@ describe("clipboard store", () => {
 
   it("copy() timer decrements remainingMs on tick", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -89,7 +99,12 @@ describe("clipboard store", () => {
 
   it("clear() resets state after copy", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -104,7 +119,12 @@ describe("clipboard store", () => {
 
   it("clear() error still resets state", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     vi.mocked(Clipboard.clear).mockResolvedValue(
       Err(new ClipboardError("clipboard", "clear failed"))
@@ -121,7 +141,12 @@ describe("clipboard store", () => {
 
   it("clears clipboard on timer expiry", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -135,7 +160,12 @@ describe("clipboard store", () => {
 
   it("clear() stops timer before expiry", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     await store.copy("secret", "x");
@@ -153,7 +183,12 @@ describe("clipboard store", () => {
 
   it("isActive is true only when copied and timer running", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     expect(store.isActive).toBe(false);
@@ -165,7 +200,12 @@ describe("clipboard store", () => {
 
   it("formattedRemaining shows seconds", async () => {
     vi.mocked(Clipboard.writeText).mockResolvedValue(
-      Ok({ path: "x", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+      Ok({
+        path: "x",
+        selection: "clipboard",
+        timerSeconds: 30,
+        expiresAt: 30_000,
+      })
     );
     const store = useClipboardStore();
     expect(store.formattedRemaining).toBe("0s");
@@ -178,10 +218,20 @@ describe("clipboard store", () => {
   it("second copy restarts timer", async () => {
     vi.mocked(Clipboard.writeText)
       .mockResolvedValueOnce(
-        Ok({ path: "a", selection: "clipboard", timerSeconds: 30, expiresAt: 30_000 })
+        Ok({
+          path: "a",
+          selection: "clipboard",
+          timerSeconds: 30,
+          expiresAt: 30_000,
+        })
       )
       .mockResolvedValueOnce(
-        Ok({ path: "b", selection: "clipboard", timerSeconds: 10, expiresAt: 40_000 })
+        Ok({
+          path: "b",
+          selection: "clipboard",
+          timerSeconds: 10,
+          expiresAt: 40_000,
+        })
       );
     const store = useClipboardStore();
     await store.copy("secret1", "a");

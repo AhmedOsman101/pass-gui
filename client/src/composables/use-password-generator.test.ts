@@ -32,10 +32,7 @@ describe("usePasswordGenerator", () => {
   it("calls generatePassword with symbols charset when symbols enabled", () => {
     vi.mocked(generatePassword).mockReturnValue("p4$$w0rd!");
     usePasswordGenerator();
-    expect(generatePassword).toHaveBeenCalledWith(
-      20,
-      "[[:alnum:]][[:punct:]]",
-    );
+    expect(generatePassword).toHaveBeenCalledWith(20, "[[:alnum:]][[:punct:]]");
   });
 
   it("calls generatePassword with alnum-only charset when symbols disabled", () => {
@@ -75,10 +72,7 @@ describe("usePasswordGenerator", () => {
     vi.mocked(generatePassword).mockReturnValue("newpass");
     state.options.length = 30;
     state.regenerate();
-    expect(generatePassword).toHaveBeenCalledWith(
-      30,
-      "[[:alnum:]][[:punct:]]",
-    );
+    expect(generatePassword).toHaveBeenCalledWith(30, "[[:alnum:]][[:punct:]]");
   });
 
   it("returns reactive state with options, generated, and regenerate", () => {

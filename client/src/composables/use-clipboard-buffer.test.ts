@@ -70,7 +70,7 @@ describe("useClipboardBuffer", () => {
     const treeStore = useEntryTreeStore();
     expect(treeStore.duplicateEntry).toHaveBeenCalledWith(
       "Email/work.gpg",
-      "Social/work.gpg",
+      "Social/work.gpg"
     );
   });
 
@@ -82,7 +82,7 @@ describe("useClipboardBuffer", () => {
     expect(treeStore.moveEntry).toHaveBeenCalledWith(
       "Email/work.gpg",
       "Social/work.gpg",
-      "FILE",
+      "FILE"
     );
   });
 
@@ -101,7 +101,7 @@ describe("useClipboardBuffer", () => {
     const treeStore = useEntryTreeStore();
     expect(treeStore.duplicateEntry).toHaveBeenCalledWith(
       "Email/work.gpg",
-      "Social/Sub/work.gpg",
+      "Social/Sub/work.gpg"
     );
   });
 });

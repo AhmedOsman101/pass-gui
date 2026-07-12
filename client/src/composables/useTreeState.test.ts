@@ -20,11 +20,23 @@ import { useTreeState } from "./useTreeState";
 
 const rootIndex: TreeIndex = {
   byPath: new Map([
-    ["Email", { name: "Email", path: "Email", type: "DIRECTORY", children: [] }],
+    [
+      "Email",
+      { name: "Email", path: "Email", type: "DIRECTORY", children: [] },
+    ],
     ["Email/work", { name: "work", path: "Email/work", type: "FILE" }],
-    ["Email/personal", { name: "personal", path: "Email/personal", type: "FILE" }],
-    ["Social", { name: "Social", path: "Social", type: "DIRECTORY", children: [] }],
-    ["Social/twitter", { name: "twitter", path: "Social/twitter", type: "FILE" }],
+    [
+      "Email/personal",
+      { name: "personal", path: "Email/personal", type: "FILE" },
+    ],
+    [
+      "Social",
+      { name: "Social", path: "Social", type: "DIRECTORY", children: [] },
+    ],
+    [
+      "Social/twitter",
+      { name: "twitter", path: "Social/twitter", type: "FILE" },
+    ],
   ]),
   parent: new Map([
     ["Email", null],
@@ -63,8 +75,8 @@ describe("useTreeState", () => {
   });
 
   it("toggleDir expands a collapsed directory", () => {
-    vi.mocked(toggleSet).mockImplementation(
-      (_idx, expanded, path) => new Set(expanded).add(path),
+    vi.mocked(toggleSet).mockImplementation((_idx, expanded, path) =>
+      new Set(expanded).add(path)
     );
     const { toggleDir, expandedDirs } = useTreeState();
     toggleDir("Email");
@@ -72,13 +84,11 @@ describe("useTreeState", () => {
   });
 
   it("toggleDir collapses an expanded directory", () => {
-    vi.mocked(toggleSet).mockImplementation(
-      (_idx, expanded, path) => {
-        const next = new Set(expanded);
-        next.delete(path);
-        return next;
-      },
-    );
+    vi.mocked(toggleSet).mockImplementation((_idx, expanded, path) => {
+      const next = new Set(expanded);
+      next.delete(path);
+      return next;
+    });
     const { toggleDir, expandedDirs } = useTreeState();
     expandedDirs.value = new Set(["Email"]);
     toggleDir("Email");
@@ -110,8 +120,8 @@ describe("useTreeState", () => {
   });
 
   it("toggleSelect toggles directory then selects for DIRECTORY type", () => {
-    vi.mocked(toggleSet).mockImplementation(
-      (_idx, expanded, path) => new Set(expanded).add(path),
+    vi.mocked(toggleSet).mockImplementation((_idx, expanded, path) =>
+      new Set(expanded).add(path)
     );
     const { toggleSelect, expandedDirs } = useTreeState();
     const treeStore = useEntryTreeStore();
@@ -194,8 +204,8 @@ describe("useTreeState", () => {
   });
 
   it("arrowRight expands a collapsed directory", () => {
-    vi.mocked(toggleSet).mockImplementation(
-      (_idx, expanded, path) => new Set(expanded).add(path),
+    vi.mocked(toggleSet).mockImplementation((_idx, expanded, path) =>
+      new Set(expanded).add(path)
     );
     const { arrowRight, focusedPath, expandedDirs } = useTreeState();
     focusedPath.value = "Email";
@@ -212,13 +222,11 @@ describe("useTreeState", () => {
   });
 
   it("arrowLeft collapses an expanded directory", () => {
-    vi.mocked(toggleSet).mockImplementation(
-      (_idx, expanded, path) => {
-        const next = new Set(expanded);
-        next.delete(path);
-        return next;
-      },
-    );
+    vi.mocked(toggleSet).mockImplementation((_idx, expanded, path) => {
+      const next = new Set(expanded);
+      next.delete(path);
+      return next;
+    });
     const { arrowLeft, focusedPath, expandedDirs } = useTreeState();
     expandedDirs.value = new Set(["Email"]);
     focusedPath.value = "Email";
@@ -235,7 +243,12 @@ describe("useTreeState", () => {
 
   it("switches to search mode and uses buildSearchResults when searchQuery is non-empty", () => {
     const searchResults: VisibleNode[] = [
-      { path: "Social/twitter", depth: 0, isExpanded: false, isDirectory: false },
+      {
+        path: "Social/twitter",
+        depth: 0,
+        isExpanded: false,
+        isDirectory: false,
+      },
     ];
     vi.mocked(buildSearchResults).mockReturnValue(searchResults);
     const searchQuery = ref("twit");
