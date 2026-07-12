@@ -42,12 +42,12 @@ import {
   ConfigValidationError,
   ConfigWriteError,
 } from "@/lib/errors";
-import type { AppConfig } from "@/types/config";
-import type { ParsedToml } from "@/types/toml";
 import Path from "@/lib/path";
 import toml from "@/lib/toml";
 import { Fs } from "@/services/filesystem";
 import { Watcher } from "@/services/watcher";
+import type { AppConfig } from "@/types/config";
+import type { ParsedToml } from "@/types/toml";
 import { Config } from "./config";
 
 // ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ import { Config } from "./config";
 import type { TomlObject, TomlStringified } from "@/types/toml";
 
 function makeMockParsedToml(
-  overrides?: Partial<AppConfig>,
+  overrides?: Partial<AppConfig>
 ): ParsedToml<AppConfig> {
   const hasStoresOverride = overrides && "stores" in overrides;
   const data = {
@@ -92,7 +92,9 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   // Reset internal cache
-  (Config as unknown as { _cachedResult: ParsedToml<AppConfig> | null })._cachedResult = null;
+  (
+    Config as unknown as { _cachedResult: ParsedToml<AppConfig> | null }
+  )._cachedResult = null;
 
   // Default mock returns
   vi.mocked(Path.getKnownPath).mockResolvedValue(Ok("/home/user/.config"));
@@ -111,11 +113,11 @@ beforeEach(() => {
       filename: "config.toml",
       stem: "config",
       extension: ".toml",
-    }),
+    })
   );
   vi.mocked(toml.parse).mockReturnValue(Ok(makeMockParsedToml()));
   vi.mocked(toml.stringify).mockReturnValue(
-    Ok("serialized content" as unknown as TomlStringified<unknown>),
+    Ok("serialized content" as unknown as TomlStringified<unknown>)
   );
   vi.mocked(toml.buildDefaultConfigTable).mockReturnValue({} as never);
   vi.mocked(Watcher.watch).mockResolvedValue(Ok(undefined));
@@ -188,7 +190,7 @@ describe("Config.exists", () => {
 describe("Config.load — cache behavior", () => {
   it("passes through ensure error", async () => {
     vi.spyOn(Config, "ensure").mockResolvedValue(
-      Err(new Error("ensure failed")),
+      Err(new Error("ensure failed"))
     );
 
     const result = await Config.load();
@@ -240,7 +242,7 @@ describe("Config.load — cache behavior", () => {
     expect(Watcher.watch).toHaveBeenCalledWith(
       "config",
       "/home/user/.config/pass-gui",
-      "config.toml",
+      "config.toml"
     );
   });
 });
@@ -281,7 +283,7 @@ describe("Config.load — error paths", () => {
     expect(result.isError()).toBe(true);
     expect(result.error).toBeInstanceOf(ConfigValidationError);
     expect((result.error as ConfigValidationError).code).toBe(
-      "CONFIG_VALIDATION_ERROR",
+      "CONFIG_VALIDATION_ERROR"
     );
   });
 });
@@ -300,7 +302,7 @@ describe("Config.save", () => {
     expect(result.ok).toBeUndefined();
     expect(Fs.writeFile).toHaveBeenCalledWith(
       CONFIG_PATH,
-      "serialized content",
+      "serialized content"
     );
     expect(Watcher.invalidate).toHaveBeenCalledWith("config");
   });
@@ -315,7 +317,7 @@ describe("Config.save", () => {
     expect(result.isError()).toBe(true);
     expect(result.error).toBeInstanceOf(ConfigValidationError);
     expect((result.error as ConfigValidationError).code).toBe(
-      "CONFIG_VALIDATION_ERROR",
+      "CONFIG_VALIDATION_ERROR"
     );
   });
 
@@ -326,15 +328,13 @@ describe("Config.save", () => {
 
     expect(result.isError()).toBe(true);
     expect(result.error).toBeInstanceOf(ConfigWriteError);
-    expect((result.error as ConfigWriteError).code).toBe(
-      "CONFIG_WRITE_ERROR",
-    );
+    expect((result.error as ConfigWriteError).code).toBe("CONFIG_WRITE_ERROR");
     expect((result.error as ConfigWriteError).path).toBe(CONFIG_PATH);
   });
 
   it("returns error when toml.stringify fails", async () => {
     vi.mocked(toml.stringify).mockReturnValue(
-      Err(new Error("stringify failed")),
+      Err(new Error("stringify failed"))
     );
 
     const result = await Config.save(validParsed);
@@ -359,7 +359,7 @@ describe("Config.ensure", () => {
     expect(toml.stringify).toHaveBeenCalled();
     expect(Fs.writeFile).toHaveBeenCalledWith(
       CONFIG_PATH,
-      "serialized content",
+      "serialized content"
     );
   });
 
@@ -402,9 +402,7 @@ describe("Config.ensure", () => {
 
     expect(result.isError()).toBe(true);
     expect(result.error).toBeInstanceOf(ConfigWriteError);
-    expect((result.error as ConfigWriteError).code).toBe(
-      "CONFIG_WRITE_ERROR",
-    );
+    expect((result.error as ConfigWriteError).code).toBe("CONFIG_WRITE_ERROR");
   });
 });
 
@@ -433,9 +431,7 @@ describe("Config.getValue", () => {
   });
 
   it("returns error when Config.load fails", async () => {
-    vi.spyOn(Config, "load").mockResolvedValue(
-      Err(new Error("load failed")),
-    );
+    vi.spyOn(Config, "load").mockResolvedValue(Err(new Error("load failed")));
 
     const result = await Config.getValue("core", "active_store");
 
@@ -464,9 +460,7 @@ describe("Config.setValue", () => {
   });
 
   it("returns error when Config.load fails", async () => {
-    vi.spyOn(Config, "load").mockResolvedValue(
-      Err(new Error("load failed")),
-    );
+    vi.spyOn(Config, "load").mockResolvedValue(Err(new Error("load failed")));
 
     const result = await Config.setValue("core", "active_store", "default");
 
@@ -476,7 +470,7 @@ describe("Config.setValue", () => {
 
   it("returns error when Config.save fails", async () => {
     vi.mocked(toml.stringify).mockReturnValue(
-      Err(new Error("stringify failed")),
+      Err(new Error("stringify failed"))
     );
 
     const result = await Config.setValue("core", "active_store", "default");
@@ -507,7 +501,7 @@ describe("edge cases", () => {
         Config as unknown as {
           _cachedResult: ParsedToml<AppConfig> | null;
         }
-      )._cachedResult,
+      )._cachedResult
     ).toBeNull();
   });
 
