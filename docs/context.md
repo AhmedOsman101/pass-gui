@@ -245,11 +245,11 @@ Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 | P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                     | 152   | ✅     |
 | P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                | 77    | ✅     |
 | P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState | 123   | ✅     |
-| P4       | Core services         | `config`, `store-validation`                                               | —     | ⬜     |
+| P4       | Core services         | `config`, `config-validation`, `store-validation`                          | 77    | ✅     |
 | P5       | Components            | 7 core + 3 lightweight dialogs                                             | —     | ⬜     |
 | P6       | Integration           | Podman container suite                                                     | —     | ⬜     |
 
-**Running total:** 410 tests, 24 files, 4.29s execution.
+**Running total:** 487 tests, 27 files, 3.32s execution.
 
 **Mock strategy:** `vi.mock("@neutralinojs/lib")` in `setup.ts` provides global mocks. Test-specific overrides via `vi.mocked()`. Results from `lib-result` (`Ok()` / `ErrFromText()`), never duck-typed.
 
