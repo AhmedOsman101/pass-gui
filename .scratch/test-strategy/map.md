@@ -2,7 +2,8 @@
 
 ## Destination
 
-A **Test Strategy Document** — the finalized specification of framework choices, mock strategy, test hierarchy, CI pipeline, priority-ordered module list, and container strategy for pass-gui's test suite. When the map is done, a builder agent can pick up the strategy doc and implement tests for every layer of the app.
+✅ **REACHED** — `TEST_STRATEGY.md` at project root. 845 lines covering every layer.
+A builder agent can pick this up and implement tests for every layer.
 
 ## Notes
 

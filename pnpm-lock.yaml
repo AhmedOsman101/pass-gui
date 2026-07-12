@@ -54,8 +54,8 @@ importers:
         specifier: ^1.22.0
         version: 1.22.0(vue@3.5.26(typescript@5.9.3))
       '@neutralinojs/lib':
-        specifier: ^6.8.0
-        version: 6.8.0
+        specifier: github:AhmedOsman101/neutralino.js#main
+        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e0a1fd013b3aa53685bb0b38ced7f2e2c03a121c
       '@tanstack/vue-hotkeys':
         specifier: ^0.10.0
         version: 0.10.0(vue@3.5.26(typescript@5.9.3))
@@ -611,8 +611,9 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@neutralinojs/lib@6.8.0':
-    resolution: {integrity: sha512-mOUEMSQSL9quFLW5DGtsZpokzz2n4+6pnX2ZCkT+OA+Gse0H5omY8sUO+uWt2RqYCw8vHFCp3qSblGQ3dbjwPg==}
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e0a1fd013b3aa53685bb0b38ced7f2e2c03a121c':
+    resolution: {gitHosted: true, integrity: sha512-VN0WqhiGG89nvzPPpMql9MlkvSxlqcwjgmTCWYn+3S8lS9aIQ4+hBfOAOAKvFfPXLMiRy6WtlgyInGLy88qFcg==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e0a1fd013b3aa53685bb0b38ced7f2e2c03a121c}
+    version: 6.8.0
 
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
@@ -3744,7 +3745,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@neutralinojs/lib@6.8.0':
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e0a1fd013b3aa53685bb0b38ced7f2e2c03a121c':
     optionalDependencies:
       '@rollup/rollup-darwin-x64': 4.62.2
       '@rollup/rollup-linux-x64-gnu': 4.62.2
