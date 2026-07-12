@@ -2,7 +2,7 @@ import type { TreeIndex, VisibleNode } from "@/types/entries";
 
 type SortMode = "alphabetical" | "reverse-alphabetical";
 
-function sortPaths(
+export function sortPaths(
   index: TreeIndex,
   paths: string[],
   sortMode?: SortMode
