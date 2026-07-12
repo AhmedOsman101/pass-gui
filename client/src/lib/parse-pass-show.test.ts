@@ -35,9 +35,7 @@ describe("parsePassShowOutput", () => {
   });
 
   it("parses metadata with colon in the value", () => {
-    const result = parsePassShowOutput(
-      "my-secret\nnotes: time is 10:30 AM\n"
-    );
+    const result = parsePassShowOutput("my-secret\nnotes: time is 10:30 AM\n");
     expect(result.isError()).toBe(false);
     expect(result.ok?.secret).toBe("my-secret");
     expect(result.ok?.metadata).toEqual({ notes: "time is 10:30 AM" });
@@ -85,9 +83,7 @@ describe("parsePassShowOutput", () => {
   });
 
   it("handles metadata with trailing whitespace", () => {
-    const result = parsePassShowOutput(
-      "my-secret\n  key1  :  val1  \n"
-    );
+    const result = parsePassShowOutput("my-secret\n  key1  :  val1  \n");
     expect(result.isError()).toBe(false);
     expect(result.ok?.metadata).toEqual({ key1: "val1" });
   });
@@ -108,9 +104,7 @@ describe("parsePassShowOutput", () => {
 
   it("handles metadata lines that look like hex colors", () => {
     // #ff0000 should NOT be treated as an inline comment
-    const result = parsePassShowOutput(
-      "my-secret\ncolor: #ff0000\n"
-    );
+    const result = parsePassShowOutput("my-secret\ncolor: #ff0000\n");
     expect(result.isError()).toBe(false);
     expect(result.ok?.metadata).toEqual({ color: "#ff0000" });
   });
