@@ -18,6 +18,7 @@ The mock strategy is decided: `vi.mock("@neutralinojs/lib")`. But we need to kno
 ## Deliverables
 
 A markdown document (`.scratch/test-strategy/mock-surface.md`) listing:
+
 - Every `@neutralinojs/lib` import used across the service layer
 - Function signatures with types
 - Recommended mock factory structure

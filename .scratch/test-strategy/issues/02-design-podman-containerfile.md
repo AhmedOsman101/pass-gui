@@ -15,6 +15,7 @@ Design the Containerfile (Dockerfile-compatible for CI) that will host GPG/pass 
 **Chosen: Alpine.** We started with `node:24-slim` (Debian) but it pulled 197 packages/107 MB including X11 and dbus — build took >3 minutes. Alpine is 38.7 MiB with 64 packages, build completes in ~30 seconds.
 
 Rationale:
+
 - GPG/pass are pure CLI tools in this context (no pinentry UI needed)
 - Alpine's `musl` has no compatibility issues with the tools we run (gpg, pass, git)
 - CI builds are significantly faster
@@ -23,6 +24,7 @@ Rationale:
 ### 2. GPG key generation — `gpg --batch --gen-key` with batch config file
 
 Non-interactive key generation works with a batch config:
+
 ```
 Key-Type: RSA
 Key-Length: 2048
@@ -42,6 +44,7 @@ Standard `pass init <email>` works inside the container. `PASSWORD_STORE_DIR` en
 ### 4. Test runner
 
 Mount the project root at `/app` and run inside the container:
+
 ```bash
 podman run --rm -v $(pwd):/app -w /app pass-gui-test \
   bash -c "pnpm install --frozen-lockfile && pnpm --filter=client vitest run tests/integration/"

@@ -237,6 +237,24 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 
 Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 
+### Testing (P0-P1 COMPLETE)
+
+| Priority | Layer                 | Test files                                                                 | Tests | Status |
+| -------- | --------------------- | -------------------------------------------------------------------------- | ----- | ------ |
+| P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path` | 69    | ✅     |
+| P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                     | 152   | ✅     |
+| P2       | Service orchestration | `entries`, `watcher`, `readiness`, `dialog`                                | —     | ⬜     |
+| P3       | Stores + composables  | active-store, entry-tree, clipboard, entry-form, readiness, ...            | —     | ⬜     |
+| P4       | Core services         | `config`, `store-validation`                                               | —     | ⬜     |
+| P5       | Components            | 7 core + 3 lightweight dialogs                                             | —     | ⬜     |
+| P6       | Integration           | Podman container suite                                                     | —     | ⬜     |
+
+**Running total:** 211 tests, 11 files, 1.56s execution.
+
+**Mock strategy:** `vi.mock("@neutralinojs/lib")` in `setup.ts` provides global mocks. Test-specific overrides via `vi.mocked()`. Results from `lib-result` (`Ok()` / `ErrFromText()`), never duck-typed.
+
+**Key config:** biome.json disables `noNonNullAssertion` for `*.test.ts` (safe for `result.ok!` after `.isOk()`). Vitest config in `vitest.config.ts` with happy-dom environment.
+
 ---
 
 ## Type System

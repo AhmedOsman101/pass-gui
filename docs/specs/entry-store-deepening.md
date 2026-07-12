@@ -18,13 +18,13 @@ This makes the codebase hard to navigate, hard to test, and creates coupling bet
 
 Split the entries store into two focused Pinia stores and extract transient UI concerns into a composable and component-local logic. Each new module has a smaller interface and a single responsibility:
 
-| Module | Responsibility | Interface size |
-|---|---|---|
+| Module                 | Responsibility                                                | Interface size       |
+| ---------------------- | ------------------------------------------------------------- | -------------------- |
 | `use-entry-tree-store` | Entry tree, current selection, sort mode, all CRUD operations | ~18 exports (was 35) |
-| `use-entry-form-store` | Form mode, form path, form preset password | ~6 exports |
-| `use-clipboard-buffer` | Copy/cut/paste buffer state | ~4 exports |
-| Skeleton timer | In EntryDetail.vue via `watch(isLoadingEntry)` | None |
-| searchQuery | In component layer (AppSidebar) with debounce | None |
+| `use-entry-form-store` | Form mode, form path, form preset password                    | ~6 exports           |
+| `use-clipboard-buffer` | Copy/cut/paste buffer state                                   | ~4 exports           |
+| Skeleton timer         | In EntryDetail.vue via `watch(isLoadingEntry)`                | None                 |
+| searchQuery            | In component layer (AppSidebar) with debounce                 | None                 |
 
 Dead exports (`isLoadingEntry`, `formPath`, `cycleSortMode`, `generateEntry`) are removed.
 

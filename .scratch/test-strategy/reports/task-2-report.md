@@ -31,13 +31,13 @@
 5. **Created `client/src/test/smoke.test.ts`** — minimal test to verify setup
 
 6. **Updated `client/package.json`** with scripts:
-   - `test:unit` → `vitest run`
-   - `test:watch` → `vitest`
-   - `test:coverage` → `vitest run --coverage`
+   - `test:unit` -> `vitest run`
+   - `test:watch` -> `vitest`
+   - `test:coverage` -> `vitest run --coverage`
 
 7. **Updated root `package.json`** with:
-   - `test` → delegates to client's test:unit
-   - `test:integration` → placeholder for Podman container
+   - `test` -> delegates to client's test:unit
+   - `test:integration` -> placeholder for Podman container
 
 8. **Updated deliverable files:**
    - `.scratch/test-strategy/issues/04-configure-vitest-setup.md` — resolved with final config snapshot
@@ -56,22 +56,22 @@ Test Files  1 passed (1)
 
 ## Files Created
 
-| File | Purpose |
-|------|---------|
-| `client/src/test/setup.ts` | Global test setup with NeutralinoJS mock factory |
-| `client/src/test/vitest.d.ts` | Vitest global type declarations |
-| `client/src/test/smoke.test.ts` | Minimal smoke test |
-| `client/vitest.config.ts` | Vitest configuration (separate from vite.config.ts) |
-| `.scratch/test-strategy/reports/task-2-report.md` | This report |
+| File                                              | Purpose                                             |
+| ------------------------------------------------- | --------------------------------------------------- |
+| `client/src/test/setup.ts`                        | Global test setup with NeutralinoJS mock factory    |
+| `client/src/test/vitest.d.ts`                     | Vitest global type declarations                     |
+| `client/src/test/smoke.test.ts`                   | Minimal smoke test                                  |
+| `client/vitest.config.ts`                         | Vitest configuration (separate from vite.config.ts) |
+| `.scratch/test-strategy/reports/task-2-report.md` | This report                                         |
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `client/package.json` | Added test:unit, test:watch, test:coverage scripts |
-| `package.json` (root) | Added test and test:integration scripts |
-| `.scratch/test-strategy/issues/04-configure-vitest-setup.md` | Replaced with resolved version + final config |
-| `.scratch/test-strategy/map.md` | Added Vitest config decision entry |
+| File                                                         | Change                                             |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| `client/package.json`                                        | Added test:unit, test:watch, test:coverage scripts |
+| `package.json` (root)                                        | Added test and test:integration scripts            |
+| `.scratch/test-strategy/issues/04-configure-vitest-setup.md` | Replaced with resolved version + final config      |
+| `.scratch/test-strategy/map.md`                              | Added Vitest config decision entry                 |
 
 ## Issues / Concerns
 

@@ -18,6 +18,7 @@
 **Blocked by:** none
 
 **Brief:** Read `client/src/components/` and `client/src/pages/` directories. Examine the 7 identified components (EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail). For each, document:
+
 - Lines of code
 - Non-trivial behaviors (form validation, keyboard nav, state transitions, API calls)
 - What should be tested vs what should not
@@ -33,6 +34,7 @@
 **Blocked by:** none
 
 **Brief:** Install vitest, configure vitest.config.ts, set up test infrastructure:
+
 1. `pnpm --filter=client add -D vitest happy-dom @pinia/testing @vue/test-utils`
 2. Create `client/vitest.config.ts` — separate from vite.config.ts, use `happy-dom` environment, disable neutralino/vueDevTools plugins
 3. Create `client/src/test/` directory with:
@@ -51,9 +53,10 @@
 **Blocked by:** none (but references Pinia 3 + @pinia/testing)
 
 **Brief:** Read `client/src/stores/` and `client/src/composables/` directories. Examine:
+
 - 5 Pinia stores
 - 4 composables
-Document test patterns per type:
+  Document test patterns per type:
 - Setup store test (ActiveStore)
 - Store with service mocks (EntryTree)
 - Timer-based store (Clipboard)
@@ -70,6 +73,7 @@ Include code examples showing the harness pattern for each type.
 **Blocked by:** Task 2 (needs vitest command names)
 
 **Brief:** After vitest is configured (Task 2):
+
 1. Create `.github/workflows/ci.yml`
 2. Three trigger levels:
    - Quick (push to any branch): typecheck + lint + test:unit

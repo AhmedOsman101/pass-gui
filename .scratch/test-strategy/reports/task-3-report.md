@@ -4,22 +4,22 @@
 
 ### Stores (565 LOC total)
 
-| File | LOC | Dependencies | Public API | Side Effects |
-|------|-----|--------------|------------|--------------|
-| `client/src/stores/active-store.ts` | 126 | `@/services/config` (Config), `@/services/pass` (Pass), `@/lib/path` (Path) | `load()`, `switchTo()`, `getGpgHome()`; refs: `storePath`, `storeName`, `isValidating`, `error`, `currentStoreConfig`; computed: `hasStore` | Async I/O in `load()`/`switchTo()`, no timers/watchers |
-| `client/src/stores/clipboard.ts` | 109 | `@/services/clipboard` (Clipboard) | `copy()`, `clear()`, `startTimer()`, `stopTimer()`; refs: `lastAction`, `remainingMs`, `isCopied`, `error`, `timerId`; computed: `isActive`, `formattedRemaining` | `setTimeout` timer with drift correction loop, `clearTimeout` |
-| `client/src/stores/entry-form.ts` | 49 | None | `openCreateForm()`, `openEditForm()`, `closeForm()`; refs: `formMode`, `formPath`, `formPresetPassword`; computed: `isFormOpen` | None |
-| `client/src/stores/entry-tree.ts` | 212 | `@/services/entries` (Entries), `@/services/filesystem` (Fs), `@/services/pass` (Pass) | `loadTree()`, `selectEntry()`, `setCurrentPath()`, `clearSelection()`, `refresh()`, `insertEntry()`, `removeEntry()`, `moveEntry()`, `duplicateEntry()`, `editEntry()`, `createFolder()`, `setSortMode()`; refs: `tree`, `currentPath`, `currentEntry`, `isLoadingTree`, `error`, `sortMode`; computed: `hasEntries` | All CRUD ops are async with store side-effects (refresh after mutation, selectEntry after write) |
-| `client/src/stores/readiness.ts` | 69 | `@/services/readiness` (Readiness) | `evaluate()`, `reset()`; refs: `snapshot`, `isEvaluating`, `error`; computed: `state`, `isReady`, `blockingIssues`, `infoIssues` | Async I/O in `evaluate()` |
+| File                                | LOC | Dependencies                                                                           | Public API                                                                                                                                                                                                                                                                                                           | Side Effects                                                                                     |
+| ----------------------------------- | --- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `client/src/stores/active-store.ts` | 126 | `@/services/config` (Config), `@/services/pass` (Pass), `@/lib/path` (Path)            | `load()`, `switchTo()`, `getGpgHome()`; refs: `storePath`, `storeName`, `isValidating`, `error`, `currentStoreConfig`; computed: `hasStore`                                                                                                                                                                          | Async I/O in `load()`/`switchTo()`, no timers/watchers                                           |
+| `client/src/stores/clipboard.ts`    | 109 | `@/services/clipboard` (Clipboard)                                                     | `copy()`, `clear()`, `startTimer()`, `stopTimer()`; refs: `lastAction`, `remainingMs`, `isCopied`, `error`, `timerId`; computed: `isActive`, `formattedRemaining`                                                                                                                                                    | `setTimeout` timer with drift correction loop, `clearTimeout`                                    |
+| `client/src/stores/entry-form.ts`   | 49  | None                                                                                   | `openCreateForm()`, `openEditForm()`, `closeForm()`; refs: `formMode`, `formPath`, `formPresetPassword`; computed: `isFormOpen`                                                                                                                                                                                      | None                                                                                             |
+| `client/src/stores/entry-tree.ts`   | 212 | `@/services/entries` (Entries), `@/services/filesystem` (Fs), `@/services/pass` (Pass) | `loadTree()`, `selectEntry()`, `setCurrentPath()`, `clearSelection()`, `refresh()`, `insertEntry()`, `removeEntry()`, `moveEntry()`, `duplicateEntry()`, `editEntry()`, `createFolder()`, `setSortMode()`; refs: `tree`, `currentPath`, `currentEntry`, `isLoadingTree`, `error`, `sortMode`; computed: `hasEntries` | All CRUD ops are async with store side-effects (refresh after mutation, selectEntry after write) |
+| `client/src/stores/readiness.ts`    | 69  | `@/services/readiness` (Readiness)                                                     | `evaluate()`, `reset()`; refs: `snapshot`, `isEvaluating`, `error`; computed: `state`, `isReady`, `blockingIssues`, `infoIssues`                                                                                                                                                                                     | Async I/O in `evaluate()`                                                                        |
 
 ### Composables (264 LOC total)
 
-| File | LOC | Dependencies | Return Values | Side Effects |
-|------|-----|--------------|---------------|--------------|
-| `client/src/composables/use-clipboard-buffer.ts` | 61 | `@/services/filesystem` (Fs), `@/stores/entry-tree` (useEntryTreeStore) | `buffer` (readonly ref), `copyEntry()`, `cutEntry()`, `pasteEntry()` | None beyond calling store actions |
-| `client/src/composables/use-generation-config.ts` | 25 | `@/services/config` (Config), `@/lib/constants` (DEFAULT_CONFIG) | `options` (reactive) | Fire-and-forget `Promise.all` in IIFE on creation |
-| `client/src/composables/use-password-generator.ts` | 30 | `./use-generation-config`, `@/lib/generate-password` | `state` (reactive with `options`, `generated`, `regenerate()`) | `watchEffect` triggers `regenerate()` on option change |
-| `client/src/composables/useTreeState.ts` | 148 | `@/stores/entry-tree` (useEntryTreeStore), `@/lib/tree-index`, `@/lib/tree-state` | `visibleNodes`, `expandedDirs`, `focusedPath`, `selectedPath`, `mode`, `index`, `toggleDir`, `selectFile`, `toggleSelect`, `focusNext`, `focusPrev`, `focusSelect`, `arrowRight`, `arrowLeft` | `watch()` on `treeStore.tree` rebuilds index + prunes expanded dirs |
+| File                                               | LOC | Dependencies                                                                      | Return Values                                                                                                                                                                                 | Side Effects                                                        |
+| -------------------------------------------------- | --- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `client/src/composables/use-clipboard-buffer.ts`   | 61  | `@/services/filesystem` (Fs), `@/stores/entry-tree` (useEntryTreeStore)           | `buffer` (readonly ref), `copyEntry()`, `cutEntry()`, `pasteEntry()`                                                                                                                          | None beyond calling store actions                                   |
+| `client/src/composables/use-generation-config.ts`  | 25  | `@/services/config` (Config), `@/lib/constants` (DEFAULT_CONFIG)                  | `options` (reactive)                                                                                                                                                                          | Fire-and-forget `Promise.all` in IIFE on creation                   |
+| `client/src/composables/use-password-generator.ts` | 30  | `./use-generation-config`, `@/lib/generate-password`                              | `state` (reactive with `options`, `generated`, `regenerate()`)                                                                                                                                | `watchEffect` triggers `regenerate()` on option change              |
+| `client/src/composables/useTreeState.ts`           | 148 | `@/stores/entry-tree` (useEntryTreeStore), `@/lib/tree-index`, `@/lib/tree-state` | `visibleNodes`, `expandedDirs`, `focusedPath`, `selectedPath`, `mode`, `index`, `toggleDir`, `selectFile`, `toggleSelect`, `focusNext`, `focusPrev`, `focusSelect`, `arrowRight`, `arrowLeft` | `watch()` on `treeStore.tree` rebuilds index + prunes expanded dirs |
 
 ---
 
@@ -61,14 +61,15 @@ describe("active-store", () => {
   });
 
   it("loads active store from config and resolves path", async () => {
-    vi.mocked(Config.getValue).mockResolvedValue(
-      mockConfigResult("work")
-    );
+    vi.mocked(Config.getValue).mockResolvedValue(mockConfigResult("work"));
     vi.mocked(Config.load).mockResolvedValue(
       mockConfigResult({
         data: {
           stores: {
-            work: { path: "~/.password-store/work", gnupg_home: "/home/user/.gnupg" },
+            work: {
+              path: "~/.password-store/work",
+              gnupg_home: "/home/user/.gnupg",
+            },
           },
         },
       } as AppConfig)
@@ -84,12 +85,8 @@ describe("active-store", () => {
   });
 
   it("sets error when config load fails", async () => {
-    vi.mocked(Config.getValue).mockResolvedValue(
-      mockConfigResult("work")
-    );
-    vi.mocked(Config.load).mockResolvedValue(
-      mockErr("Config file not found")
-    );
+    vi.mocked(Config.getValue).mockResolvedValue(mockConfigResult("work"));
+    vi.mocked(Config.load).mockResolvedValue(mockErr("Config file not found"));
 
     const store = useActiveStoreStore();
     await store.load();
@@ -186,7 +183,13 @@ describe("entry-tree", () => {
       ok({ success: true, path: "Email/new-entry" })
     );
     vi.mocked(Entries.show).mockResolvedValue(
-      ok({ name: "new-entry", path: "Email/new-entry", body: "pass123\n", raw: "pass123\n", fields: {} })
+      ok({
+        name: "new-entry",
+        path: "Email/new-entry",
+        body: "pass123\n",
+        raw: "pass123\n",
+        fields: {},
+      })
     );
 
     const store = useEntryTreeStore();
@@ -202,9 +205,7 @@ describe("entry-tree", () => {
   });
 
   it("insertEntry returns error message on failure", async () => {
-    vi.mocked(Entries.insert).mockResolvedValue(
-      err("Entry already exists")
-    );
+    vi.mocked(Entries.insert).mockResolvedValue(err("Entry already exists"));
 
     const store = useEntryTreeStore();
     const errMsg = await store.insertEntry("Email/existing", "pass\n");
@@ -286,10 +287,7 @@ describe("clipboard store timer", () => {
     expect(result).toEqual(clipAction);
     expect(store.isCopied).toBe(true);
     expect(store.isActive).toBe(true);
-    expect(Clipboard.writeText).toHaveBeenCalledWith(
-      "secret123",
-      "Email/test"
-    );
+    expect(Clipboard.writeText).toHaveBeenCalledWith("secret123", "Email/test");
   });
 
   it("decrements remainingMs via drift-correction timer ticks", async () => {
@@ -547,7 +545,10 @@ vi.mock("@/lib/generate-password", () => ({
   generateMemorablePassword: vi.fn(),
 }));
 
-import { generatePassword, generateMemorablePassword } from "@/lib/generate-password";
+import {
+  generatePassword,
+  generateMemorablePassword,
+} from "@/lib/generate-password";
 import { usePasswordGenerator } from "@/composables/use-password-generator";
 
 describe("usePasswordGenerator", () => {
@@ -561,10 +562,7 @@ describe("usePasswordGenerator", () => {
     const state = usePasswordGenerator();
 
     expect(state.generated).toBe("mocked-password-abc123");
-    expect(generatePassword).toHaveBeenCalledWith(
-      20,
-      "[[:alnum:]][[:punct:]]"
-    );
+    expect(generatePassword).toHaveBeenCalledWith(20, "[[:alnum:]][[:punct:]]");
   });
 
   it("regenerate re-calls generatePassword with current options", () => {
@@ -579,7 +577,9 @@ describe("usePasswordGenerator", () => {
 
   it("uses generateMemorablePassword when memorable is true", () => {
     vi.mocked(generatePassword).mockReturnValue("not-called");
-    vi.mocked(generateMemorablePassword).mockReturnValue("2787-brave-buffalo-sabrina");
+    vi.mocked(generateMemorablePassword).mockReturnValue(
+      "2787-brave-buffalo-sabrina"
+    );
 
     vi.mock("@/composables/use-generation-config", () => ({
       useGenerationConfig: () => ({
@@ -683,15 +683,15 @@ it("store action interacts with router", async () => {
 
 ## Summary of Mock Strategies
 
-| Dependency | How to Mock |
-|------------|-------------|
-| `@/services/config` (Config) | `vi.mock("@/services/config")` — factory returns `{ Config: { load: vi.fn(), getValue: vi.fn(), setValue: vi.fn() } }` |
-| `@/services/pass` (Pass) | `vi.mock("@/services/pass")` — stub `{ Pass: { storeDirectory: "..." } }` or create full mock |
-| `@/services/entries` (Entries) | `vi.mock("@/services/entries")` — mock `list`, `show`, `insert`, `remove`, `move`, `copy`, `edit` |
-| `@/services/clipboard` (Clipboard) | `vi.mock("@/services/clipboard")` — mock `writeText`, `clear` |
-| `@/services/readiness` (Readiness) | `vi.mock("@/services/readiness")` — mock `check` |
-| `@/services/filesystem` (Fs) | `vi.mock("@/services/filesystem")` — mock `join`, `mkdir`, etc. |
-| `crypto.getRandomValues` | `vi.stubGlobal("crypto", { getRandomValues: vi.fn() })` |
-| `@neutralinojs/lib` | Already mocked globally in `setup.ts`. Use `vi.mocked(Neu)` to access if needed. |
-| Pinia stores in composables | `createTestingPinia({ createSpy: vi.fn })` — set refs directly on the store instance |
-| `@/composables/use-generation-config` | `vi.mock("@/composables/use-generation-config")` — return `{ options: { memorable, length, symbols } }` |
+| Dependency                            | How to Mock                                                                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `@/services/config` (Config)          | `vi.mock("@/services/config")` — factory returns `{ Config: { load: vi.fn(), getValue: vi.fn(), setValue: vi.fn() } }` |
+| `@/services/pass` (Pass)              | `vi.mock("@/services/pass")` — stub `{ Pass: { storeDirectory: "..." } }` or create full mock                          |
+| `@/services/entries` (Entries)        | `vi.mock("@/services/entries")` — mock `list`, `show`, `insert`, `remove`, `move`, `copy`, `edit`                      |
+| `@/services/clipboard` (Clipboard)    | `vi.mock("@/services/clipboard")` — mock `writeText`, `clear`                                                          |
+| `@/services/readiness` (Readiness)    | `vi.mock("@/services/readiness")` — mock `check`                                                                       |
+| `@/services/filesystem` (Fs)          | `vi.mock("@/services/filesystem")` — mock `join`, `mkdir`, etc.                                                        |
+| `crypto.getRandomValues`              | `vi.stubGlobal("crypto", { getRandomValues: vi.fn() })`                                                                |
+| `@neutralinojs/lib`                   | Already mocked globally in `setup.ts`. Use `vi.mocked(Neu)` to access if needed.                                       |
+| Pinia stores in composables           | `createTestingPinia({ createSpy: vi.fn })` — set refs directly on the store instance                                   |
+| `@/composables/use-generation-config` | `vi.mock("@/composables/use-generation-config")` — return `{ options: { memorable, length, symbols } }`                |

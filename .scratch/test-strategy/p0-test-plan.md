@@ -1,12 +1,14 @@
 # P0 Pure Lib Tests — Implementation Plan
 
 ## Context
+
 Continuing from parse-pass-show.test.ts (already done, committed, 15/15 passing).
 3 remaining P0 test files to implement, then verify.
 
 ## Tasks
 
 ### Task 1: generate-password.test.ts
+
 - **Source:** client/src/lib/generate-password.ts (85 lines)
 - **File:** client/src/lib/generate-password.test.ts
 - **Dependencies:** `crypto.getRandomValues` — must stub with `vi.stubGlobal("crypto", { getRandomValues: vi.fn() })`
@@ -16,6 +18,7 @@ Continuing from parse-pass-show.test.ts (already done, committed, 15/15 passing)
 - **Edge cases:** password length, charset expansion ([[:punct:]], [[:alnum:]], etc.), memorable format structure
 
 ### Task 2: tree-index.test.ts
+
 - **Source:** client/src/lib/tree-index.ts (30 lines)
 - **File:** client/src/lib/tree-index.test.ts
 - **Pure function:** `buildIndex(tree)` builds `{ byPath, parent, children }` maps from EntryTree
@@ -23,6 +26,7 @@ Continuing from parse-pass-show.test.ts (already done, committed, 15/15 passing)
 - **Edge cases:** flat list, nested dirs, empty tree, single node, root children mapping
 
 ### Task 3: tree-state.test.ts
+
 - **Source:** client/src/lib/tree-state.ts (162 lines)
 - **File:** client/src/lib/tree-state.test.ts
 - **Exported functions:**
@@ -33,6 +37,7 @@ Continuing from parse-pass-show.test.ts (already done, committed, 15/15 passing)
 - **Edge cases:** sort order (alphabetical, reverse, dirs first), visible tree from index with various expansion states, expand/collapse recursion (collapse removes children), search filtering with parent inclusion, empty states
 
 ## Global Constraints
+
 - TDD: Red-Green for each test function
 - Co-locate test files next to source (e.g., `generate-password.test.ts` next to `generate-password.ts`)
 - Use Vitest built-in assertions (not @testing-library/vue for pure functions)

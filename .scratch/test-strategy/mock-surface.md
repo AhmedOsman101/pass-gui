@@ -15,18 +15,18 @@ just needs to return the same export shape.
 
 ## All Imports (10 source files)
 
-| File | Imports | Type |
-|------|---------|------|
-| `main.ts` | `Neutralino` (default) | runtime: calls `Neutralino.init()` |
-| `services/neutralino.ts` | `debug`, `os`, `type ExecCommandOptions`, `type ExecCommandResult`, `type OperatingSystem` | runtime + type |
-| `services/pass.ts` | `debug`, `type ExecCommandOptions`, `type ExecCommandResult` | runtime + type |
-| `services/gpg.ts` | `debug`, `type ExecCommandOptions`, `type ExecCommandResult` | runtime + type |
-| `services/filesystem.ts` | `filesystem`, `type DirectoryEntry`, `type DirectoryReaderOptions`, `type FileReaderOptions`, `type PathParts`, `type Stats` | runtime + type |
-| `services/clipboard.ts` | `clipboard` (as `neuClipboard`) | runtime |
-| `services/watcher.ts` | `events`, `filesystem` | runtime |
-| `services/dialog.ts` | `os`, `type FolderDialogOptions`, `type Icon`, `type MessageBoxChoice`, `type OpenDialogOptions`, `type SaveDialogOptions` | runtime + type |
-| `services/entries.ts` | `type ExecCommandResult` | type-only |
-| `lib/path.ts` | `os`, `type KnownPath` | runtime + type |
+| File                     | Imports                                                                                                                      | Type                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `main.ts`                | `Neutralino` (default)                                                                                                       | runtime: calls `Neutralino.init()` |
+| `services/neutralino.ts` | `debug`, `os`, `type ExecCommandOptions`, `type ExecCommandResult`, `type OperatingSystem`                                   | runtime + type                     |
+| `services/pass.ts`       | `debug`, `type ExecCommandOptions`, `type ExecCommandResult`                                                                 | runtime + type                     |
+| `services/gpg.ts`        | `debug`, `type ExecCommandOptions`, `type ExecCommandResult`                                                                 | runtime + type                     |
+| `services/filesystem.ts` | `filesystem`, `type DirectoryEntry`, `type DirectoryReaderOptions`, `type FileReaderOptions`, `type PathParts`, `type Stats` | runtime + type                     |
+| `services/clipboard.ts`  | `clipboard` (as `neuClipboard`)                                                                                              | runtime                            |
+| `services/watcher.ts`    | `events`, `filesystem`                                                                                                       | runtime                            |
+| `services/dialog.ts`     | `os`, `type FolderDialogOptions`, `type Icon`, `type MessageBoxChoice`, `type OpenDialogOptions`, `type SaveDialogOptions`   | runtime + type                     |
+| `services/entries.ts`    | `type ExecCommandResult`                                                                                                     | type-only                          |
+| `lib/path.ts`            | `os`, `type KnownPath`                                                                                                       | runtime + type                     |
 
 > **Note:** `ExecCommandResult` in `entries.ts` is type-only (`import type`).
 > It's erased at compile time — no mock entry needed for that import alone.
@@ -48,6 +48,7 @@ declare function init(options?: InitOptions): void;
 ```
 
 **Side effects on call:**
+
 - Opens a WebSocket to `ws://127.0.0.1:<NL_PORT>?connectToken=<token>`
 - Registers built-in event handlers (`ready`, `close`, `error`, etc.)
 - Sets `window.NL_CVERSION` and `window.NL_CCOMMIT`
@@ -112,6 +113,7 @@ declare namespace os {
 ```
 
 **Used in codebase:**
+
 - `os.execCommand(cmd, opts)` — `services/neutralino.ts`
 - `os.getEnv(key)` — `services/neutralino.ts`
 - `os.getPath(name)` — `lib/path.ts`
@@ -172,10 +174,7 @@ declare namespace filesystem {
   export function move(source: string, destination: string): Promise<void>;
   export function getStats(path: string): Promise<Stats>;
   export function getAbsolutePath(path: string): Promise<string>;
-  export function getRelativePath(
-    path: string,
-    base?: string
-  ): Promise<string>;
+  export function getRelativePath(path: string, base?: string): Promise<string>;
   export function getPathParts(path: string): Promise<PathParts>;
   export function getPermissions(path: string): Promise<Permissions>;
   export function setPermissions(
@@ -197,6 +196,7 @@ declare namespace filesystem {
 ```
 
 **Used in codebase:**
+
 - `filesystem.createDirectory(path)` — `services/filesystem.ts` (in `mkdir`)
 - `filesystem.writeFile(path, data)` — `services/filesystem.ts` (in `writeFile`)
 - `filesystem.readFile(path, opts)` — `services/filesystem.ts` (in `readFile`)
@@ -217,14 +217,12 @@ declare namespace filesystem {
 
 ```ts
 declare namespace debug {
-  export function log(
-    message: string,
-    type?: LoggerType
-  ): Promise<void>;
+  export function log(message: string, type?: LoggerType): Promise<void>;
 }
 ```
 
 **Used in codebase:**
+
 - `debug.log(...)` — `services/neutralino.ts`, `services/pass.ts`, `services/gpg.ts`
 
 ---
@@ -245,6 +243,7 @@ declare namespace clipboard {
 ```
 
 **Used in codebase:**
+
 - `clipboard.readText()` — `services/clipboard.ts`
 - `clipboard.writeText(data)` — `services/clipboard.ts`
 - `clipboard.clear()` — `services/clipboard.ts`
@@ -265,15 +264,13 @@ declare namespace events {
     event: string,
     handler: (ev: CustomEvent) => void
   ): Promise<Response>;
-  export function dispatch(
-    event: string,
-    data?: any
-  ): Promise<Response>;
+  export function dispatch(event: string, data?: any): Promise<Response>;
   export function broadcast(event: string, data?: any): Promise<void>;
 }
 ```
 
 **Used in codebase:**
+
 - `events.on("watchFile", handler)` — `services/watcher.ts`
 - `events.off("watchFile", handler)` — `services/watcher.ts`
 
@@ -288,22 +285,22 @@ They exist in the module's type declarations but have no runtime presence.
 Including them in the mock is harmless and helps test files that cast or
 reference the types.
 
-| Export | Kind | Files using it |
-|--------|------|----------------|
-| `ExecCommandOptions` | interface | neutralino.ts, pass.ts, gpg.ts |
-| `ExecCommandResult` | interface | neutralino.ts, pass.ts, gpg.ts, entries.ts |
-| `OperatingSystem` | enum | neutralino.ts |
-| `DirectoryEntry` | interface | filesystem.ts |
-| `DirectoryReaderOptions` | interface | filesystem.ts |
-| `FileReaderOptions` | interface | filesystem.ts |
-| `PathParts` | interface | filesystem.ts |
-| `Stats` | interface | filesystem.ts |
-| `FolderDialogOptions` | interface | dialog.ts |
-| `Icon` | enum | dialog.ts |
-| `MessageBoxChoice` | enum | dialog.ts |
-| `OpenDialogOptions` | interface | dialog.ts |
-| `SaveDialogOptions` | interface | dialog.ts |
-| `KnownPath` | type alias | path.ts |
+| Export                   | Kind       | Files using it                             |
+| ------------------------ | ---------- | ------------------------------------------ |
+| `ExecCommandOptions`     | interface  | neutralino.ts, pass.ts, gpg.ts             |
+| `ExecCommandResult`      | interface  | neutralino.ts, pass.ts, gpg.ts, entries.ts |
+| `OperatingSystem`        | enum       | neutralino.ts                              |
+| `DirectoryEntry`         | interface  | filesystem.ts                              |
+| `DirectoryReaderOptions` | interface  | filesystem.ts                              |
+| `FileReaderOptions`      | interface  | filesystem.ts                              |
+| `PathParts`              | interface  | filesystem.ts                              |
+| `Stats`                  | interface  | filesystem.ts                              |
+| `FolderDialogOptions`    | interface  | dialog.ts                                  |
+| `Icon`                   | enum       | dialog.ts                                  |
+| `MessageBoxChoice`       | enum       | dialog.ts                                  |
+| `OpenDialogOptions`      | interface  | dialog.ts                                  |
+| `SaveDialogOptions`      | interface  | dialog.ts                                  |
+| `KnownPath`              | type alias | path.ts                                    |
 
 ## Key Interface Definitions (for replicating return values in test data)
 
@@ -364,10 +361,13 @@ interface Error {
 ```
 
 > The app mirrors this error structure as `NeuErrorObj` in `types/index.ts`:
+>
 > ```ts
 > type NeuErrorObj = { code: NeuErrorCode; message: string };
 > ```
+>
 > And catches Neutralino errors in `services/filesystem.ts` using:
+>
 > ```ts
 > const err = e as NeuErrorObj;
 > if (err?.code === NEU_ERROR_CODES_MAP.DirectoryCreationFailed) { ... }
@@ -406,7 +406,9 @@ const os = {
   execCommand: vi.fn(() => Promise.resolve(createMockExecCommandResult())),
   getEnv: vi.fn(() => Promise.resolve("")),
   getEnvs: vi.fn(() => Promise.resolve({})),
-  getLocale: vi.fn(() => Promise.resolve({ locale: "en_US", language: "en", region: "US" })),
+  getLocale: vi.fn(() =>
+    Promise.resolve({ locale: "en_US", language: "en", region: "US" })
+  ),
   getPath: vi.fn(() => Promise.resolve("/home/user")),
   getSpawnedProcesses: vi.fn(() => Promise.resolve([])),
   open: vi.fn(() => Promise.resolve()),
@@ -435,7 +437,9 @@ const filesystem = {
   removeWatcher: vi.fn(() => Promise.resolve(42)),
   getWatchers: vi.fn(() => Promise.resolve([])),
   updateOpenedFile: vi.fn(() => Promise.resolve()),
-  getOpenedFileInfo: vi.fn(() => Promise.resolve({ id: 1, eof: false, pos: 0, lastRead: 0 })),
+  getOpenedFileInfo: vi.fn(() =>
+    Promise.resolve({ id: 1, eof: false, pos: 0, lastRead: 0 })
+  ),
   readDirectory: vi.fn(() => Promise.resolve([])),
   copy: vi.fn(() => Promise.resolve()),
   move: vi.fn(() => Promise.resolve()),
@@ -612,14 +616,7 @@ const mockNeutralino = {
 // They are provided in the __mocks__ file only so tests can reference them.
 
 export default mockNeutralino;
-export {
-  init,
-  os,
-  filesystem,
-  debug,
-  clipboard,
-  events,
-};
+export { init, os, filesystem, debug, clipboard, events };
 
 // Export helper for tests that need custom return values
 export { createMockExecCommandResult };
@@ -651,6 +648,7 @@ vi.mock("@neutralinojs/lib", () => {
 ### 1. `init()` has real side effects
 
 `init()` is called at app startup in `main.ts`:
+
 ```ts
 import Neutralino from "@neutralinojs/lib";
 Neutralino.init();
@@ -663,11 +661,13 @@ replace `init` with `vi.fn()` to prevent test failures from WebSocket attempts.
 ### 2. `window.NL_OS` global is read, not the import
 
 The `OperatingSystem` enum is imported as a **type** only:
+
 ```ts
 import { type OperatingSystem, os, debug } from "@neutralinojs/lib";
 ```
 
 The actual OS value comes from the global `window.NL_OS`:
+
 ```ts
 public OS: OperatingSystem = window.NL_OS;
 ```
@@ -683,6 +683,7 @@ Object.defineProperty(window, "NL_HOME_DIR", { value: "/home/user" });
 ### 3. Error objects thrown by NeutralinoJS
 
 NeutralinoJS operations throw errors shaped like:
+
 ```ts
 { code: "NE_FS_DIRCRER", message: "Failed to create directory" }
 ```
@@ -702,11 +703,13 @@ The app's `NEU_ERROR_CODES` mapping in `errors.ts` defines every known code.
 ### 4. `ExecCommandResult` used both as return value and error context
 
 `ExecCommandResult` is passed through `CommandFailedError`:
+
 ```ts
 throw new CommandFailedError({ cmd, args, ...result });
 ```
 
 Test data factories should provide complete `ExecCommandResult` objects:
+
 ```ts
 const mockResult = {
   pid: 12345,
@@ -722,8 +725,8 @@ The lib exports everything as **namespace objects** (e.g., `os`,
 `filesystem`, `debug`), not individual functions. This means:
 
 ```ts
-import { os } from "@neutralinojs/lib";        // ✅ namespace
-os.execCommand("cmd");                          // ✅
+import { os } from "@neutralinojs/lib"; // ✅ namespace
+os.execCommand("cmd"); // ✅
 import { execCommand } from "@neutralinojs/lib"; // ❌ not a direct export
 ```
 
@@ -739,6 +742,7 @@ syntax) is the same as the full module exports object.
 ### 7. `filesystem.getRelativePath` and `filesystem.getJoinedPath` are used without `wrapAsync`
 
 These two functions are called without `wrapAsync` (unlike most others):
+
 ```ts
 static async join(...paths: string[]): Promise<string> {
   return await filesystem.getJoinedPath(...paths);        // direct await

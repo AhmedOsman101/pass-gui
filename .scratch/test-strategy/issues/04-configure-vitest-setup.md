@@ -65,15 +65,15 @@ client/
 
 ### Decisions Applied
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Config file | Separate `vitest.config.ts` | Avoids neutralino/vueDevTools plugin conflicts |
-| Environment | `happy-dom` | Lightweight, enough DOM for Vue Test Utils |
-| Globals | `true` | `describe`/`it`/`expect` without imports |
-| Plugins | `vue()` only | No vueDevTools or neutralino in test config |
-| Coverage | `v8` provider | Built-in, zero extra deps |
-| Pool | `forks` (default) | Isolates `vi.mock` per worker |
-| Setup | `setup.ts` with `vi.hoisted()` | Factory function avoids hoisting issues |
+| Decision    | Choice                         | Rationale                                      |
+| ----------- | ------------------------------ | ---------------------------------------------- |
+| Config file | Separate `vitest.config.ts`    | Avoids neutralino/vueDevTools plugin conflicts |
+| Environment | `happy-dom`                    | Lightweight, enough DOM for Vue Test Utils     |
+| Globals     | `true`                         | `describe`/`it`/`expect` without imports       |
+| Plugins     | `vue()` only                   | No vueDevTools or neutralino in test config    |
+| Coverage    | `v8` provider                  | Built-in, zero extra deps                      |
+| Pool        | `forks` (default)              | Isolates `vi.mock` per worker                  |
+| Setup       | `setup.ts` with `vi.hoisted()` | Factory function avoids hoisting issues        |
 
 ### Scripts
 
