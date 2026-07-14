@@ -165,5 +165,5 @@ podman run --rm -it \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
   -v "$(pwd)/.container/client-node_modules":/app/client/node_modules \
   pass-gui-test \
-  sh -c "yes | pnpm install --frozen-lockfile --ignore-scripts && pnpm vitest run tests/integration"
+  sh -c "yes | pnpm install --frozen-lockfile --ignore-scripts && pnpm vitest run tests/integration --poolOptions.forks.singleFork"
 ```

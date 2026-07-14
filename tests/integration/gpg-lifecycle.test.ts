@@ -55,17 +55,19 @@ describe("GPG lifecycle", () => {
         mkdirSync(gnupgHome, { recursive: true, mode: 0o700 });
       }
 
-      const batchConfig = [
-        "%echo Generating Ed25519 test key",
-        "Key-Type: Ed25519",
-        "Name-Real: pass-gui Test",
-        "Name-Email: ed25519-test@pass-gui.local",
-        "Expire-Date: 0",
-        "%no-protection",
-        "%commit",
-      ].join("\n");
+    const batchConfig = [
+      "%echo Generating Ed25519 test key",
+      "Key-Type: Ed25519",
+      "Name-Real: pass-gui Test",
+      "Name-Email: ed25519-test@pass-gui.local",
+      "Expire-Date: 0",
+      "%no-protection",
+      "%commit",
+    ].join("\n");
 
-      run("gpg --batch --gen-key /dev/stdin", { input: batchConfig, env });
+    const batchFile = join(gnupgHome, "batch-ed25519");
+    writeFileSync(batchFile, batchConfig, "utf-8");
+    run(`gpg --batch --gen-key "${batchFile}"`, { env });
 
       const colonOut = run("gpg --list-keys --with-colons", { env });
       expect(colonOut).toContain("pub:");
@@ -181,20 +183,22 @@ describe("GPG lifecycle", () => {
         mkdirSync(gnupgHome, { recursive: true, mode: 0o700 });
       }
 
-      const batchConfig = [
-        "%echo Generating key with 1-year expiration",
-        "Key-Type: RSA",
-        "Key-Length: 2048",
-        "Subkey-Type: RSA",
-        "Subkey-Length: 2048",
-        "Name-Real: pass-gui Test",
-        "Name-Email: expire-test@pass-gui.local",
-        "Expire-Date: 1Y",
-        "%no-protection",
-        "%commit",
-      ].join("\n");
+    const batchConfig = [
+      "%echo Generating key with 1-year expiration",
+      "Key-Type: RSA",
+      "Key-Length: 2048",
+      "Subkey-Type: RSA",
+      "Subkey-Length: 2048",
+      "Name-Real: pass-gui Test",
+      "Name-Email: expire-test@pass-gui.local",
+      "Expire-Date: 1Y",
+      "%no-protection",
+      "%commit",
+    ].join("\n");
 
-      run("gpg --batch --gen-key /dev/stdin", { input: batchConfig, env });
+    const batchFile = join(gnupgHome, "batch-expire");
+    writeFileSync(batchFile, batchConfig, "utf-8");
+    run(`gpg --batch --gen-key "${batchFile}"`, { env });
 
       const listOutput = run(
         "gpg --list-keys --keyid-format LONG expire-test@pass-gui.local",

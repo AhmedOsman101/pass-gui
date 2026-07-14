@@ -106,31 +106,26 @@ describe("Pass git integration", () => {
   it("git diff shows content changes between commits", () => {
     const path = `diff-test-${randomUUID().slice(0, 8)}`;
     insertEntry(env, path, randomUUID());
-    const diff = run(
-      `git -C "${env.PASSWORD_STORE_DIR}" diff HEAD~1..HEAD`,
-      { env }
-    );
+    const diff = run(`git -C "${env.PASSWORD_STORE_DIR}" diff HEAD~1..HEAD`, {
+      env,
+    });
     expect(diff).toContain(path);
   });
 
   it("pass git config can be set and persisted", () => {
     const testName = `Test User ${randomUUID().slice(0, 4)}`;
-    const testEmail =
-      `gitconfig-${randomUUID().slice(0, 8)}@pass-gui.local`;
+    const testEmail = `gitconfig-${randomUUID().slice(0, 8)}@pass-gui.local`;
 
-    run(
-      `git -C "${env.PASSWORD_STORE_DIR}" config user.name "${testName}"`,
-      { env }
-    );
-    run(
-      `git -C "${env.PASSWORD_STORE_DIR}" config user.email "${testEmail}"`,
-      { env }
-    );
+    run(`git -C "${env.PASSWORD_STORE_DIR}" config user.name "${testName}"`, {
+      env,
+    });
+    run(`git -C "${env.PASSWORD_STORE_DIR}" config user.email "${testEmail}"`, {
+      env,
+    });
 
-    const nameOut = run(
-      `git -C "${env.PASSWORD_STORE_DIR}" config user.name`,
-      { env }
-    );
+    const nameOut = run(`git -C "${env.PASSWORD_STORE_DIR}" config user.name`, {
+      env,
+    });
     const emailOut = run(
       `git -C "${env.PASSWORD_STORE_DIR}" config user.email`,
       { env }
