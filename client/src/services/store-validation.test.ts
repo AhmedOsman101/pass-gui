@@ -23,13 +23,13 @@ vi.mock("@/services/filesystem", () => ({
   },
 }));
 
-import { Err, ErrFromText, Ok } from "lib-result";
+import { Err, Ok } from "lib-result";
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SecretKey } from "@/types";
 import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
+import type { SecretKey } from "@/types";
 import { StoreValidation } from "./store-validation";
 
 function makeSecretKey(overrides: Partial<SecretKey> = {}): SecretKey {
@@ -138,9 +138,7 @@ describe("StoreValidation", () => {
       const recipients = [
         { raw: "DEADBEEF", keyId: "DEADBEEF", isFingerprint: false },
       ];
-      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(
-        Ok([makeSecretKey()])
-      );
+      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([makeSecretKey()]));
 
       const result = await StoreValidation.verifyRecipients(recipients);
 
@@ -153,9 +151,7 @@ describe("StoreValidation", () => {
         { raw: "DEADBEEF", keyId: "DEADBEEF", isFingerprint: false },
         { raw: "MISSING", keyId: "MISSING", isFingerprint: false },
       ];
-      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(
-        Ok([makeSecretKey()])
-      );
+      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([makeSecretKey()]));
 
       const result = await StoreValidation.verifyRecipients(recipients);
 
@@ -199,9 +195,7 @@ describe("StoreValidation", () => {
       vi.mocked(Fs.isDirectory).mockResolvedValue(Ok(true));
       vi.mocked(Fs.isFile).mockResolvedValue(Ok(true));
       vi.mocked(Fs.readFile).mockResolvedValue(Ok("DEADBEEF\n"));
-      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(
-        Ok([makeSecretKey()])
-      );
+      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([makeSecretKey()]));
       (Fs.readDirectory as unknown as Mock).mockResolvedValue(
         Ok(gpgDirEntries)
       );
@@ -239,12 +233,8 @@ describe("StoreValidation", () => {
     it("populates missingKeys when some recipients missing", async () => {
       vi.mocked(Fs.isDirectory).mockResolvedValue(Ok(true));
       vi.mocked(Fs.isFile).mockResolvedValue(Ok(true));
-      vi.mocked(Fs.readFile).mockResolvedValue(
-        Ok("DEADBEEF\nMISSING\n")
-      );
-      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(
-        Ok([makeSecretKey()])
-      );
+      vi.mocked(Fs.readFile).mockResolvedValue(Ok("DEADBEEF\nMISSING\n"));
+      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([makeSecretKey()]));
       (Fs.readDirectory as unknown as Mock).mockResolvedValue(
         Ok(gpgDirEntries)
       );
@@ -259,9 +249,7 @@ describe("StoreValidation", () => {
       vi.mocked(Fs.isDirectory).mockResolvedValue(Ok(true));
       vi.mocked(Fs.isFile).mockResolvedValue(Ok(true));
       vi.mocked(Fs.readFile).mockResolvedValue(Ok("DEADBEEF\n"));
-      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(
-        Ok([makeSecretKey()])
-      );
+      vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([makeSecretKey()]));
       (Fs.readDirectory as unknown as Mock).mockResolvedValue(
         Ok(noGpgDirEntries)
       );

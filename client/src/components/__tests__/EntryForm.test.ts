@@ -1,17 +1,17 @@
-import { describe, it, expect, vi } from "vitest";
-import { mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
-import { useEntryTreeStore } from "@/stores/entry-tree";
-import { useEntryFormStore } from "@/stores/entry-form";
+import { mount } from "@vue/test-utils";
+import { describe, expect, it, vi } from "vitest";
 import EntryForm from "@/components/EntryForm.vue";
+import { useEntryFormStore } from "@/stores/entry-form";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 function flushPromises() {
-  return new Promise<void>((resolve) => setTimeout(resolve, 0));
+  return new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
 describe("EntryForm", () => {
   function mountForm(
-    initialState: Record<string, Record<string, unknown>> = {},
+    initialState: Record<string, Record<string, unknown>> = {}
   ) {
     return mount(EntryForm, {
       global: {
@@ -86,7 +86,7 @@ describe("EntryForm", () => {
 
     expect(treeStore.insertEntry).toHaveBeenCalledWith(
       "test/path",
-      "test-password",
+      "test-password"
     );
     expect(formStore.closeForm).toHaveBeenCalled();
   });
@@ -112,7 +112,7 @@ describe("EntryForm", () => {
 
     expect(treeStore.editEntry).toHaveBeenCalledWith(
       "existing/path",
-      "new-password",
+      "new-password"
     );
     expect(formStore.closeForm).toHaveBeenCalled();
   });
@@ -143,7 +143,7 @@ describe("EntryForm", () => {
 
     expect(treeStore.insertEntry).toHaveBeenCalledWith(
       "test/path",
-      "my-secret",
+      "my-secret"
     );
   });
 
@@ -160,7 +160,7 @@ describe("EntryForm", () => {
 
     expect(treeStore.insertEntry).toHaveBeenCalledWith(
       "test/path",
-      "my-secret\nurl: example.com",
+      "my-secret\nurl: example.com"
     );
   });
 
@@ -173,7 +173,7 @@ describe("EntryForm", () => {
 
     const buttons = wrapper.findAll("button");
     const toggleBtn = buttons.filter(
-      (b) => b.attributes("type") === "button" && b.text().trim() === "",
+      b => b.attributes("type") === "button" && b.text().trim() === ""
     )[0]!;
     await toggleBtn.trigger("click");
 

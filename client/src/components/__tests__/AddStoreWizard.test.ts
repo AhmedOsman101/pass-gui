@@ -1,5 +1,6 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
+import { Err, Ok } from "lib-result";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AddStoreWizard from "@/components/settings/AddStoreWizard.vue";
 import { Config } from "@/services/config";
@@ -7,7 +8,6 @@ import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
 import { StoreValidation } from "@/services/store-validation";
-import { Ok, Err } from "lib-result";
 
 vi.mock("@/services/gpg", () => ({
   Gpg: { listSecretKeys: vi.fn() },
@@ -29,7 +29,7 @@ vi.mock("@/services/store-validation", () => ({
 }));
 
 function flushPromises() {
-  return new Promise<void>((resolve) => setTimeout(resolve, 0));
+  return new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
 const stubs = {
@@ -99,7 +99,7 @@ describe("AddStoreWizard", () => {
     vm.storeName = "bad name!";
 
     expect(vm.nameError).toContain(
-      "letters, numbers, hyphens, and underscores",
+      "letters, numbers, hyphens, and underscores"
     );
   });
 
@@ -129,7 +129,7 @@ describe("AddStoreWizard", () => {
     vm.storePath = "/valid/path";
     vi.mocked(Gpg.listSecretKeys).mockResolvedValue(Ok([testKey]));
     vi.mocked(StoreValidation.validate).mockResolvedValue(
-      Ok({ exists: false, initialized: false }),
+      Ok({ exists: false, initialized: false })
     );
     await vm.advanceStep();
     expect(vm.step).toBe("gpg");
@@ -164,7 +164,7 @@ describe("AddStoreWizard", () => {
       Ok({
         data: { stores: {} },
         _raw: { stores: {} },
-      } as any),
+      } as any)
     );
     vi.mocked(Config.save).mockResolvedValue(Ok(undefined as any));
 
@@ -192,7 +192,7 @@ describe("AddStoreWizard", () => {
       Ok({
         data: { stores: {} },
         _raw: { stores: {} },
-      } as any),
+      } as any)
     );
     vi.mocked(Config.save).mockResolvedValue(Ok(undefined as any));
 

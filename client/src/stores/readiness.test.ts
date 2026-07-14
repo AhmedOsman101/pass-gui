@@ -65,7 +65,7 @@ describe("readiness store", () => {
 
   it("evaluate() error with Error object", async () => {
     vi.mocked(Readiness.check).mockRejectedValue(
-      new Error("pass binary not found"),
+      new Error("pass binary not found")
     );
     const store = useReadinessStore();
     await store.evaluate("/tmp/store");

@@ -3,9 +3,8 @@ import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 import Tree from "@/components/Tree.vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
-import { useTreeState } from "@/composables/useTreeState";
 import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
+import { useTreeState } from "@/composables/useTreeState";
 
 const { hotkeyCallbacks } = vi.hoisted(() => ({
   hotkeyCallbacks: new Map<string, () => void>(),
