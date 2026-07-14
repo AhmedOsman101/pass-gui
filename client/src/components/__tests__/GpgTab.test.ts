@@ -211,4 +211,53 @@ describe("GpgTab", () => {
     input.trigger("keydown", { key: "," });
     expect(wrapper.emitted("update:opts")![0]).toEqual([["comma-tag"]]);
   });
+
+  it("clicks Save button and emits save", async () => {
+    const { wrapper } = mountGpgTab();
+    const saveButton = wrapper.findAll("button").find(b => b.text() === "Save")!;
+    expect(saveButton).toBeDefined();
+    await saveButton.trigger("click");
+    expect(wrapper.emitted("save")).toBeTruthy();
+  });
+
+  it("disables Save button when isSaving is true", () => {
+    const { wrapper } = mountGpgTab({ isSaving: true });
+    const saveButton = wrapper.findAll("button").find(b => b.text() === "Save")!;
+    expect(saveButton).toBeDefined();
+    expect((saveButton.element as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("blur on tag input triggers addTag", async () => {
+    const { wrapper } = mountGpgTab();
+    const input = wrapper.find('input[placeholder="Type and press comma..."]');
+    const vm = wrapper.vm as any;
+
+    vm.tagInput = "blur-tag";
+    await input.trigger("blur");
+    expect(wrapper.emitted("update:opts")![0]).toEqual([["blur-tag"]]);
+  });
+
+  it("blur on edit input commits tag edit", async () => {
+    const { wrapper } = mountGpgTab({ opts: ["edit-me"] });
+    const vm = wrapper.vm as any;
+
+    vm.startEditTag(0);
+    await wrapper.vm.$nextTick();
+
+    vm.editingTagValue = "edited-via-blur";
+    const editInput = wrapper.find("input.w-20");
+    await editInput.trigger("blur");
+
+    expect(wrapper.emitted("update:opts")![0]).toEqual([["edited-via-blur"]]);
+    expect(vm.editingTagIndex).toBeNull();
+  });
+
+  it("handles empty input with comma-only tagInput", () => {
+    const { wrapper } = mountGpgTab();
+    const vm = wrapper.vm as any;
+
+    vm.tagInput = ",";
+    vm.addTag();
+    expect(wrapper.emitted("update:opts")).toBeUndefined();
+  });
 });
