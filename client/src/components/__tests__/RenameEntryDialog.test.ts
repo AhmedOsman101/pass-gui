@@ -2,7 +2,6 @@ import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
-import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const stubs = {
   Dialog: { template: "<div><slot /></div>" },

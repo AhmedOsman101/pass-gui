@@ -246,10 +246,10 @@ Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 | P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                                                                             | 77    | ✅     |
 | P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState | 123   | ✅     |
 | P4       | Core services         | `config`, `config-validation`, `store-validation`                                                                                       | 77    | ✅     |
-| P5       | Components            | 7 core + 3 lightweight dialogs                                                                                                          | —     | ⬜     |
+| P5       | Components            | EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail, CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog | 96    | ✅     |
 | P6       | Integration           | Podman container suite                                                                                                                  | —     | ⬜     |
 
-**Running total:** 487 tests, 27 files, 3.32s execution.
+**Running total:** 583 tests, 37 files, 7.56s execution.
 
 **Mock strategy:** `vi.mock("@neutralinojs/lib")` in `setup.ts` provides global mocks. Test-specific overrides via `vi.mocked()`. Results from `lib-result` (`Ok()` / `ErrFromText()`), never duck-typed.
 
