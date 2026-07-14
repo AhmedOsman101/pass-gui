@@ -148,7 +148,7 @@ cd client && pnpm test:coverage
 > Run integration tests (must run inside the Podman container)
 
 ```bash
-echo hi
+$MASK test integration build && $MASK test integration run
 ```
 
 #### build
@@ -172,5 +172,5 @@ podman run --rm -it \
   --userns=keep-id \
   -v "$(pwd)":/app \
   pass-gui-test \
-  sh -c "pnpm install && pnpm vitest run tests/integration"
+  sh -c "pnpm install --frozen-lockfile --ignore-scripts --force && pnpm vitest run tests/integration"
 ```
