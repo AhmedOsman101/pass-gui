@@ -4,27 +4,45 @@
 
 > Lint the project
 
+**OPTIONS**
+* reporter
+    * flags: --reporter
+    * type: string
+    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+
 ```bash
 unset BIOME_CONFIG_PATH
-biome lint .
+biome lint . ${reporter:+--reporter "$reporter"}
 ```
 
 ## format
 
 > Lint and format the project
 
+**OPTIONS**
+* reporter
+    * flags: --reporter
+    * type: string
+    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+
 ```bash
 unset BIOME_CONFIG_PATH
-biome check --fix .
+biome check --fix . ${reporter:+--reporter "$reporter"}
 ```
 
 ### unsafe
 
 > Lint and format with unsafe fixes
 
+**OPTIONS**
+* reporter
+    * flags: --reporter
+    * type: string
+    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+
 ```bash
 unset BIOME_CONFIG_PATH
-biome check --fix --unsafe .
+biome check --fix --unsafe . ${reporter:+--reporter "$reporter"}
 ```
 
 ## typecheck

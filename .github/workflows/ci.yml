@@ -19,30 +19,34 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.9.0
+          version: 11.13.0
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "pnpm"
 
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: mask
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       # Level 1: Quick check (all pushes)
       - name: Typecheck
-        run: pnpm typecheck
+        run: mask typecheck
 
       - name: Lint
-        run: pnpm lint
+        run: mask lint --reporter github
 
       - name: Unit tests
-        run: pnpm test:unit
+        run: mask test unit
 
       # Level 2: Full check (PR to main or tag push)
       - name: Coverage
         if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
-        run: pnpm test:coverage
+        run: mask test coverage
 
       - name: Build Docker image for integration tests
         if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
@@ -60,8 +64,8 @@ jobs:
       # Level 3: Release (tag push only)
       - name: Build
         if: startsWith(github.ref, 'refs/tags/v')
-        run: pnpm build
+        run: mask build
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
-        run: pnpm release
+        run: mask release

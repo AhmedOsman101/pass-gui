@@ -8,7 +8,6 @@
     "build": "run-p typecheck \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "test": "echo No tests yet",
     "test:unit": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "vue-tsc --build"
