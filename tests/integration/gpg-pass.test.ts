@@ -6,11 +6,11 @@
 //   - GNUPGHOME and PASSWORD_STORE_DIR point to writable, ephemeral locations
 //
 // Run inside the Podman container (Containerfile.test):
-//   pnpm --filter=client vitest run tests/integration/
+//   pnpm test:integration
 //
 // Or manually (after installing system tools):
 //   GNUPGHOME=/tmp/pg-test-gpg PASSWORD_STORE_DIR=/tmp/pg-test-store \
-//     pnpm --filter=client vitest run tests/integration/
+//     pnpm test:integration
 //
 // These tests exec actual gpg/pass binaries — never point them at your real
 // password store or GPG keyring.
