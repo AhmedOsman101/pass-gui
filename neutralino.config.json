@@ -59,7 +59,7 @@
       "projectPath": "/client/",
       "initCommand": "pnpm install",
       "devCommand": "true",
-      "buildCommand": "pnpm build:frontend"
+      "buildCommand": "pnpm --filter=client build"
     }
   }
 }

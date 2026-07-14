@@ -18,7 +18,7 @@
     "build:frontend": "pnpm --filter=client build",
     "build": "pnpm build:frontend && neu build",
     "build:clean": "pnpm clean && pnpm build",
-    "release": "pnpm clean && neu build --release --clean",
+    "release": "pnpm clean && neu build --release --clean --embed-resources",
     "clean": "rm -rf client/dist && rm -rf build",
     "test": "pnpm --filter=client test:unit",
     "test:unit": "pnpm --filter=client test:unit",
