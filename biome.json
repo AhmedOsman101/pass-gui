@@ -379,6 +379,9 @@
           "style": {
             "noNonNullAssertion": "off",
             "useNumericSeparators": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
           }
         }
       }

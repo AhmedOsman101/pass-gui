@@ -7,46 +7,65 @@ import {
   type SaveDialogOptions,
 } from "@neutralinojs/lib";
 import { type Result, wrapAsync } from "lib-result";
+import Path from "@/lib/path";
 
 /**
  * Service wrapping Neutralino OS dialog and notification APIs.
  * Each method returns Result instead of throwing, following lib-result conventions.
+ * Dialog methods inject the system root as `defaultPath` when the caller doesn't specify one.
  */
-class DialogService {
+class Dialog {
+  private static systemRoot: string = Path.getSystemRoot();
+
   /**
    * Shows a file open dialog. Returns selected file paths, or empty array on cancel.
+   * Defaults to system root when no defaultPath is provided.
    */
-  async showOpenDialog(
+  static async showOpenDialog(
     title?: string,
     options?: OpenDialogOptions
   ): Promise<Result<string[]>> {
-    return await wrapAsync(async () => os.showOpenDialog(title, options));
+    const opts: OpenDialogOptions = {
+      defaultPath: Dialog.systemRoot,
+      ...options,
+    };
+    return await wrapAsync(async () => os.showOpenDialog(title, opts));
   }
 
   /**
    * Shows a file save dialog. Returns selected path, or empty string on cancel.
+   * Defaults to system root when no defaultPath is provided.
    */
-  async showSaveDialog(
+  static async showSaveDialog(
     title?: string,
     options?: SaveDialogOptions
   ): Promise<Result<string>> {
-    return await wrapAsync(async () => os.showSaveDialog(title, options));
+    const opts: SaveDialogOptions = {
+      defaultPath: Dialog.systemRoot,
+      ...options,
+    };
+    return await wrapAsync(async () => os.showSaveDialog(title, opts));
   }
 
   /**
    * Shows a folder open dialog. Returns selected folder path, or empty string on cancel.
+   * Defaults to system root when no defaultPath is provided.
    */
-  async showFolderDialog(
+  static async showFolderDialog(
     title?: string,
     options?: FolderDialogOptions
   ): Promise<Result<string>> {
-    return await wrapAsync(async () => os.showFolderDialog(title, options));
+    const opts: FolderDialogOptions = {
+      defaultPath: Dialog.systemRoot,
+      ...options,
+    };
+    return await wrapAsync(async () => os.showFolderDialog(title, opts));
   }
 
   /**
    * Shows a native OS notification.
    */
-  async showNotification(
+  static async showNotification(
     title: string,
     content: string,
     icon?: Icon
@@ -59,7 +78,7 @@ class DialogService {
   /**
    * Shows a native OS message box. Returns the user's choice (e.g. "YES", "NO", "OK").
    */
-  async showMessageBox(
+  static async showMessageBox(
     title: string,
     content: string,
     choice?: MessageBoxChoice,
@@ -71,6 +90,4 @@ class DialogService {
   }
 }
 
-const Dialog = new DialogService();
-
-export { Dialog, DialogService };
+export { Dialog };

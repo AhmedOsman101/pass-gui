@@ -1,4 +1,4 @@
-import { type KnownPath, os } from "@neutralinojs/lib";
+import { type KnownPath, OperatingSystem, os } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 
 /**
@@ -49,4 +49,18 @@ async function getHomeDir(): Promise<Result<string>> {
   return home;
 }
 
-export default { expandTilde, resolveUserPath, getHomeDir, getKnownPath };
+/**
+ * Returns the system root path based on the detected OS.
+ * Uses `window.NL_OS` injected by Neutralino at runtime.
+ */
+function getSystemRoot(): string {
+  return window.NL_OS === OperatingSystem.Windows ? "C:\\" : "/";
+}
+
+export default {
+  expandTilde,
+  resolveUserPath,
+  getHomeDir,
+  getKnownPath,
+  getSystemRoot,
+};
