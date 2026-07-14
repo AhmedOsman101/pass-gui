@@ -1,7 +1,7 @@
 import { os } from "@neutralinojs/lib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AllowedCommand } from "@/types";
-import { Neu, NeutralinoService } from "./neutralino";
+import { Neu, NeutralinoService } from "../neutralino";
 
 describe("Neu.exec", () => {
   beforeEach(() => {

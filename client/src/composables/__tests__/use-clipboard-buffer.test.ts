@@ -9,7 +9,7 @@ vi.mock("@/services/pass", () => ({
 }));
 
 import { useEntryTreeStore } from "@/stores/entry-tree";
-import { useClipboardBuffer } from "./use-clipboard-buffer";
+import { useClipboardBuffer } from "../use-clipboard-buffer";
 
 describe("useClipboardBuffer", () => {
   beforeEach(() => {

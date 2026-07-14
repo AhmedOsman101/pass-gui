@@ -6,7 +6,7 @@ vi.mock("@/services/config", () => ({
 }));
 
 import { Config } from "@/services/config";
-import { useGenerationConfig } from "./use-generation-config";
+import { useGenerationConfig } from "../use-generation-config";
 
 const DEFAULTS = {
   memorable: false,

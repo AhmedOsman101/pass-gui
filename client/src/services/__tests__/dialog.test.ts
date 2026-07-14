@@ -1,6 +1,6 @@
 import { Icon, MessageBoxChoice, os } from "@neutralinojs/lib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Dialog } from "./dialog";
+import { Dialog } from "../dialog";
 
 describe("Dialog", () => {
   beforeEach(() => {

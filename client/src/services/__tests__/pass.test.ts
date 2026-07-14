@@ -5,8 +5,8 @@ import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
 import type { AppConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
-import { Neu } from "./neutralino";
-import { PassService } from "./pass";
+import { Neu } from "../neutralino";
+import { PassService } from "../pass";
 
 vi.mock("@/services/config", () => ({
   Config: {

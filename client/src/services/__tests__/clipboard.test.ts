@@ -6,7 +6,7 @@ import { Config } from "@/services/config";
 import type { AppConfig } from "@/types/config";
 import type { ClipboardAction } from "@/types/entries";
 import type { ParsedToml } from "@/types/toml";
-import { Clipboard } from "./clipboard";
+import { Clipboard } from "../clipboard";
 
 vi.mock("@/services/config", () => ({
   Config: {

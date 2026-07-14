@@ -11,7 +11,7 @@ import {
   validateGpgConfig,
   validatePreferencesConfig,
   validateStoresConfig,
-} from "./config-validation";
+} from "../config-validation";
 
 describe("validateAppConfig", () => {
   it("accepts valid DEFAULT_CONFIG", () => {

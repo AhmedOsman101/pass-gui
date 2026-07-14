@@ -1,6 +1,6 @@
 import { os } from "@neutralinojs/lib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import Path from "./path";
+import Path from "../path";
 
 describe("expandTilde", () => {
   it("replaces tilde with home directory when followed by slash", () => {

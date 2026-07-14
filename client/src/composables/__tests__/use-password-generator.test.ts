@@ -15,7 +15,7 @@ import {
   generateMemorablePassword,
   generatePassword,
 } from "@/lib/generate-password";
-import { usePasswordGenerator } from "./use-password-generator";
+import { usePasswordGenerator } from "../use-password-generator";
 
 describe("usePasswordGenerator", () => {
   beforeEach(() => {

@@ -48,7 +48,7 @@ import { Fs } from "@/services/filesystem";
 import { Watcher } from "@/services/watcher";
 import type { AppConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
-import { Config } from "./config";
+import { Config } from "../config";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   generateMemorablePassword,
   generatePassword,
-} from "./generate-password";
-import { WORD_LIST } from "./wordlist";
+} from "../generate-password";
+import { WORD_LIST } from "../wordlist";
 
 function stubCrypto(returnValue: number) {
   vi.stubGlobal("crypto", {

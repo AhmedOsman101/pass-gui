@@ -1,6 +1,6 @@
 import { events, filesystem } from "@neutralinojs/lib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Watcher } from "./watcher";
+import { Watcher } from "../watcher";
 
 describe("Watcher", () => {
   beforeEach(async () => {

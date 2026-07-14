@@ -7,7 +7,7 @@ import { Gpg } from "@/services/gpg";
 import { Neu } from "@/services/neutralino";
 import { Pass } from "@/services/pass";
 import { StoreValidation } from "@/services/store-validation";
-import { Readiness } from "./readiness";
+import { Readiness } from "../readiness";
 
 vi.mock("@/services/pass", () => ({
   Pass: {

@@ -27,7 +27,7 @@ vi.mock("@/lib/parse-pass-show", () => ({
 
 import { parsePassShowOutput } from "@/lib/parse-pass-show";
 import { walkStore } from "@/lib/store-walker";
-import { Entries } from "./entries";
+import { Entries } from "../entries";
 
 const mockEntryTree = [
   {

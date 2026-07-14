@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EntryTree } from "@/types/entries";
-import { buildIndex } from "./tree-index";
+import { buildIndex } from "../tree-index";
 
 describe("buildIndex", () => {
   it("returns empty maps for an empty tree", () => {

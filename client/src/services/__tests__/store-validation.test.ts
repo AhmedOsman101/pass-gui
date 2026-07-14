@@ -30,7 +30,7 @@ import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
 import type { SecretKey } from "@/types";
-import { StoreValidation } from "./store-validation";
+import { StoreValidation } from "../store-validation";
 
 function makeSecretKey(overrides: Partial<SecretKey> = {}): SecretKey {
   return {

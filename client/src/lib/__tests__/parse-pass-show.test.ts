@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePassShowOutput } from "./parse-pass-show";
+import { parsePassShowOutput } from "../parse-pass-show";
 
 describe("parsePassShowOutput", () => {
   it("returns error on empty string", () => {

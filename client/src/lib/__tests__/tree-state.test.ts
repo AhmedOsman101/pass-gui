@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EntryTree } from "@/types/entries";
-import { buildIndex } from "./tree-index";
+import { buildIndex } from "../tree-index";
 import {
   buildSearchResults,
   buildVisible,
@@ -8,7 +8,7 @@ import {
   expandSet,
   sortPaths,
   toggleSet,
-} from "./tree-state";
+} from "../tree-state";
 
 const tree: EntryTree = [
   {

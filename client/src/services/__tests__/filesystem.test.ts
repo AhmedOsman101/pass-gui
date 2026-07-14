@@ -1,7 +1,7 @@
 import { filesystem } from "@neutralinojs/lib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DirectoryCreationError, FileWriteError } from "@/lib/errors";
-import { Fs, makeIgnoreFilter, type TreeDirectoryEntry } from "./filesystem";
+import { Fs, makeIgnoreFilter, type TreeDirectoryEntry } from "../filesystem";
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -1,7 +1,7 @@
 import { debug, os } from "@neutralinojs/lib";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { GpgService } from "./gpg";
-import { Neu } from "./neutralino";
+import { GpgService } from "../gpg";
+import { Neu } from "../neutralino";
 
 const Gpg2Found = {
   pid: 1,
