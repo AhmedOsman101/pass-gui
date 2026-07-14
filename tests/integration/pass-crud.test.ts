@@ -16,6 +16,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateKey,
@@ -43,9 +44,6 @@ describe("Pass CRUD", () => {
     initStore(env, email);
   });
 
-  // -----------------------------------------------------------------------
-  // 1. pass init creates a password store with .gpg-id
-  // -----------------------------------------------------------------------
   it("pass init creates a password store with .gpg-id", () => {
     const storeDir = env.PASSWORD_STORE_DIR!;
     expect(existsSync(storeDir)).toBe(true);
@@ -57,86 +55,86 @@ describe("Pass CRUD", () => {
     expect(gpgId).toBe(email);
   });
 
-  // -----------------------------------------------------------------------
-  // 2. Insert and show a single-line entry
-  // -----------------------------------------------------------------------
   it("insert and show a single-line entry", () => {
-    insertEntry(env, "test-single", "my-secret-password");
-    expect(showEntry(env, "test-single")).toBe("my-secret-password");
+    const password = randomUUID();
+    insertEntry(env, "test-single", password);
+    expect(showEntry(env, "test-single")).toBe(password);
   });
 
-  // -----------------------------------------------------------------------
-  // 3. Insert with multi-line content
-  // -----------------------------------------------------------------------
   it("insert with multi-line content", () => {
-    run("pass insert -m test-multi", { input: "line1\nline2\nline3\n", env });
-    expect(showEntry(env, "test-multi")).toBe("line1\nline2\nline3");
+    const lines = [randomUUID(), randomUUID(), randomUUID()];
+    const content = lines.join("\n");
+    run("pass insert -m test-multi", { input: `${content}\n`, env });
+    expect(showEntry(env, "test-multi")).toBe(content);
   });
 
-  // -----------------------------------------------------------------------
-  // 4. Insert into subdirectories
-  // -----------------------------------------------------------------------
   it("insert into subdirectories", () => {
-    insertEntry(env, "social/email", "email-password");
-    insertEntry(env, "social/gaming/steam", "steam-password");
-    expect(showEntry(env, "social/email")).toBe("email-password");
-    expect(showEntry(env, "social/gaming/steam")).toBe("steam-password");
+    const emailPw = randomUUID();
+    const steamPw = randomUUID();
+    insertEntry(env, "social/email", emailPw);
+    insertEntry(env, "social/gaming/steam", steamPw);
+    expect(showEntry(env, "social/email")).toBe(emailPw);
+    expect(showEntry(env, "social/gaming/steam")).toBe(steamPw);
   });
 
-  // -----------------------------------------------------------------------
-  // 5. pass ls displays the store tree
-  // -----------------------------------------------------------------------
   it("pass ls displays the store tree", () => {
+    insertEntry(env, "ls-test-alpha", randomUUID());
+    insertEntry(env, "ls-test-beta", randomUUID());
+    insertEntry(env, "ls-test-sub/gamma", randomUUID());
+
     const tree = lsStore(env);
-    expect(treeContains(tree, "test-single")).toBe(true);
-    expect(treeContains(tree, "test-multi")).toBe(true);
-    expect(treeContains(tree, "social")).toBe(true);
+    expect(treeContains(tree, "ls-test-alpha")).toBe(true);
+    expect(treeContains(tree, "ls-test-beta")).toBe(true);
+    expect(treeContains(tree, "ls-test-sub")).toBe(true);
   });
 
-  // -----------------------------------------------------------------------
-  // 6. pass rm removes an entry
-  // -----------------------------------------------------------------------
   it("pass rm removes an entry", () => {
-    removeEntry(env, "test-single");
+    const password = randomUUID();
+    insertEntry(env, "rm-test", password);
+    expect(showEntry(env, "rm-test")).toBe(password);
+
+    removeEntry(env, "rm-test");
 
     const tree = lsStore(env);
-    expect(treeContains(tree, "test-single")).toBe(false);
+    expect(treeContains(tree, "rm-test")).toBe(false);
 
-    expect(() => showEntry(env, "test-single")).toThrow();
+    expect(() => showEntry(env, "rm-test")).toThrow(/password store/i);
   });
 
-  // -----------------------------------------------------------------------
-  // 7. pass mv renames/moves an entry
-  // -----------------------------------------------------------------------
   it("pass mv renames/moves an entry", () => {
-    run("pass mv test-multi moved-test", { env });
+    const lines = [randomUUID(), randomUUID()];
+    const content = lines.join("\n");
+    run("pass insert -m mv-origin", { input: `${content}\n`, env });
+    expect(showEntry(env, "mv-origin")).toBe(content);
 
-    expect(() => showEntry(env, "test-multi")).toThrow();
+    run("pass mv mv-origin mv-dest", { env });
 
-    const content = showEntry(env, "moved-test");
-    expect(content).toBe("line1\nline2\nline3");
+    expect(() => showEntry(env, "mv-origin")).toThrow(/password store/i);
+
+    expect(showEntry(env, "mv-dest")).toBe(content);
   });
 
-  // -----------------------------------------------------------------------
-  // 8. pass cp duplicates an entry
-  // -----------------------------------------------------------------------
   it("pass cp duplicates an entry", () => {
-    run("pass cp moved-test copied-test", { env });
+    const lines = [randomUUID(), randomUUID()];
+    const content = lines.join("\n");
+    run("pass insert -m cp-origin", { input: `${content}\n`, env });
+    expect(showEntry(env, "cp-origin")).toBe(content);
 
-    const original = showEntry(env, "moved-test");
-    const copy = showEntry(env, "copied-test");
-    expect(original).toBe("line1\nline2\nline3");
-    expect(copy).toBe("line1\nline2\nline3");
+    run("pass cp cp-origin cp-copy", { env });
+
+    expect(showEntry(env, "cp-origin")).toBe(content);
+    expect(showEntry(env, "cp-copy")).toBe(content);
   });
 
-  // -----------------------------------------------------------------------
-  // 9. pass ls with directory filter
-  // -----------------------------------------------------------------------
   it("pass ls with directory filter", () => {
-    const filteredTree = run("pass ls social", { env });
-    expect(treeContains(filteredTree, "email")).toBe(true);
-    expect(treeContains(filteredTree, "steam")).toBe(true);
-    expect(treeContains(filteredTree, "moved-test")).toBe(false);
-    expect(treeContains(filteredTree, "copied-test")).toBe(false);
+    insertEntry(env, "filter-a/entry1", randomUUID());
+    insertEntry(env, "filter-a/entry2", randomUUID());
+    insertEntry(env, "filter-b/entry3", randomUUID());
+
+    const filteredTree = run("pass ls filter-a", { env });
+    expect(treeContains(filteredTree, "entry1")).toBe(true);
+    expect(treeContains(filteredTree, "entry2")).toBe(true);
+    expect(treeContains(filteredTree, "entry3")).toBe(false);
+    expect(treeContains(filteredTree, "filter-b")).toBe(false);
   });
 });
