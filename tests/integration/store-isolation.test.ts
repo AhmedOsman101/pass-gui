@@ -87,7 +87,7 @@ describe("Store isolation", () => {
       // directory, but B's GPG keyring (different GNUPGHOME) cannot decrypt it.
       copyFileSync(
         join(envA.passwordStoreDir, "cross-secret.gpg"),
-        join(envB.passwordStoreDir, "cross-secret.gpg"),
+        join(envB.passwordStoreDir, "cross-secret.gpg")
       );
 
       expect(() => showEntry(envB.env, "cross-secret")).toThrow(/gpg/i);
@@ -99,7 +99,7 @@ describe("Store isolation", () => {
       // Copy the .gpg file from store B to store A for the reverse direction.
       copyFileSync(
         join(envB.passwordStoreDir, "reverse-secret.gpg"),
-        join(envA.passwordStoreDir, "reverse-secret.gpg"),
+        join(envA.passwordStoreDir, "reverse-secret.gpg")
       );
 
       expect(() => showEntry(envA.env, "reverse-secret")).toThrow(/gpg/i);
