@@ -12,20 +12,41 @@
 FROM node:24-alpine
 
 # Install system dependencies
-# gnupg — GPG encryption for pass
-# pass  — the standard Unix password store
-# git   — pass uses git internally; pnpm may need it for some packages
-RUN apk add --no-cache gnupg pass git
+# gnupg        — GPG encryption for pass
+# pass         — the standard Unix password store
+# git          — pass uses git internally; pnpm may need it for some packages
+# pinentry-tty — GPG Pin Entry program
+RUN apk add --no-cache gnupg pass git pinentry-tty
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
+ENV GNUPGHOME=/home/testuser/.gnupg
+ENV PASSWORD_STORE_DIR=/home/testuser/.password-store
+ENV GPG_TTY=/dev/console
 
 # Install pnpm at the project's pinned version
 RUN npm install -g pnpm@11.13.0
 
+# Build args let you match your host UID/GID so bind-mounted
+# files stay writable and don't end up owned by a foreign UID
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+# node:alpine ships a "node" user/group at UID/GID 1000.
+# Remove it first so the build-arg UID/GID is free to reuse.
+RUN (deluser node 2>/dev/null || true) && (delgroup node 2>/dev/null || true)
+
 # Create a non-root user with writable home for GPG
-RUN addgroup -S testuser && adduser -S testuser -G testuser -h /home/testuser
+RUN addgroup -g "${USER_GID}" -S testuser \
+  && adduser -u "${USER_UID}" -S testuser -G testuser -h /home/testuser \
+  && mkdir -p /app "${GNUPGHOME}" "${PASSWORD_STORE_DIR}" \
+  && chown -R testuser:testuser /home/testuser /app \
+  && chmod 700 "${GNUPGHOME}"
+
 USER testuser
 WORKDIR /app
+
+# Prevent pnpm from leaking into the project directory
+RUN pnpm config set store-dir /home/testuser/.local/share/pnpm/store
 
 CMD ["sh"]
