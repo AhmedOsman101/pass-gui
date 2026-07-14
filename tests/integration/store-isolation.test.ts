@@ -17,7 +17,7 @@
 // real keyring or password store.
 // ---------------------------------------------------------------------------
 
-import { existsSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
@@ -83,11 +83,24 @@ describe("Store isolation", () => {
     it("cross-store decryption fails with wrong keyring", () => {
       insertEntry(envA.env, "cross-secret", "cross-content");
 
+      // Copy the .gpg file from store A to store B so it exists in B's store
+      // directory, but B's GPG keyring (different GNUPGHOME) cannot decrypt it.
+      copyFileSync(
+        join(envA.passwordStoreDir, "cross-secret.gpg"),
+        join(envB.passwordStoreDir, "cross-secret.gpg"),
+      );
+
       expect(() => showEntry(envB.env, "cross-secret")).toThrow(/gpg/i);
 
       expect(showEntry(envA.env, "cross-secret")).toBe("cross-content");
 
       insertEntry(envB.env, "reverse-secret", "reverse-content");
+
+      // Copy the .gpg file from store B to store A for the reverse direction.
+      copyFileSync(
+        join(envB.passwordStoreDir, "reverse-secret.gpg"),
+        join(envA.passwordStoreDir, "reverse-secret.gpg"),
+      );
 
       expect(() => showEntry(envA.env, "reverse-secret")).toThrow(/gpg/i);
 
@@ -146,7 +159,7 @@ describe("Store isolation", () => {
       const email = generateKey(absEnv.env, {
         email: "relative@pass-gui.local",
       });
-      initStore(absEnv.env, email);
+      initStore(relEnv.env, email);
 
       insertEntry(relEnv.env, "relative-test", "relative-content");
       expect(showEntry(relEnv.env, "relative-test")).toBe("relative-content");
