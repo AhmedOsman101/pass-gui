@@ -23,7 +23,7 @@ const stubs = {
 };
 
 function mountEntryDetail(
-  overrides: Record<string, Record<string, unknown>> = {},
+  overrides: Record<string, Record<string, unknown>> = {}
 ) {
   const entryTreeOverrides = (overrides["entry-tree"] ?? {}) as Record<
     string,
@@ -93,7 +93,7 @@ describe("EntryDetail", () => {
 
     expect(clipboardStore.copy).toHaveBeenCalledWith(
       "supersecret123",
-      "Email/work",
+      "Email/work"
     );
   });
 
@@ -108,7 +108,7 @@ describe("EntryDetail", () => {
 
     expect(clipboardStore.copy).toHaveBeenCalledWith(
       "test-value",
-      "Email/work",
+      "Email/work"
     );
   });
 

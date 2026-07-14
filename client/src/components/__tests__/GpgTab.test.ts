@@ -214,7 +214,9 @@ describe("GpgTab", () => {
 
   it("clicks Save button and emits save", async () => {
     const { wrapper } = mountGpgTab();
-    const saveButton = wrapper.findAll("button").find(b => b.text() === "Save")!;
+    const saveButton = wrapper
+      .findAll("button")
+      .find(b => b.text() === "Save")!;
     expect(saveButton).toBeDefined();
     await saveButton.trigger("click");
     expect(wrapper.emitted("save")).toBeTruthy();
@@ -222,7 +224,9 @@ describe("GpgTab", () => {
 
   it("disables Save button when isSaving is true", () => {
     const { wrapper } = mountGpgTab({ isSaving: true });
-    const saveButton = wrapper.findAll("button").find(b => b.text() === "Save")!;
+    const saveButton = wrapper
+      .findAll("button")
+      .find(b => b.text() === "Save")!;
     expect(saveButton).toBeDefined();
     expect((saveButton.element as HTMLButtonElement).disabled).toBe(true);
   });

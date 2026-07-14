@@ -812,26 +812,30 @@ client/
 │   │   ├── setup.ts                          # Global Neu mock (vi.hoisted + vi.mock)
 │   │   ├── vitest.d.ts                       # Vitest global type declarations
 │   │   └── smoke.test.ts                     # Min smoke test: 1+1=2
-│   ├── __mocks__/                            # (future) auto-hoisted mock files
 │   ├── lib/
 │   │   ├── parse-pass-show.ts
-│   │   └── parse-pass-show.test.ts           # Co-located unit tests
+│   │   └── __tests__/
+│   │       └── parse-pass-show.test.ts       # Co-located in __tests__/
 │   ├── services/
 │   │   ├── neutralino.ts
-│   │   └── neutralino.test.ts                # Co-located service tests
+│   │   └── __tests__/
+│   │       ├── neutralino.test.ts            # Co-located in __tests__/
+│   │       ├── config.test.ts
+│   │       └── ...
 │   ├── stores/
 │   │   ├── active-store.ts
-│   │   ├── __tests__/
-│   │   │   └── active-store.test.ts          # Option: subdir for store tests
-│   │   └── ...                               # Or co-located
+│   │   └── __tests__/
+│   │       ├── active-store.test.ts          # Co-located in __tests__/
+│   │       └── ...
 │   ├── composables/
 │   │   ├── useTreeState.ts
-│   │   └── useTreeState.test.ts              # Co-located composable tests
+│   │   └── __tests__/
+│   │       └── useTreeState.test.ts          # Co-located in __tests__/
 │   └── components/
 │       ├── EntryForm.vue
-│       ├── __tests__/
-│       │   └── EntryForm.test.ts             # Subdir for component tests
-│       └── ...
+│       └── __tests__/
+│           ├── EntryForm.test.ts             # Co-located in __tests__/
+│           └── ...
 ├── tests/
 │   └── integration/
 │       ├── gpg-pass.test.ts                  # Container-backed integration tests
@@ -843,9 +847,10 @@ client/
         └── ci.yml                            # CI/CD workflow
 ```
 
-**Convention:** Co-locate `.test.ts` next to the source module for
-lib/services/composables. Use `__tests__/` subdirectory for stores and
-components (where the test file name matches the component name).
+**Convention:** All test files live in a `__tests__/` subdirectory within
+their group directory (`lib/__tests__/`, `services/__tests__/`,
+`stores/__tests__/`, `composables/__tests__/`, `components/__tests__/`).
+The test file name matches the source module name.
 
 ---
 
@@ -871,7 +876,7 @@ pnpm typecheck && pnpm lint
 
 1. Identify the layer (lib → service → store/composable → component → integration)
 2. Follow the priority order (P0 → P6)
-3. Co-locate the test file next to the source (or in `__tests__/` for components)
+3. Place the test file in the `__tests__/` subdirectory of its group (`lib/__tests__/`, `services/__tests__/`, `stores/__tests__/`, `composables/__tests__/`, `components/__tests__/`)
 4. Import `vi.mock()` for any module-level mocking needed
 5. Use `@pinia/testing` `createTestingPinia()` for store-dependent tests
 6. Use `vi.useFakeTimers()` for any timer-dependent logic

@@ -239,21 +239,21 @@ Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 
 ### Testing (P0-P2 COMPLETE)
 
-| Priority | Layer                 | Test files                                                                 | Tests | Status |
-| -------- | --------------------- | -------------------------------------------------------------------------- | ----- | ------ |
-| P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path` | 69    | ✅     |
-| P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                     | 152   | ✅     |
-| P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                | 77    | ✅     |
+| Priority | Layer                 | Test files                                                                                                                              | Tests | Status |
+| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path`                                                              | 69    | ✅     |
+| P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                                                                                  | 152   | ✅     |
+| P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                                                                             | 77    | ✅     |
 | P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState | 123   | ✅     |
-| P4       | Core services         | `config`, `config-validation`, `store-validation`                          | 77    | ✅     |
-| P5       | Components            | 7 core + 3 lightweight dialogs                                             | —     | ⬜     |
-| P6       | Integration           | Podman container suite                                                     | —     | ⬜     |
+| P4       | Core services         | `config`, `config-validation`, `store-validation`                                                                                       | 77    | ✅     |
+| P5       | Components            | 7 core + 3 lightweight dialogs                                                                                                          | —     | ⬜     |
+| P6       | Integration           | Podman container suite                                                                                                                  | —     | ⬜     |
 
 **Running total:** 487 tests, 27 files, 3.32s execution.
 
 **Mock strategy:** `vi.mock("@neutralinojs/lib")` in `setup.ts` provides global mocks. Test-specific overrides via `vi.mocked()`. Results from `lib-result` (`Ok()` / `ErrFromText()`), never duck-typed.
 
-**P3 tests:** 123 tests across 9 store/composable files. Use `createTestingPinia({ createSpy: vi.fn })` for store-dependent tests, `vi.mock()` for service mocks, `vi.useFakeTimers()` for timer-dependent logic. Tests co-located with source files (no `__tests__/` subdir).
+**P3 tests:** 123 tests across 9 store/composable files. Use `createTestingPinia({ createSpy: vi.fn })` for store-dependent tests, `vi.mock()` for service mocks, `vi.useFakeTimers()` for timer-dependent logic. All tests live in `__tests__/` subdirectories per group.
 
 **Key config:** biome.json disables `noNonNullAssertion` for `*.test.ts` (safe for `result.ok!` after `.isOk()`). Vitest config in `vitest.config.ts` with happy-dom environment.
 

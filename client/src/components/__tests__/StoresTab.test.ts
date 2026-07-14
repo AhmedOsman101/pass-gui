@@ -52,7 +52,7 @@ function mountStoresTab(props: Record<string, unknown> = {}) {
 }
 
 function emittedStores(
-  wrapper: ReturnType<typeof mountStoresTab>,
+  wrapper: ReturnType<typeof mountStoresTab>
 ): Record<string, any> {
   return wrapper.emitted("updateStores")![0]![0] as Record<string, any>;
 }
