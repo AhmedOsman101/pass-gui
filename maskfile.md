@@ -162,6 +162,8 @@ podman build \
 podman run --rm -it \
   --userns=keep-id \
   -v "$(pwd)":/app \
+  -v "$(pwd)/.container/node_modules":/app/node_modules \
+  -v "$(pwd)/.container/client-node_modules":/app/client/node_modules \
   pass-gui-test \
   sh -c "pnpm install --frozen-lockfile --ignore-scripts --force && pnpm vitest run tests/integration"
 ```

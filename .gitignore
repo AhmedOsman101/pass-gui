@@ -43,3 +43,6 @@ test.sh
 
 # Testing playground
 client/src/pages/test.vue
+
+# Misc.
+.container
