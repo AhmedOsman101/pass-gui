@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------
 
 import { type ExecSyncOptions, execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll } from "vitest";
@@ -123,7 +123,9 @@ function generateKey(env: NodeJS.ProcessEnv, params: GpgKeyParams): string {
     "%commit",
   ].join("\n");
 
-  run("gpg --batch --gen-key /dev/stdin", { input: batchConfig, env });
+  const batchFile = join(gnupgHome, "batch-key-gen");
+  writeFileSync(batchFile, batchConfig, "utf-8");
+  run(`gpg --batch --gen-key "${batchFile}"`, { env });
   return params.email;
 }
 
