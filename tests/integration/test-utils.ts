@@ -223,6 +223,7 @@ function run(command: string, opts?: RunOptions): string {
     encoding: "utf-8" as const,
     env: { ...process.env, ...opts?.env },
     cwd: opts?.cwd ?? testRoot,
+    input: opts?.input,
     stdio: opts?.input ? ["pipe", "pipe", "pipe"] : undefined,
   };
 

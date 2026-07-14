@@ -13,17 +13,16 @@
 // keyring.
 // ---------------------------------------------------------------------------
 
-import { describe, expect, it } from "vitest";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import {
-  useEphemeralTestRoot,
-  makeTestEnv,
   generateKey,
-  getKeyId,
   getFingerprint,
+  makeTestEnv,
   run,
   testRoot,
+  useEphemeralTestRoot,
 } from "./test-utils";
 
 describe("GPG lifecycle", () => {
@@ -85,7 +84,7 @@ describe("GPG lifecycle", () => {
       generateKey(env, { email: "seclist-test@pass-gui.local" });
 
       const colonOut = run("gpg --list-secret-keys --with-colons", { env });
-      const secLine = colonOut.split("\n").find((l) => l.startsWith("sec:"));
+      const secLine = colonOut.split("\n").find(l => l.startsWith("sec:"));
       expect(secLine).toBeTruthy();
 
       const keyId = secLine!.split(":")[4];
@@ -134,10 +133,9 @@ describe("GPG lifecycle", () => {
 
       const fingerprint = getFingerprint(env, email);
 
-      run(
-        `gpg --batch --yes --delete-secret-and-public-key "${fingerprint}"`,
-        { env }
-      );
+      run(`gpg --batch --yes --delete-secret-and-public-key "${fingerprint}"`, {
+        env,
+      });
 
       const listAfterDelete = run("gpg --list-keys", { env });
       expect(listAfterDelete).not.toContain(email);
@@ -162,10 +160,9 @@ describe("GPG lifecycle", () => {
       expect(run("gpg --list-keys", { env })).toContain(email);
       expect(run("gpg --list-secret-keys", { env })).toContain(email);
 
-      run(
-        `gpg --batch --yes --delete-secret-and-public-key "${fingerprint}"`,
-        { env }
-      );
+      run(`gpg --batch --yes --delete-secret-and-public-key "${fingerprint}"`, {
+        env,
+      });
 
       expect(run("gpg --list-keys", { env })).not.toContain(email);
       expect(run("gpg --list-secret-keys", { env })).not.toContain(email);
