@@ -5,13 +5,14 @@
 > Lint the project
 
 **OPTIONS**
-* reporter
-    * flags: --reporter
-    * type: string
-    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+
+- reporter
+  - flags: --reporter
+  - type: string
+  - desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
 
 ```bash
-unset BIOME_CONFIG_PATH
+unset BIOME_CONFIG_PATH &>/dev/null
 biome lint . ${reporter:+--reporter "$reporter"}
 ```
 
@@ -20,29 +21,19 @@ biome lint . ${reporter:+--reporter "$reporter"}
 > Lint and format the project
 
 **OPTIONS**
-* reporter
-    * flags: --reporter
-    * type: string
-    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+
+- reporter
+  - flags: --reporter
+  - type: string
+  - desc: Output format (default|json|json-pretty|github|summary|concise)
+- unsafe
+  - flags: --unsafe
+  - type: boolean
+  - desc: Apply unsafe fixes
 
 ```bash
-unset BIOME_CONFIG_PATH
-biome check --fix . ${reporter:+--reporter "$reporter"}
-```
-
-### unsafe
-
-> Lint and format with unsafe fixes
-
-**OPTIONS**
-* reporter
-    * flags: --reporter
-    * type: string
-    * desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
-
-```bash
-unset BIOME_CONFIG_PATH
-biome check --fix --unsafe . ${reporter:+--reporter "$reporter"}
+unset BIOME_CONFIG_PATH &>/dev/null
+biome check --fix . ${reporter:+--reporter "$reporter"} ${unsafe:+'--unsafe'}
 ```
 
 ## typecheck
