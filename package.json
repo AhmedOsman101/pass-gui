@@ -23,7 +23,7 @@
     "test": "pnpm --filter=client test:unit",
     "test:unit": "pnpm --filter=client test:unit",
     "test:coverage": "pnpm --filter=client test:coverage",
-    "test:integration": "pnpm vitest run tests/integration",
+    "test:integration": "bash -c 'if [ \"$PASS_GUI_CONTAINER\" != \"1\" ]; then echo \"ERROR: Integration tests must run inside the Podman container.\" && echo \"  podman build -t pass-gui-test -f Containerfile.test .\" && echo \"  podman run --rm -v \\\"\\$(pwd)\\\":/app -w /app pass-gui-test \\\\\" && echo \"    bash -c '\\''pnpm install --frozen-lockfile \\&\\& pnpm test:integration'\\''\" && exit 1; fi; pnpm vitest run tests/integration'",
     "update:neu": "neu update"
   },
   "packageManager": "pnpm@11.13.0",

@@ -17,6 +17,9 @@ FROM node:24-alpine
 # git   — pass uses git internally; pnpm may need it for some packages
 RUN apk add --no-cache gnupg pass git
 
+# Integration test guard — prevents accidental runs outside the container
+ENV PASS_GUI_CONTAINER=1
+
 # Install pnpm at the project's pinned version
 RUN npm install -g pnpm@11.13.0
 
