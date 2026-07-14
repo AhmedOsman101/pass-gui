@@ -8,23 +8,9 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "lint": "unset BIOME_CONFIG_PATH; biome lint .",
     "format": "unset BIOME_CONFIG_PATH; biome check --fix .",
-    "format:unsafe": "unset BIOME_CONFIG_PATH; biome check --fix --unsafe .",
     "typecheck": "pnpm --filter=client typecheck",
-    "dev:neutralino": "neu run dev",
-    "dev:frontend": "pnpm --filter=client dev",
-    "dev": "concurrently -n \"FRONTEND,NEUTRALINO\" -c \"blue,magenta\" \"pnpm dev:frontend\" \"pnpm dev:neutralino\"",
-    "build:frontend": "pnpm --filter=client build",
-    "build": "pnpm build:frontend && neu build",
-    "build:clean": "pnpm clean && pnpm build",
-    "release": "pnpm clean && neu build --release --clean --embed-resources",
-    "clean": "rm -rf client/dist && rm -rf build",
-    "test": "pnpm --filter=client test:unit",
-    "test:unit": "pnpm --filter=client test:unit",
-    "test:coverage": "pnpm --filter=client test:coverage",
-    "test:integration": "{ test \"${PASS_GUI_CONTAINER}\" != 1 && echo 'ERROR: Integration tests must run inside the Podman container.'; } || pnpm vitest run tests/integration",
-    "update:neu": "neu update"
+    "test:integration": "{ test \"${PASS_GUI_CONTAINER}\" != 1 && echo 'ERROR: Integration tests must run inside the Podman container.'; } || pnpm vitest run tests/integration"
   },
   "packageManager": "pnpm@11.13.0",
   "dependencies": {
