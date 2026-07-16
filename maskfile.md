@@ -99,7 +99,7 @@ $MASK clean && $MASK build
 > Remove build artifacts
 
 ```bash
-rm -rf client/dist build
+rm -rf client/dist/ build/
 ```
 
 ## release
@@ -111,14 +111,6 @@ $MASK clean && neu build --release --clean --embed-resources
 ```
 
 ## test
-
-> Run unit tests
-
-```bash
-$MASK test unit
-```
-
-### unit
 
 > Run unit tests
 

@@ -4,10 +4,7 @@ export default defineConfig({
   test: {
     include: ["tests/integration/**/*.test.ts"],
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    fileParallelism: false,
+    maxWorkers: 1,
   },
 });
