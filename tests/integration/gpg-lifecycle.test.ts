@@ -44,35 +44,21 @@ describe("GPG lifecycle", () => {
   });
 
   // -----------------------------------------------------------------------
-  // 2. Ed25519 key generation
+  // 2. RSA 4096 key generation
   // -----------------------------------------------------------------------
-  describe("Ed25519 key generation", () => {
+  describe("RSA 4096 key generation", () => {
     const { env } = makeTestEnv(".gnupg-ed25519");
 
-    it("generates an Ed25519 key", () => {
-      const gnupgHome = env.GNUPGHOME!;
-      if (!existsSync(gnupgHome)) {
-        mkdirSync(gnupgHome, { recursive: true, mode: 0o700 });
-      }
+    it("generates an RSA 4096 key from batch config", () => {
+      const email = generateKey(env, {
+        email: "rsa4096-test@pass-gui.local",
+        keyType: "RSA",
+        keyLength: 4096,
+      });
 
-      const batchConfig = [
-        "%echo Generating Ed25519 test key",
-        "Key-Type: Ed25519",
-        "Name-Real: pass-gui Test",
-        "Name-Email: ed25519-test@pass-gui.local",
-        "Expire-Date: 0",
-        "%no-protection",
-        "%commit",
-      ].join("\n");
-
-      const batchFile = join(gnupgHome, "batch-ed25519");
-      writeFileSync(batchFile, batchConfig, "utf-8");
-      run(`gpg --batch --gen-key "${batchFile}"`, { env });
-
-      const colonOut = run("gpg --list-keys --with-colons", { env });
-      expect(colonOut).toContain("pub:");
-      expect(colonOut).toContain("ed25519");
-      expect(colonOut).toContain("ed25519-test@pass-gui.local");
+      const listOutput = run("gpg --list-keys", { env });
+      expect(listOutput).toContain(email);
+      expect(listOutput).toContain("4096");
     });
   });
 
