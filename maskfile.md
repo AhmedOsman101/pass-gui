@@ -155,7 +155,7 @@ $MASK container build
 
 ```bash
 $MASK container run \
-  "haveged -w 1024 && yes | pnpm install --frozen-lockfile --ignore-scripts && pnpm vitest run --config vitest.integration.config.ts"
+  "pnpm install; pnpm vitest run --config vitest.integration.config.ts"
 ```
 
 ## container
@@ -193,4 +193,21 @@ podman run --rm ${interactive:+'-it'} \
   -v "$(pwd)/.container/pnpm-store":/home/testuser/.local/share/pnpm/store \
   pass-gui-test \
   bash -c "${command}"
+```
+
+### dev
+
+> Runs the project inside the container
+
+**OPTIONS**
+
+- interactive
+  - flags: -i --interactive
+  - type: boolean
+  - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
+
+```bash
+$MASK container run \
+  ${interactive:+'-it'} \
+  'pnpm exec neu update --latest && pnpm dev'
 ```
