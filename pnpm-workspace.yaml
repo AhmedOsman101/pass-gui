@@ -2,6 +2,9 @@ packages:
   - client
 
 allowBuilds:
+  bufferutil: true
+  es5-ext: true
+  utf-8-validate: true
   vue-demi: true
 
 linkWorkspacePackages: true
