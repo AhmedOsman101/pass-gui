@@ -1,4 +1,4 @@
-# Containerfile.test — Integration test environment for pass-gui
+# Containerfile — Integration test environment for pass-gui
 #
 # Build:   mask container build
 # Run:     mask container run '<command>'
@@ -6,16 +6,22 @@
 # The container has Node.js 24, pnpm, GPG, and pass pre-installed.
 # Mount the project root at /app, then run pnpm install + integration tests.
 #
-# Alpine base = smaller image, faster builds than Debian slim
+# Void Linux base = smaller image, faster builds than Debian slim
 
-FROM node:24-alpine
+FROM ghcr.io/void-linux/void-glibc-full:latest
+
+# Sync repodata and update xbps itself first. Void images sometimes
+# ship with a stale xbps binary; skipping this step can break -Sy.
+RUN xbps-install -Syu xbps && xbps-install -Suy
 
 # Install system dependencies
 # gnupg        — GPG encryption for pass
 # pass         — the standard Unix password store
-# git          — pass uses git internally; pnpm may need it for some packages
+# git          — pass uses git internally
 # pinentry-tty — GPG Pin Entry program
-RUN apk add --no-cache gnupg pass git pinentry-tty haveged
+# nodejs       — verify version matches your pinned engines field
+# shadow       — useradd/groupadd (may already be in -full, kept explicit)
+RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry haveged nodejs shadow bash
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
@@ -25,20 +31,16 @@ ENV GPG_TTY=/dev/console
 ENV GPG_AGENT_INFO=
 
 # Install pnpm at the project's pinned version
-RUN npm install -g pnpm@11.13.0
+RUN npm install -g pnpm@11.13.1
 
 # Build args let you match your host UID/GID so bind-mounted
 # files stay writable and don't end up owned by a foreign UID
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# node:alpine ships a "node" user/group at UID/GID 1000.
-# Remove it first so the build-arg UID/GID is free to reuse.
-RUN (deluser node 2>/dev/null || true) && (delgroup node 2>/dev/null || true)
-
 # Create a non-root user with writable home for GPG
-RUN addgroup -g "${USER_GID}" -S testuser \
-  && adduser -u "${USER_UID}" -S testuser -G testuser -h /home/testuser \
+RUN groupadd -g "${USER_GID}" testuser \
+  && useradd -u "${USER_UID}" -g testuser -m -d /home/testuser -s /bin/bash testuser \
   && mkdir -p /app "${GNUPGHOME}" "${PASSWORD_STORE_DIR}" \
   && chown -R testuser:testuser /home/testuser /app \
   && chmod 700 "${GNUPGHOME}"
@@ -52,7 +54,5 @@ RUN git config --global user.name "Test User" \
 
 # Prevent pnpm from leaking into the project directory
 RUN pnpm config set store-dir /home/testuser/.local/share/pnpm/store
-RUN pnpm install @neutralinojs/neu || true
-RUN pnpm approve-builds --all
 
-CMD ["sh"]
+CMD ["bash"]

@@ -170,8 +170,7 @@ $MASK container run \
 podman build \
   --build-arg USER_UID="$(id -u)" \
   --build-arg USER_GID="$(id -g)" \
-  -t pass-gui-test \
-  -f Containerfile.test .
+  -t pass-gui-test
 ```
 
 ### run (command)
@@ -192,5 +191,5 @@ podman run --rm ${interactive:+'-it'} \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
   -v "$(pwd)/.container/pnpm-store":/home/testuser/.local/share/pnpm/store \
   pass-gui-test \
-  sh -c "${command}"
+  bash -c "${command}"
 ```
