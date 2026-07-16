@@ -139,6 +139,27 @@ $MASK test integration build && $MASK test integration run
 > Builds the container for integration testing
 
 ```bash
+$MASK container build
+```
+
+#### run
+
+> Runs the integration testing on the container
+
+```bash
+$MASK container run \
+  "haveged -w 1024 && yes | pnpm install --frozen-lockfile --ignore-scripts && pnpm vitest run --config vitest.integration.config.ts"
+```
+
+## container
+
+> Commands to control the Podman testing container
+
+### build
+
+> Builds the container for integration testing
+
+```bash
 podman build \
   --build-arg USER_UID="$(id -u)" \
   --build-arg USER_GID="$(id -g)" \
@@ -146,9 +167,9 @@ podman build \
   -f Containerfile.test .
 ```
 
-#### run
+### run (command)
 
-> Builds the container for integration testing
+> Runs the integration testing on the container
 
 ```bash
 podman run --rm -it \
@@ -157,5 +178,5 @@ podman run --rm -it \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
   -v "$(pwd)/.container/client-node_modules":/app/client/node_modules \
   pass-gui-test \
-  sh -c "yes | pnpm install --frozen-lockfile --ignore-scripts; haveged -w 1024 && pnpm vitest run --config vitest.integration.config.ts"
+  sh -c "${command}"
 ```
