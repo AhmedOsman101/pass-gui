@@ -146,6 +146,13 @@ $MASK container build
 
 > Runs the integration testing on the container
 
+**OPTIONS**
+
+- reporter
+  - flags: -i --interactive
+  - type: boolean
+  - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
+
 ```bash
 $MASK container run \
   "haveged -w 1024 && yes | pnpm install --frozen-lockfile --ignore-scripts && pnpm vitest run --config vitest.integration.config.ts"
@@ -171,8 +178,15 @@ podman build \
 
 > Runs the integration testing on the container
 
+**OPTIONS**
+
+- reporter
+  - flags: -i --interactive
+  - type: boolean
+  - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
+
 ```bash
-podman run --rm -it \
+podman run --rm ${interactive:+'-it'} \
   --userns=keep-id \
   -v "$(pwd)":/app \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
