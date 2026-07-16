@@ -16,13 +16,14 @@ FROM node:24-alpine
 # pass         — the standard Unix password store
 # git          — pass uses git internally; pnpm may need it for some packages
 # pinentry-tty — GPG Pin Entry program
-RUN apk add --no-cache gnupg pass git pinentry-tty
+RUN apk add --no-cache gnupg pass git pinentry-tty haveged
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
 ENV GNUPGHOME=/home/testuser/.gnupg
 ENV PASSWORD_STORE_DIR=/home/testuser/.password-store
 ENV GPG_TTY=/dev/console
+ENV GPG_AGENT_INFO=
 
 # Install pnpm at the project's pinned version
 RUN npm install -g pnpm@11.13.0
