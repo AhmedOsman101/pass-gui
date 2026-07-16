@@ -21,7 +21,7 @@ RUN xbps-install -Syu xbps && xbps-install -Syu
 # pinentry-tty — GPG Pin Entry program
 # nodejs       — verify version matches your pinned engines field
 # shadow       — useradd/groupadd (may already be in -full, kept explicit)
-RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry nodejs shadow bash libwebkit2gtk41
+RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry nodejs shadow bash libwebkit2gtk41 libwebkitgtk60
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
