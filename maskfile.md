@@ -148,7 +148,7 @@ $MASK container build
 
 **OPTIONS**
 
-- reporter
+- interactive
   - flags: -i --interactive
   - type: boolean
   - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
@@ -180,7 +180,7 @@ podman build \
 
 **OPTIONS**
 
-- reporter
+- interactive
   - flags: -i --interactive
   - type: boolean
   - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
@@ -190,6 +190,7 @@ podman run --rm ${interactive:+'-it'} \
   --userns=keep-id \
   -v "$(pwd)":/app \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
+  -v "$(pwd)/.container/pnpm-store":/home/testuser/.local/share/pnpm/store \
   pass-gui-test \
   sh -c "${command}"
 ```

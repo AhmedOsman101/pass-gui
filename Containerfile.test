@@ -1,8 +1,7 @@
 # Containerfile.test — Integration test environment for pass-gui
 #
-# Build:   podman build -t pass-gui-test -f Containerfile.test .
-# Run:     podman run --rm -v $(pwd):/app -w /app pass-gui-test \
-#            bash -c "pnpm install && pnpm --filter=client vitest run tests/integration/"
+# Build:   mask container build
+# Run:     mask container run '<command>'
 #
 # The container has Node.js 24, pnpm, GPG, and pass pre-installed.
 # Mount the project root at /app, then run pnpm install + integration tests.
@@ -53,5 +52,7 @@ RUN git config --global user.name "Test User" \
 
 # Prevent pnpm from leaking into the project directory
 RUN pnpm config set store-dir /home/testuser/.local/share/pnpm/store
+RUN pnpm install @neutralinojs/neu || true
+RUN pnpm approve-builds --all
 
 CMD ["sh"]
