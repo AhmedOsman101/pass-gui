@@ -9,7 +9,7 @@ docs/
 ├── roadmap/             <- strategic direction (read first, in order)
 ├── specs/               <- atomic specifications per phase
 ├── plans/               <- execution plans per phase
-└── references/          <- external reference material
+└── refs/                <- external reference material
 ```
 
 ## How To Use These Docs

@@ -12,7 +12,7 @@
     "typecheck": "pnpm --filter=client typecheck",
     "test:integration": "{ test \"${PASS_GUI_CONTAINER}\" != 1 && echo 'ERROR: Integration tests must run inside the Podman container.'; } || pnpm vitest run tests/integration"
   },
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.13.1",
   "dependencies": {
     "@ltd/j-toml": "^1.38.0",
     "@lucide/vue": "^1.22.0",
