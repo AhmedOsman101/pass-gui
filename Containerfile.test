@@ -47,6 +47,10 @@ RUN addgroup -g "${USER_GID}" -S testuser \
 USER testuser
 WORKDIR /app
 
+# Dummy git identity so git commands work inside the container
+RUN git config --global user.name "Test User" \
+  && git config --global user.email "test@example.com"
+
 # Prevent pnpm from leaking into the project directory
 RUN pnpm config set store-dir /home/testuser/.local/share/pnpm/store
 
