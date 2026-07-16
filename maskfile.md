@@ -128,22 +128,6 @@ cd client && pnpm test:coverage
 
 ### integration
 
-> Run integration tests (must run inside the Podman container)
-
-```bash
-$MASK test integration build && $MASK test integration run
-```
-
-#### build
-
-> Builds the container for integration testing
-
-```bash
-$MASK container build
-```
-
-#### run
-
 > Runs the integration testing on the container
 
 **OPTIONS**
