@@ -13,7 +13,7 @@
 
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
-biome lint . ${reporter:+--reporter "$reporter"}
+pnpm exec biome lint . ${reporter:+--reporter "$reporter"}
 ```
 
 ## format
@@ -33,7 +33,7 @@ biome lint . ${reporter:+--reporter "$reporter"}
 
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
-biome check --fix . ${reporter:+--reporter "$reporter"} ${unsafe:+'--unsafe'}
+pnpm exec biome check --fix . ${reporter:+--reporter "$reporter"} ${unsafe:+'--unsafe'}
 ```
 
 ## typecheck
