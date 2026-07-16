@@ -7,10 +7,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "husky",
+    "dev": "concurrently -n 'VITE,NEUTRALINO' -c 'blue,magenta' 'cd client && pnpm dev' 'neu run dev'",
     "format": "unset BIOME_CONFIG_PATH; biome check --fix .",
-    "typecheck": "pnpm --filter=client typecheck",
-    "test:integration": "{ test \"${PASS_GUI_CONTAINER}\" != 1 && echo 'ERROR: Integration tests must run inside the Podman container.'; } || pnpm vitest run tests/integration"
+    "prepare": "husky",
+    "typecheck": "cd client && pnpm typecheck"
   },
   "packageManager": "pnpm@11.13.1",
   "dependencies": {

@@ -170,7 +170,8 @@ $MASK container run \
 podman build \
   --build-arg USER_UID="$(id -u)" \
   --build-arg USER_GID="$(id -g)" \
-  -t pass-gui-test
+  -t pass-gui-test \
+  -f Dockerfile
 ```
 
 ### run (command)

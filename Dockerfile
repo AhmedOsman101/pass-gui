@@ -8,11 +8,11 @@
 #
 # Void Linux base = smaller image, faster builds than Debian slim
 
-FROM ghcr.io/void-linux/void-glibc-full:latest
+FROM ghcr.io/void-linux/void-glibc-full
 
 # Sync repodata and update xbps itself first. Void images sometimes
 # ship with a stale xbps binary; skipping this step can break -Sy.
-RUN xbps-install -Syu xbps && xbps-install -Suy
+RUN xbps-install -Syu xbps && xbps-install -Syu
 
 # Install system dependencies
 # gnupg        — GPG encryption for pass
@@ -21,7 +21,7 @@ RUN xbps-install -Syu xbps && xbps-install -Suy
 # pinentry-tty — GPG Pin Entry program
 # nodejs       — verify version matches your pinned engines field
 # shadow       — useradd/groupadd (may already be in -full, kept explicit)
-RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry haveged nodejs shadow bash
+RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry nodejs shadow bash libwebkit2gtk41
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1

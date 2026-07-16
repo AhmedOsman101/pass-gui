@@ -7,7 +7,7 @@
   "copyright": "Copyright (c) Ahmad Othman <ahmad.ali.othman@outlook.com> 2026. All rights reserved.",
   "applicationIcon": "client/dist/app_icon.png",
   "version": "0.0.1",
-  "defaultMode": "browser",
+  "defaultMode": "window",
   "port": 0,
   "documentRoot": "/client/dist/",
   "url": "/",
@@ -37,7 +37,7 @@
       "minHeight": 600,
       "fullScreen": false,
       "alwaysOnTop": false,
-      "enableInspector": false,
+      "enableInspector": true,
       "icon": "/client/dist/app_icon.png",
       "borderless": false,
       "maximize": true,
@@ -59,7 +59,7 @@
       "projectPath": "/client/",
       "initCommand": "pnpm install",
       "devCommand": "true",
-      "buildCommand": "pnpm --filter=client build"
+      "buildCommand": "pnpm build"
     }
   }
 }

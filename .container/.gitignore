@@ -1,4 +1,4 @@
 node_modules/*
-!node_modules/.gitkeep
 pnpm-store/*
+!node_modules/.gitkeep
 !pnpm-store/.gitkeep
