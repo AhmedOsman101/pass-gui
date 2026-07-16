@@ -190,7 +190,6 @@ podman run --rm ${interactive:+'-it'} \
   --userns=keep-id \
   -v "$(pwd)":/app \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
-  -v "$(pwd)/.container/client-node_modules":/app/client/node_modules \
   pass-gui-test \
   sh -c "${command}"
 ```
