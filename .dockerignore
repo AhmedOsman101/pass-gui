@@ -1,0 +1,16 @@
+# Dependencies and builds
+dist
+node_modules
+build
+
+# Logs
+logs
+*.log
+*.log*
+
+# Private markdown files
+docs
+
+# Misc.
+.git
+.container

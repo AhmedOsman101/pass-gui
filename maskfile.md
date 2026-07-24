@@ -172,7 +172,10 @@ podman build \
 ```bash
 podman run --rm ${interactive:+'-it'} \
   --userns=keep-id \
+  -p 3000:3000 \
+  -p 3001:3001 \
   -v "$(pwd)":/app \
+  -v "$(pwd)/neutralino.config.container.json":/app/neutralino.config.json:ro \
   -v "$(pwd)/.container/node_modules":/app/node_modules \
   -v "$(pwd)/.container/pnpm-store":/home/testuser/.local/share/pnpm/store \
   pass-gui-test \
@@ -193,5 +196,5 @@ podman run --rm ${interactive:+'-it'} \
 ```bash
 $MASK container run \
   ${interactive:+'-it'} \
-  'pnpm exec neu update --latest && pnpm dev'
+  'test -d bin || pnpm exec neu update --latest; pnpm dev'
 ```

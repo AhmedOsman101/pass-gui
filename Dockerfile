@@ -1,4 +1,4 @@
-# Containerfile — Integration test environment for pass-gui
+# Dockerfile — Integration test environment for pass-gui
 #
 # Build:   mask container build
 # Run:     mask container run '<command>'
@@ -14,14 +14,19 @@ FROM ghcr.io/void-linux/void-glibc-full
 # ship with a stale xbps binary; skipping this step can break -Sy.
 RUN xbps-install -Syu xbps && xbps-install -Syu
 
-# Install system dependencies
+# Stable base — almost never changes, cache holds long-term
 # gnupg        — GPG encryption for pass
 # pass         — the standard Unix password store
 # git          — pass uses git internally
-# pinentry-tty — GPG Pin Entry program
 # nodejs       — verify version matches your pinned engines field
 # shadow       — useradd/groupadd (may already be in -full, kept explicit)
-RUN xbps-install -Sy gnupg pass git pinentry-tty pinentry nodejs shadow bash libwebkit2gtk41 libwebkitgtk60
+RUN xbps-install -Sy gnupg pass git nodejs bash
+
+# More likely to change during development
+RUN xbps-install -Sy pinentry pinentry-tty libwebkitgtk60
+
+# Install pnpm at the project's pinned version
+RUN npm install -g pnpm@11.17.0
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
@@ -29,9 +34,6 @@ ENV GNUPGHOME=/home/testuser/.gnupg
 ENV PASSWORD_STORE_DIR=/home/testuser/.password-store
 ENV GPG_TTY=/dev/console
 ENV GPG_AGENT_INFO=
-
-# Install pnpm at the project's pinned version
-RUN npm install -g pnpm@11.13.1
 
 # Build args let you match your host UID/GID so bind-mounted
 # files stay writable and don't end up owned by a foreign UID
