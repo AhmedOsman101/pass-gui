@@ -60,7 +60,7 @@ type StoreConfig = {
  */
 type AppConfig = {
   core: CoreConfig;
-  preferences: PreferencesConfig;
+  preferences?: PreferencesConfig;
   generation: GenerationConfig;
   clipboard: ClipboardConfig;
   gpg: GpgConfig;
@@ -72,12 +72,6 @@ type AppConfig = {
  * All top-level configuration sections.
  */
 type ConfigSection = keyof AppConfig;
-
-/**
- * Fixed configuration sections supported by the generic get/set methods.
- * Note: stores is handled separately due to its dynamic nature.
- */
-type FixedConfigSection = Exclude<ConfigSection, "stores">;
 
 /**
  * Valid config key for a given fixed config section.
@@ -100,7 +94,6 @@ export type {
   ConfigValue,
   CoreConfig,
   ExtensionsConfig,
-  FixedConfigSection,
   GenerationConfig,
   GpgConfig,
   PreferencesConfig,

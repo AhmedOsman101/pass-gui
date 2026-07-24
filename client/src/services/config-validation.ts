@@ -16,7 +16,7 @@ const CoreConfigSchema = z.object({
   active_store: z.string().min(1, "active_store cannot be empty"),
 });
 
-const PreferencesConfigSchema = z.object({}).strict();
+const PreferencesConfigSchema = z.record(z.never(), z.never());
 
 const GenerationConfigSchema = z.object({
   memorable: z.boolean(),
@@ -66,7 +66,7 @@ const StoresConfigSchema = z.record(z.string(), StoreConfigSchema);
 const AppConfigSchema = z
   .object({
     core: CoreConfigSchema,
-    preferences: PreferencesConfigSchema,
+    preferences: PreferencesConfigSchema.optional(),
     generation: GenerationConfigSchema,
     clipboard: ClipboardConfigSchema,
     gpg: GpgConfigSchema,

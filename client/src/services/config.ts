@@ -243,16 +243,26 @@ class Config {
     if (configResult.isError()) return Err(configResult.error);
 
     const config = configResult.ok.data;
-    const sectionConfig = config[section] as AppConfig[S] | undefined;
-    const defaultSectionConfig = DEFAULT_CONFIG[section] as
-      | AppConfig[S]
+
+    // Type assertion needed: TypeScript widens S to the full ConfigSection
+    // union when evaluating indexed access, making it unable to verify that
+    // K can index the resulting union type. The assertion is safe because
+    // K is constrained to keyof AppConfig[S].
+    const sectionConfig = config[section] as unknown as
+      | {
+          [P in K]: ConfigValue<S, P>;
+        }
       | undefined;
+    const defaultSectionConfig = DEFAULT_CONFIG[section] as unknown as
+      | {
+          [P in K]: ConfigValue<S, P>;
+        }
+      | undefined;
+
     const value = sectionConfig?.[key];
     const defaultValue = defaultSectionConfig?.[key];
 
-    return Ok(
-      (value !== undefined ? value : defaultValue) as ConfigValue<S, K>
-    );
+    return Ok((value ?? defaultValue) as ConfigValue<S, K>);
   }
 
   /**
