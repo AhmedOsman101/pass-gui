@@ -9,7 +9,7 @@
 - reporter
   - flags: --reporter
   - type: string
-  - desc: Output format (default|json|json-pretty|github|junit|summary|gitlab|checkstyle|rdjson|sarif|concise)
+  - desc: Output format (default|json|json-pretty|github|summary|concise)
 
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
@@ -91,7 +91,8 @@ cd client && pnpm build
 > Clean artifacts and build
 
 ```bash
-$MASK clean && $MASK build
+$MASK clean
+$MASK build
 ```
 
 ## clean
@@ -107,7 +108,8 @@ rm -rf client/dist/ build/
 > Build a release version with embedded resources
 
 ```bash
-$MASK clean && neu build --release --clean --embed-resources
+$MASK clean
+neu build --release --clean --embed-resources
 ```
 
 ## test
@@ -130,16 +132,8 @@ cd client && pnpm test:coverage
 
 > Runs the integration testing on the container
 
-**OPTIONS**
-
-- interactive
-  - flags: -i --interactive
-  - type: boolean
-  - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
-
 ```bash
-$MASK container run \
-  "pnpm install; pnpm vitest run --config vitest.integration.config.ts"
+$MASK container run "pnpm test:integration"
 ```
 
 ## container
@@ -174,10 +168,10 @@ podman run --rm ${interactive:+'-it'} \
   --userns=keep-id \
   -p 3000:3000 \
   -p 3001:3001 \
-  -v "$(pwd)":/app \
-  -v "$(pwd)/neutralino.config.container.json":/app/neutralino.config.json:ro \
-  -v "$(pwd)/.container/node_modules":/app/node_modules \
-  -v "$(pwd)/.container/pnpm-store":/home/testuser/.local/share/pnpm/store \
+  -v "$(pwd):/app" \
+  -v "$(pwd)/neutralino.config.container.json:/app/neutralino.config.json:ro" \
+  -v "$(pwd)/.container/node_modules:/app/node_modules" \
+  -v "$(pwd)/.container/pnpm-store:/home/testuser/.local/share/pnpm/store" \
   pass-gui-test \
   bash -c "${command}"
 ```
@@ -186,15 +180,6 @@ podman run --rm ${interactive:+'-it'} \
 
 > Runs the project inside the container
 
-**OPTIONS**
-
-- interactive
-  - flags: -i --interactive
-  - type: boolean
-  - desc: Make STDIN available to the contained process and allocate a pseudo-TTY for container
-
 ```bash
-$MASK container run \
-  ${interactive:+'-it'} \
-  'test -d bin || pnpm exec neu update --latest; pnpm dev'
+$MASK container run 'pnpm dev'
 ```
