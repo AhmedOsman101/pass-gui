@@ -1,1 +1,0 @@
-ts=2026-07-12T17:49:17.571Z type=preference scope=pass-gui content="Use `pnpm lint --reporter=summary` instead of piping output through tail. Shows only violation summary, not the full rule descriptions for every file."

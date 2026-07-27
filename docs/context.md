@@ -1,6 +1,5 @@
 # pass-gui Context File
 
-> Handoff document for AI agents reviewing or working on the pass-gui project.
 > Last updated: July 12, 2026
 
 ---
@@ -22,10 +21,11 @@ pass-gui/
 ├── biome.json                   # Biome linter/formatter (sole lint tool, no ESLint)
 ├── neutralino.config.json       # NeutralinoJS app config
 ├── docs/
-│   ├── roadmap/                 # Strategic roadmap (read 01->05)
-│   ├── specs/                   # Stable scoping specs per phase
+│   ├── code-reviews/            # Execution plans per phase
+│   ├── external-resources/      # API docs and source code for various useful things
 │   ├── plans/                   # Execution plans per phase
-│   └── references/              # NeutralinoJS + j-toml API docs
+│   ├── roadmap/                 # Strategic roadmap
+│   └── specs/                   # Stable scoping specs per phase
 └── client/src/
     ├── main.ts                  # Entry point: mounts Vue, inits services
     ├── App.vue                  # Root: ReadinessGate -> loading/blocked/ready
@@ -176,7 +176,7 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 
 ## Current State: What is IMPLEMENTED
 
-### Backend (Phases 02 + 03 — COMPLETE)
+### Backend
 
 - **Config system** — load/save/ensure/getValue/setValue with Zod validation, TOML comment preservation via `@ltd/j-toml`, cross-field validation (active_store references valid store), commented default config on first write
 - **Readiness orchestrator** — Sequential checks: pass -> tree -> gpg -> gpgKeys -> store -> storeEmpty. Returns `ReadinessSnapshot` with state + issues.
@@ -188,7 +188,7 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 - **Filesystem service** — Full directory operations including tree building and gitignore-style filtering
 - **Password generation** — CSPRNG via `crypto.getRandomValues`, memorable format (NNNN-word-word-word), standard random from charset
 
-### Frontend (Phase 04 — 6/7 quests complete)
+### Frontend
 
 - **Readiness-driven app entry** — ReadinessGate -> LoadingScreen/BlockedScreen/ready slot
 - **App shell** — Resizable two-panel layout (AppSidebar + EntryDetail)
@@ -201,155 +201,44 @@ Error code maps: `NEU_ERROR_CODES` (40+), `CONFIG_ERROR_CODES` (4), `STORE_ERROR
 - **Theme toggle** — Dark/light/system mode via `@vueuse/core` useColorMode
 - **shadcn-vue suite** — sidebar, button, input, separator, skeleton, tooltip, breadcrumb, sheet, collapsible, dropdown-menu, context-menu, alert-dialog, resizable
 
-### Infrastructure
-
-- **pnpm workspace** (root + client/) with full build: Vite 8, Neutralino 6.8, Vue 3.5, TypeScript 5.9, Tailwind v4
-- **Biome 2.5** — Sole linter/formatter (no ESLint/Prettier)
-- **File-based routing** — Vue Router from pages/
-- **Dark/light mode** — via `@vueuse/core` useColorMode
-
 ---
 
 ## Current State: What is NOT IMPLEMENTED
 
-### Phase 04 Remaining
-
-- ❌ Quest 7: Ledger Reconciliation (reconcile filesystem state with pass operations)
-- ❌ Settings UI (config editing in-app)
-
-### Phase 05 — Release (NOT STARTED)
-
-- ❌ Module-level init promises -> graceful degradation (lazy init guards)
-- ❌ Onboarding flows (missing pass, missing GPG keys, store creation)
-- ❌ Per-store GNUPGHOME override handling
-- ❌ Session-scoped store switching UI
-- ❌ Multi-store management UI (create/rename/remove stores)
-- ❌ QR code generation
-- ❌ Filesystem watching for external changes
-- ❌ In-memory caching
-- ❌ Command timeout handling
-- ❌ Clearing sensitive data from memory
-- ❌ GPG agent passphrase handling
-- ❌ Extension support (.extensions directory detection, OTP)
-- ❌ Release packaging (NeutralinoJS build)
-- ❌ Documentation (README, system requirements, config guide)
-- ❌ Developer debug mode, logging system
-
 Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 
-### Testing (P0-P2 COMPLETE)
+### Testing
 
-| Priority | Layer                 | Test files                                                                                                                              | Tests | Status |
-| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path`                                                              | 69    | ✅     |
-| P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                                                                                  | 152   | ✅     |
-| P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                                                                             | 77    | ✅     |
-| P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState | 123   | ✅     |
-| P4       | Core services         | `config`, `config-validation`, `store-validation`                                                                                       | 77    | ✅     |
+| Priority | Layer                 | Test files                                                                                                                                | Tests | Status |
+| -------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path`                                                                | 69    | ✅     |
+| P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                                                                                    | 152   | ✅     |
+| P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                                                                               | 77    | ✅     |
+| P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState   | 123   | ✅     |
+| P4       | Core services         | `config`, `config-validation`, `store-validation`                                                                                         | 77    | ✅     |
 | P5       | Components            | EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail, CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog | 96    | ✅     |
-| P6       | Integration           | Podman container suite                                                                                                                  | —     | ⬜     |
+| P6       | Integration           | Podman container suite (Future work)                                                                                                      | —     | ⬜     |
 
 **Running total:** 583 tests, 37 files, 7.56s execution.
-
 **Mock strategy:** `vi.mock("@neutralinojs/lib")` in `setup.ts` provides global mocks. Test-specific overrides via `vi.mocked()`. Results from `lib-result` (`Ok()` / `ErrFromText()`), never duck-typed.
-
-**P3 tests:** 123 tests across 9 store/composable files. Use `createTestingPinia({ createSpy: vi.fn })` for store-dependent tests, `vi.mock()` for service mocks, `vi.useFakeTimers()` for timer-dependent logic. All tests live in `__tests__/` subdirectories per group.
-
 **Key config:** biome.json disables `noNonNullAssertion` for `*.test.ts` (safe for `result.ok!` after `.isOk()`). Vitest config in `vitest.config.ts` with happy-dom environment.
-
----
-
-## Type System
-
-All in `client/src/types/`:
-
-```ts
-// index.ts
-type Brand<T, TBrand> = T & { [__brand]: TBrand };
-type Version = { major: number; minor: number; patch?: number };
-type PassBinaryInfo = { path: string; isSystemBinary: boolean };
-type GpgBinaryInfo = { path: string; command: string };
-type SecretKey = {
-  keyId: string;
-  fingerprint?: string;
-  userId: string;
-  userIds: string[];
-  algorithm: string;
-  creationDate: string | null;
-  expirationDate: string | null;
-};
-type AllowedCommand =
-  | "pass" | "gpg" | "gpg2" | "gpg2" | "type" | "ls"
-  | "where.exe" | "which" | "readlink" | "file" | "tree";
-type OsType = "Linux" | "Darwin" | "Windows NT" | "Unknown";
-
-// config.ts
-type AppConfig = {
-  core: CoreConfig;           // { active_store: string }
-  preferences: PreferencesConfig; // { auto_refresh_interval_ms: number }
-  generation: GenerationConfig; // { memorable, default_length, symbols, character_set, ... }
-  clipboard: ClipboardConfig; // { clear_after_seconds, selection: "clipboard"|"primary"|"secondary" }
-  gpg: GpgConfig;            // { opts: string[], signing_key?, key? }
-  extensions: ExtensionsConfig; // { enabled: boolean }
-  stores: Record<string, StoreConfig>; // { path: string, gnupg_home?: string }
-};
-
-// readiness.ts
-type ReadinessState =
-  | "NEED_PASS" | "NEED_TREE" | "NEED_GPG" | "GPG_NO_KEYS"
-  | "STORE_NOT_FOUND" | "STORE_NO_GPG_ID" | "STORE_GPG_ID_EMPTY"
-  | "STORE_GPG_ID_KEY_MISSING" | "STORE_EMPTY" | "READY";
-
-type ReadinessIssue = { code: ReadinessIssueCode; severity: "blocking" | "info"; ... };
-type ReadinessSnapshot = { state: ReadinessState; issues: ReadinessIssue[]; evaluatedAt: string };
-
-// entries.ts
-type EntryNode = { name: string; path: string; type: "FILE" | "DIRECTORY"; children?: EntryNode[] };
-type EntryTree = EntryNode[];
-type EntryDetail = { path: string; secret: string; metadata: Record<string, string>; other: string[]; raw: string };
-type MutationInput = { path: string; content: string; force?: boolean };
-type MutationResult = { success: boolean; path: string; oldPath?: string };
-```
-
----
-
-## Code Style Rules
-
-- **TypeScript**: `type` over `interface`, explicit type imports (`useImportType: error`), named functions preferred, no `any` (use `unknown`), no `enum`
-- **Vue 3**: `<script setup lang="ts">`, Composition API, state first then computed then functions, `defineProps`/`defineEmits` with runtime options
-- **Formatting (Biome)**: 2-space indent, 80 char width, LF, ES5 trailing commas, semicolons always, double quotes for JSX/HTML
-- **Naming**: `PascalCase.vue` (components), `use*.ts` (composables), `camelCase.ts` (stores/services/utils), `UPPER_SNAKE_CASE` (constants)
-- **Imports**: Third-party at top, internal with `@/` alias
-- **Security**: Never log plaintext passwords, mask with `- - - - - `, clear clipboard after timeout, use GPG agent, validate all inputs
 
 ---
 
 ## Key Commands
 
 ```bash
-pnpm dev              # Parallel: frontend + NeutralinoJS
-pnpm dev:neutralino   # With inspector
-pnpm dev:frontend     # Vite dev server only
-pnpm typecheck        # Vue-TSC type checking (MUST pass before changes)
-pnpm lint             # Biome check
-pnpm format           # Biome auto-fix (safe only)
-pnpm format:unsafe    # Biome auto-fix (including unsafe)
-pnpm build            # Full build (frontend + NeutralinoJS)
-pnpm build:frontend   # Vite build only
-pnpm release          # Release build
+mask dev              # Parallel: frontend + NeutralinoJS
+mask dev neutralino   # With inspector
+mask dev frontend     # Vite dev server only
+mask typecheck        # Vue-TSC type checking (MUST pass before changes)
+mask lint             # Biome check
+mask format           # Biome auto-fix (safe only)
+mask format --unsafe  # Biome auto-fix (including unsafe)
+mask build            # Full build (frontend + NeutralinoJS)
+mask build frontend   # Vite build only
+mask release          # Release build
 ```
-
----
-
-## Roadmap Status
-
-| Phase | Description                    | Status                      |
-| ----- | ------------------------------ | --------------------------- |
-| 01    | Current State & Direction      | ✅ Done                     |
-| 02    | Backend Foundation & Readiness | ✅ Complete                 |
-| 03    | Entry & Operations Backend     | ✅ Complete                 |
-| 04    | Frontend After Backend         | 🔄 In Progress (6/7 quests) |
-| 05    | Release & Future Work          | ⏳ Not Started              |
 
 ---
 
