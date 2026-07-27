@@ -35,7 +35,7 @@ lerna-debug.log*
 *.sw?
 
 # Private markdown files
-docs/refs
+docs/external-resources
 review.md
 test.sh
 

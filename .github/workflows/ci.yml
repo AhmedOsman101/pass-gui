@@ -50,16 +50,20 @@ jobs:
 
       - name: Build Docker image for integration tests
         if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
-        run: docker build -t pass-gui-test -f Containerfile.test .
+        run: docker build -t pass-gui-test -f Dockerfile .
 
       - name: Run integration tests
         if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/v')
         run: >
           docker run --rm
+          -p 3000:3000 \
+          -p 3001:3001 \
           -v ${{ github.workspace }}:/app
-          -w /app
-          pass-gui-test
-          bash -c "pnpm install --frozen-lockfile && pnpm --filter=client vitest run tests/integration/"
+          -v ${{ github.workspace }}/neutralino.config.container.json:/app/neutralino.config.json:ro \
+          -v ${{ github.workspace }}/.container/node_modules:/app/node_modules \
+          -v ${{ github.workspace }}/.container/pnpm-store:/home/testuser/.local/share/pnpm/store \
+          pass-gui-test \
+          bash -c "pnpm install --frozen-lockfile; pnpm test:integration"
 
       # Level 3: Release (tag push only)
       - name: Build

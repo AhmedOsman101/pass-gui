@@ -1,6 +1,5 @@
 bin
 resources
-local-docs
-refs
+docs/external-resources
 .opencode/skills
 .container
