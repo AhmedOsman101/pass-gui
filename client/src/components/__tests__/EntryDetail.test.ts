@@ -1,7 +1,7 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import EntryDetail from "@/components/EntryDetail.vue";
 import { useClipboardStore } from "@/stores/clipboard";
 import { useEntryFormStore } from "@/stores/entry-form";
