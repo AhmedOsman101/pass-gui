@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { ArrowRightLeft, Copy, Eye, EyeOff, Files, Pencil, Plus, Scissors, Sparkles, SquarePen, Trash2, X } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import EntryForm from "@/components/EntryForm.vue";
 import MoveOrDuplicateDialog from "@/components/MoveOrDuplicateDialog.vue";
@@ -16,7 +22,7 @@ const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
 const clipboard = useClipboardStore();
 
-const isSecretVisible = ref(false);
+const isSecretVisible = shallowRef<boolean>(false);
 const isDeleteOpen = ref(false);
 const isRenameOpen = ref(false);
 
@@ -98,10 +104,10 @@ async function copySecret(): Promise<void> {
   }
 }
 
-async function copyValue(value: string): Promise<void> {
+async function copyValue(value: string, label: string): Promise<void> {
   const action = await clipboard.copy(value, treeStore.currentPath ?? "");
   if (action) {
-    toast("Password copied", {
+    toast(`${label} copied`, {
       description: `Clears in ${action.timerSeconds}s`,
       action: {
         label: "Clear",
@@ -148,18 +154,25 @@ async function copyValue(value: string): Promise<void> {
   </div>
 
   <!-- Entry detail -->
-  <div v-else class="p-6 space-y-6">
+  <TooltipProvider v-else>
+    <div class="p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-start justify-between">
       <h2 class="text-lg font-semibold font-mono">{{ entry.path }}</h2>
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-8 shrink-0"
-        @click="treeStore.clearSelection()"
-      >
-        <X class="size-4" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-8 shrink-0"
+            aria-label="Close entry"
+            @click="treeStore.clearSelection()"
+          >
+            <X class="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Close entry</TooltipContent>
+      </Tooltip>
     </div>
 
     <!-- Secret field -->
@@ -172,24 +185,37 @@ async function copyValue(value: string): Promise<void> {
           <template v-if="isSecretVisible">{{ entry.secret }}</template>
           <template v-else>••••••••••••••••</template>
         </code>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-8 shrink-0"
-          @click="toggleSecret"
-        >
-          <EyeOff v-if="isSecretVisible" class="size-4" />
-          <Eye v-else class="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-8 shrink-0"
-          @click="copySecret"
-        >
-          <Copy class="size-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-8 shrink-0"
+              :aria-label="isSecretVisible ? 'Hide password' : 'Show password'"
+              @click="toggleSecret"
+            >
+              <EyeOff v-if="isSecretVisible" class="size-4" />
+              <Eye v-else class="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{{ isSecretVisible ? "Hide password" : "Show password" }}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-8 shrink-0"
+              aria-label="Copy password"
+              @click="copySecret"
+            >
+              <Copy class="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy password</TooltipContent>
+        </Tooltip>
       </div>
+      <p class="sr-only" role="status">Password {{ isSecretVisible ? "shown" : "hidden" }}</p>
     </div>
 
     <!-- Metadata -->
@@ -207,14 +233,20 @@ async function copyValue(value: string): Promise<void> {
             <span class="text-xs text-muted-foreground">{{ getLabel(key) }}</span>
             <p class="text-sm font-mono truncate">{{ value }}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-8 shrink-0"
-            @click="copyValue(value)"
-          >
-            <Copy class="size-3" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="size-8 shrink-0"
+                :aria-label="`Copy ${getLabel(key)}`"
+                @click="copyValue(value, getLabel(key))"
+              >
+                <Copy class="size-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy {{ getLabel(key) }}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -295,5 +327,6 @@ async function copyValue(value: string): Promise<void> {
         </Button>
       </DeleteConfirmDialog>
     </div>
-  </div>
+    </div>
+  </TooltipProvider>
 </template>

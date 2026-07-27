@@ -1,10 +1,13 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import EntryDetail from "@/components/EntryDetail.vue";
 import { useClipboardStore } from "@/stores/clipboard";
 import { useEntryFormStore } from "@/stores/entry-form";
 import { useEntryTreeStore } from "@/stores/entry-tree";
+
+vi.mock("sonner", () => ({ toast: vi.fn() }));
 
 const defaultEntry = {
   path: "Email/work",
@@ -97,18 +100,22 @@ describe("EntryDetail", () => {
     );
   });
 
-  it("copyValue calls clipboard.copy with value", async () => {
+  it("copies metadata with its field label", async () => {
     const wrapper = mountEntryDetail();
     const clipboardStore = useClipboardStore();
     vi.mocked(clipboardStore.copy).mockResolvedValue({
       timerSeconds: 5,
     } as any);
 
-    await (wrapper.vm as any).copyValue("test-value");
+    await wrapper.get('button[aria-label="Copy Username"]').trigger("click");
 
     expect(clipboardStore.copy).toHaveBeenCalledWith(
-      "test-value",
+      "user@example.com",
       "Email/work"
+    );
+    expect(toast).toHaveBeenCalledWith(
+      "Username copied",
+      expect.objectContaining({ description: "Clears in 5s" })
     );
   });
 
@@ -207,5 +214,20 @@ describe("EntryDetail", () => {
 
     expect(vm.isSecretVisible).toBe(false);
     expect(wrapper.text()).toContain("••••••••••••••••");
+  });
+
+  it("labels compact secret controls and announces visibility changes", async () => {
+    const wrapper = mountEntryDetail();
+
+    const revealButton = wrapper.get('button[aria-label="Show password"]');
+    expect(wrapper.get('[role="status"]').text()).toBe("Password hidden");
+
+    await revealButton.trigger("click");
+
+    wrapper.get('button[aria-label="Hide password"]');
+    expect(wrapper.get('[role="status"]').text()).toBe("Password shown");
+    wrapper.get('button[aria-label="Copy password"]');
+    wrapper.get('button[aria-label="Copy Username"]');
+    wrapper.get('button[aria-label="Close entry"]');
   });
 });
