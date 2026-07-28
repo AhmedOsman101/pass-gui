@@ -33,8 +33,17 @@ function parsePassShowOutput(
   const other: string[] = [];
 
   // Parse remaining lines
+  let hasOtpUri = false;
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i] as string;
+
+    // First standalone OTP URI line goes to other; later OTP URIs also go to other.
+    if (!hasOtpUri && line.startsWith("otpauth://")) {
+      hasOtpUri = true;
+      other.push(line);
+      continue;
+    }
+
     const colonIndex = line.indexOf(":");
 
     if (colonIndex > 0) {
