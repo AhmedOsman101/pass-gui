@@ -22,7 +22,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateKey,
   initStore,
-  insertEntry,
   makeTestEnv,
   run,
   useEphemeralTestRoot,
@@ -168,7 +167,10 @@ describe("Error paths", () => {
   // -----------------------------------------------------------------------
   it("decryption fails when secret key is missing", () => {
     // Key A: used for encryption
-    const gnupgHomeA = join(env.GNUPGHOME!, `../keyA-${randomUUID().slice(0, 8)}`);
+    const gnupgHomeA = join(
+      env.GNUPGHOME!,
+      `../keyA-${randomUUID().slice(0, 8)}`
+    );
     const envA = { ...env, GNUPGHOME: gnupgHomeA };
     const emailA = generateKey(envA, {
       email: `keyA-${randomUUID().slice(0, 8)}@test.local`,
@@ -176,7 +178,10 @@ describe("Error paths", () => {
     });
 
     // Key B: different keyring for decryption attempt
-    const gnupgHomeB = join(env.GNUPGHOME!, `../keyB-${randomUUID().slice(0, 8)}`);
+    const gnupgHomeB = join(
+      env.GNUPGHOME!,
+      `../keyB-${randomUUID().slice(0, 8)}`
+    );
     const envB = { ...env, GNUPGHOME: gnupgHomeB };
     generateKey(envB, {
       email: `keyB-${randomUUID().slice(0, 8)}@test.local`,
