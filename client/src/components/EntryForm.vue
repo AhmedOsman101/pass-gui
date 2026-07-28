@@ -13,10 +13,20 @@ import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useEntryFormStore } from "@/stores/entry-form";
 import { usePasswordGenerator } from "@/composables/use-password-generator";
 import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
+import {
+  parseEntryContent,
+  serializeEntryContent,
+  type MetadataEntry,
+} from "@/lib/entry-content";
 
 const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
 const isEdit = computed(() => formStore.formMode === "edit");
+
+// Editor mode
+const editorMode = ref<"form" | "raw">("form");
+const rawContent = ref("");
+
 // Path — editable in create mode, read-only in edit mode
 const path = ref("");
 watch(
@@ -37,6 +47,15 @@ const isSecretVisible = ref(true);
 const showGeneratorOptions = ref(false);
 const genOptions = usePasswordGenerator();
 
+// OTP URI
+const otpUri = ref("");
+
+// Notes
+const notes = ref("");
+
+// Metadata
+const metadata = ref<MetadataEntry[]>([]);
+
 // Auto-generate when form opens in create mode
 watch(
   () => formStore.formMode,
@@ -49,7 +68,7 @@ watch(
   { immediate: true },
 );
 
-// Initialize secret from entry or preset
+// Initialize from entry or preset
 watch(
   () => [formStore.formMode, formStore.formPresetPassword, treeStore.currentEntry],
   () => {
@@ -57,28 +76,14 @@ watch(
       secret.value = formStore.formPresetPassword;
       isSecretVisible.value = true;
     } else if (formStore.formMode === "edit" && treeStore.currentEntry) {
-      secret.value = treeStore.currentEntry.secret;
+      const draft = parseEntryContent(treeStore.currentEntry.raw);
+      secret.value = draft.secret;
+      otpUri.value = draft.otpUri;
+      metadata.value = draft.metadata;
+      notes.value = draft.notes;
       isSecretVisible.value = false;
     }
     // create-without-preset is handled by the config load watcher above
-  },
-  { immediate: true }
-);
-
-// Metadata
-type MetaEntry = { key: string; value: string };
-const metadata = ref<MetaEntry[]>([]);
-
-watch(
-  () => [formStore.formMode, treeStore.currentEntry],
-  () => {
-    if (formStore.formMode === "edit" && treeStore.currentEntry) {
-      metadata.value = Object.entries(treeStore.currentEntry.metadata).map(
-        ([key, value]) => ({ key, value })
-      );
-    } else {
-      metadata.value = [];
-    }
   },
   { immediate: true }
 );
@@ -124,15 +129,34 @@ watch(() => genOptions.generated, (val) => {
   }
 });
 
-// Build content string from form fields
+// Mode conversion
+function toRawMode(): void {
+  rawContent.value = serializeEntryContent({
+    secret: secret.value,
+    otpUri: otpUri.value,
+    metadata: metadata.value,
+    notes: notes.value,
+  });
+  editorMode.value = "raw";
+}
+
+function toFormMode(): void {
+  const draft = parseEntryContent(rawContent.value);
+  secret.value = draft.secret;
+  otpUri.value = draft.otpUri;
+  metadata.value = draft.metadata;
+  notes.value = draft.notes;
+  editorMode.value = "form";
+}
+
+// Build content string from canonical draft
 function buildContent(): string {
-  const lines = [secret.value];
-  for (const meta of metadata.value) {
-    if (meta.key.trim()) {
-      lines.push(`${meta.key}: ${meta.value}`);
-    }
-  }
-  return lines.join("\n");
+  return serializeEntryContent({
+    secret: secret.value,
+    otpUri: otpUri.value,
+    metadata: metadata.value,
+    notes: notes.value,
+  });
 }
 
 // Submit
@@ -140,6 +164,15 @@ async function handleSubmit(): Promise<void> {
   if (!path.value.trim()) {
     formError.value = "Path is required";
     return;
+  }
+
+  // Sync raw to canonical refs before validation
+  if (editorMode.value === "raw") {
+    const draft = parseEntryContent(rawContent.value);
+    secret.value = draft.secret;
+    otpUri.value = draft.otpUri;
+    metadata.value = draft.metadata;
+    notes.value = draft.notes;
   }
 
   if (!secret.value) {
@@ -178,13 +211,23 @@ async function handleSubmit(): Promise<void> {
 <template>
   <div class="p-6 space-y-6 max-w-2xl">
     <!-- Header -->
-    <div class="flex items-center gap-3">
-      <Button variant="ghost" size="icon" class="size-8" @click="formStore.closeForm()">
-        <ArrowLeft class="size-4" />
-      </Button>
-      <h2 class="text-lg font-semibold">
-        {{ isEdit ? "Edit Entry" : "New Entry" }}
-      </h2>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <Button variant="ghost" size="icon" class="size-8" @click="formStore.closeForm()">
+          <ArrowLeft class="size-4" />
+        </Button>
+        <h2 class="text-lg font-semibold">
+          {{ isEdit ? "Edit Entry" : "New Entry" }}
+        </h2>
+      </div>
+      <div class="flex items-center gap-1 rounded-md border p-1">
+        <Button type="button" size="sm" :variant="editorMode === 'form' ? 'secondary' : 'ghost'" @click="toFormMode">
+          Form
+        </Button>
+        <Button type="button" size="sm" :variant="editorMode === 'raw' ? 'secondary' : 'ghost'" @click="toRawMode">
+          Raw
+        </Button>
+      </div>
     </div>
 
     <form class="space-y-6" @submit.prevent="handleSubmit">
@@ -208,102 +251,126 @@ async function handleSubmit(): Promise<void> {
         </p>
       </div>
 
-      <!-- Password -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Password
-          </label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            class="h-7 px-2 text-xs"
-            @click="showGeneratorOptions = !showGeneratorOptions"
-          >
-            {{ showGeneratorOptions ? "Hide Generator" : "Generate" }}
-          </Button>
-        </div>
+      <!-- Form mode -->
+      <template v-if="editorMode === 'form'">
+        <!-- Password -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Password
+            </label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="h-7 px-2 text-xs"
+              @click="showGeneratorOptions = !showGeneratorOptions"
+            >
+              {{ showGeneratorOptions ? "Hide Generator" : "Generate" }}
+            </Button>
+          </div>
 
-        <!-- Password input with toggle -->
-        <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
-          <code class="flex-1 font-mono text-sm break-all">
-            <template v-if="isSecretVisible">{{ secret }}</template>
-            <template v-else>
-              {{ secret ? "••••••••••••••••" : "—" }}
-            </template>
-          </code>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="size-8 shrink-0"
-            :disabled="!secret"
-            @click="isSecretVisible = !isSecretVisible"
-          >
-            <EyeOff v-if="isSecretVisible" class="size-4" />
-            <Eye v-else class="size-4" />
-          </Button>
-        </div>
-
-        <GeneratorOptionsPanel
-          v-if="showGeneratorOptions"
-          v-model:gen-state="genOptions"
-          @regenerate="onRegenerate"
-        />
-      </div>
-
-      <!-- Metadata -->
-      <div class="space-y-2">
-        <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Metadata
-        </label>
-
-        <div v-if="metadata.length > 0" class="space-y-2">
-          <div
-            v-for="(meta, index) in metadata"
-            :key="index"
-            class="flex items-start gap-2"
-          >
-            <input
-              v-model="meta.key"
-              type="text"
-              placeholder="Key"
-              class="w-1/3 rounded-md border bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              :class="duplicateKeys.has(meta.key.trim()) ? 'border-destructive' : 'border-input'"
-            />
-            <textarea
-              v-model="meta.value"
-              rows="1"
-              placeholder="Value"
-              class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y max-h-32"
-            />
+          <!-- Password input with toggle -->
+          <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+            <code class="flex-1 font-mono text-sm break-all">
+              <template v-if="isSecretVisible">{{ secret }}</template>
+              <template v-else>
+                {{ secret ? "••••••••••••••••" : "—" }}
+              </template>
+            </code>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              class="size-9 shrink-0 mt-0.5"
-              @click="removeMetadata(index)"
+              class="size-8 shrink-0"
+              :disabled="!secret"
+              @click="isSecretVisible = !isSecretVisible"
             >
-              <Trash2 class="size-4 text-destructive" />
+              <EyeOff v-if="isSecretVisible" class="size-4" />
+              <Eye v-else class="size-4" />
             </Button>
           </div>
+
+          <GeneratorOptionsPanel
+            v-if="showGeneratorOptions"
+            v-model:gen-state="genOptions"
+            @regenerate="onRegenerate"
+          />
         </div>
 
-        <p v-if="hasDuplicateKeys" class="text-xs text-destructive">
-          Duplicate keys: {{ [...duplicateKeys].join(", ") }} — last value wins on save.
-        </p>
+        <!-- OTP URI -->
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">OTP URI</label>
+          <textarea v-model="otpUri" rows="2" placeholder="otpauth://totp/..." class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
+        </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          class="w-full"
-          @click="addMetadata"
-        >
-          <Plus class="size-4 mr-1" />
-          Add Metadata
-        </Button>
+        <!-- Metadata -->
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Metadata
+          </label>
+
+          <div v-if="metadata.length > 0" class="space-y-2">
+            <div
+              v-for="(meta, index) in metadata"
+              :key="index"
+              class="flex items-start gap-2"
+            >
+              <input
+                v-model="meta.key"
+                type="text"
+                placeholder="Key"
+                class="w-1/3 rounded-md border bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                :class="duplicateKeys.has(meta.key.trim()) ? 'border-destructive' : 'border-input'"
+              />
+              <textarea
+                v-model="meta.value"
+                rows="1"
+                placeholder="Value"
+                class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y max-h-32"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-9 shrink-0 mt-0.5"
+                @click="removeMetadata(index)"
+              >
+                <Trash2 class="size-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+
+          <p v-if="hasDuplicateKeys" class="text-xs text-destructive">
+            Duplicate keys: {{ [...duplicateKeys].join(", ") }} — last value wins on save.
+          </p>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="w-full"
+            @click="addMetadata"
+          >
+            <Plus class="size-4 mr-1" />
+            Add Metadata
+          </Button>
+        </div>
+
+        <!-- Notes -->
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Notes</label>
+          <textarea v-model="notes" rows="4" placeholder="Any lines that are not key: value pairs" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
+        </div>
+      </template>
+
+      <!-- Raw mode -->
+      <div v-else class="space-y-2">
+        <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Entry content</label>
+        <textarea v-model="rawContent" rows="14" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
+        <p class="text-xs text-muted-foreground">
+          First line is required password. Later <code>key: value</code> lines are metadata; first <code>otpauth://...</code> line is OTP; other lines are notes.
+        </p>
       </div>
 
       <!-- Error -->

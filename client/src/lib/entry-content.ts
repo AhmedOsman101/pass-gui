@@ -8,6 +8,9 @@ export type EntryDraft = {
 };
 
 export function parseEntryContent(raw: string): EntryDraft {
+  if (!raw) {
+    return { secret: "", otpUri: "", metadata: [], notes: "" };
+  }
   const [secret = "", ...lines] = raw.split("\n");
   const metadata: MetadataEntry[] = [];
   const notes: string[] = [];
