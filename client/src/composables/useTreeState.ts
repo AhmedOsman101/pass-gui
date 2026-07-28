@@ -51,7 +51,7 @@ export function useTreeState(searchQuery?: Ref<string>) {
     if (node.type === "FILE") {
       treeStore.selectEntry(path);
     } else {
-      treeStore.setCurrentPath(path);
+      treeStore.setSelectedPath(path);
     }
   }
 
@@ -133,7 +133,7 @@ export function useTreeState(searchQuery?: Ref<string>) {
     visibleNodes,
     expandedDirs,
     focusedPath,
-    selectedPath: toRef(treeStore, "currentPath"),
+    selectedPath: toRef(treeStore, "selectedPath"),
     mode,
     index,
     toggleDir,

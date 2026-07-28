@@ -46,7 +46,7 @@ const formStore = useEntryFormStore();
 const clipboard = useClipboardBuffer();
 const activeStore = useActiveStoreStore();
 
-const hasSelection = computed(() => !!treeStore.currentPath);
+const hasSelection = computed(() => !!treeStore.selectedPath);
 const isCreateFolderOpen = ref(false);
 
 const searchQuery = ref("");
@@ -71,22 +71,22 @@ watch(
 
 // Global hotkeys
 useHotkey("Mod+C", () => {
-  if (treeStore.currentPath) {
-    const node = findNode(treeStore.tree, treeStore.currentPath);
-    clipboard.copyEntry(treeStore.currentPath, node?.type);
+  if (treeStore.selectedPath) {
+    const node = findNode(treeStore.tree, treeStore.selectedPath);
+    clipboard.copyEntry(treeStore.selectedPath, node?.type);
   }
 }, { enabled: hasSelection });
 
 useHotkey("Mod+X", () => {
-  if (treeStore.currentPath) {
-    const node = findNode(treeStore.tree, treeStore.currentPath);
-    clipboard.cutEntry(treeStore.currentPath, node?.type);
+  if (treeStore.selectedPath) {
+    const node = findNode(treeStore.tree, treeStore.selectedPath);
+    clipboard.cutEntry(treeStore.selectedPath, node?.type);
   }
 }, { enabled: hasSelection });
 
 useHotkey("Mod+V", () => {
   if (clipboard.buffer.value) {
-    const selected = treeStore.currentPath;
+    const selected = treeStore.selectedPath;
     if (selected) {
       const node = findNode(treeStore.tree, selected);
       const destDir = node?.type === "DIRECTORY"

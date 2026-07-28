@@ -38,6 +38,7 @@ vi.mock("@/composables/use-clipboard-buffer");
 const defaultInitialState = {
   "active-store": { storePath: "/home/user/.password-store" },
   "entry-tree": {
+    selectedPath: "Email/work",
     currentPath: "Email/work",
     tree: [
       {
@@ -156,27 +157,39 @@ describe("AppSidebar", () => {
     expect(Watcher.unwatch).toHaveBeenCalledWith("store");
   });
 
-  it("Mod+C calls clipboard.copyEntry with current path and node type", () => {
-    mountSidebar();
+  it("Mod+C calls clipboard.copyEntry with selected path and node type", () => {
+    mountSidebar({
+      ...defaultInitialState,
+      "entry-tree": {
+        ...defaultInitialState["entry-tree"],
+        selectedPath: "Email",
+      },
+    });
 
     const cb = hotkeyCallbacks.get("Mod+C");
     expect(cb).toBeDefined();
     cb?.();
 
-    expect(mockCopyEntry).toHaveBeenCalledWith("Email/work", "FILE");
+    expect(mockCopyEntry).toHaveBeenCalledWith("Email", "DIRECTORY");
   });
 
-  it("Mod+X calls clipboard.cutEntry", () => {
-    mountSidebar();
+  it("Mod+X calls clipboard.cutEntry with sidebar selection", () => {
+    mountSidebar({
+      ...defaultInitialState,
+      "entry-tree": {
+        ...defaultInitialState["entry-tree"],
+        selectedPath: "Email",
+      },
+    });
 
     const cb = hotkeyCallbacks.get("Mod+X");
     expect(cb).toBeDefined();
     cb?.();
 
-    expect(mockCutEntry).toHaveBeenCalledWith("Email/work", "FILE");
+    expect(mockCutEntry).toHaveBeenCalledWith("Email", "DIRECTORY");
   });
 
-  it("Mod+V pastes into parent directory for file selections", () => {
+  it("Mod+V pastes into parent directory for selected files", () => {
     mountSidebar();
 
     mockBuffer.value = { mode: "copy", path: "Email/work" };
@@ -209,6 +222,7 @@ describe("AppSidebar", () => {
     const wrapper = mountSidebar({
       "active-store": { storePath: null },
       "entry-tree": {
+        selectedPath: null,
         currentPath: null,
         tree: [],
         sortMode: "alphabetical",

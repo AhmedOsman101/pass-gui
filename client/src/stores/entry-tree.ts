@@ -17,6 +17,7 @@ type SortMode = "alphabetical" | "reverse-alphabetical";
  */
 const useEntryTreeStore = defineStore("entry-tree", () => {
   const tree = ref<EntryTree>([]);
+  const selectedPath = ref<string | null>(null);
   const currentPath = ref<string | null>(null);
   const currentEntry = ref<EntryDetail | null>(null);
   const isLoadingTree = ref(false);
@@ -44,6 +45,7 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
   }
 
   async function selectEntry(path: string, force = false): Promise<void> {
+    selectedPath.value = path;
     if (!force && currentPath.value === path && currentEntry.value) return;
 
     currentPath.value = path;
@@ -63,11 +65,12 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
     }
   }
 
-  function setCurrentPath(path: string): void {
-    currentPath.value = path;
+  function setSelectedPath(path: string): void {
+    selectedPath.value = path;
   }
 
   function clearSelection(): void {
+    selectedPath.value = null;
     currentPath.value = null;
     currentEntry.value = null;
   }
@@ -122,6 +125,10 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
     await refresh();
     if (nodeType !== "DIRECTORY") {
       await selectEntry(newPath, true);
+    } else if (selectedPath.value?.startsWith(`${oldPath}/`)) {
+      selectedPath.value = selectedPath.value.replace(oldPath, newPath);
+    } else if (selectedPath.value === oldPath) {
+      selectedPath.value = newPath;
     }
     return null;
   }
@@ -187,6 +194,7 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
 
   return {
     tree,
+    selectedPath,
     currentPath,
     currentEntry,
     isLoadingTree,
@@ -195,7 +203,7 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
     hasEntries,
     loadTree,
     selectEntry,
-    setCurrentPath,
+    setSelectedPath,
     clearSelection,
     refresh,
     insertEntry,

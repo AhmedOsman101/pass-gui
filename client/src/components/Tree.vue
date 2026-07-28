@@ -34,7 +34,6 @@ const {
   visibleNodes,
   focusedPath,
   selectedPath,
-  toggleDir,
   toggleSelect,
   focusNext,
   focusPrev,
@@ -151,7 +150,7 @@ useHotkey("Enter", () => { focusSelect(); });
               v-if="node.isDirectory"
               class="shrink-0 transition-transform duration-200"
               :class="{ 'rotate-90': node.isExpanded }"
-              @click.stop="toggleDir(node.path)"
+              @click.stop="toggleSelect(node.path)"
             />
             <Folder v-if="node.isDirectory" class="shrink-0 size-4" />
             <File v-else class="shrink-0 size-4" />

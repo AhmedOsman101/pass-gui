@@ -55,6 +55,7 @@ describe("entry-tree store", () => {
   it("has correct initial state", () => {
     const store = useEntryTreeStore();
     expect(store.tree).toEqual([]);
+    expect(store.selectedPath).toBeNull();
     expect(store.currentPath).toBeNull();
     expect(store.currentEntry).toBeNull();
     expect(store.isLoadingTree).toBe(false);
@@ -116,6 +117,7 @@ describe("entry-tree store", () => {
 
     await store.selectEntry("Email/work");
 
+    expect(store.selectedPath).toBe("Email/work");
     expect(store.currentPath).toBe("Email/work");
     expect(store.currentEntry).toEqual(mockEntryDetail);
     expect(store.error).toBeNull();
@@ -170,21 +172,27 @@ describe("entry-tree store", () => {
     expect(store.currentEntry).toBeNull();
   });
 
-  it("setCurrentPath() sets the path directly", () => {
+  it("setSelectedPath() updates sidebar selection without changing displayed entry", () => {
     const store = useEntryTreeStore();
+    store.currentPath = "Email/work";
+    store.currentEntry = mockEntryDetail;
 
-    store.setCurrentPath("Email/work");
+    store.setSelectedPath("Email");
 
+    expect(store.selectedPath).toBe("Email");
     expect(store.currentPath).toBe("Email/work");
+    expect(store.currentEntry).toEqual(mockEntryDetail);
   });
 
-  it("clearSelection() nulls both currentPath and currentEntry", () => {
+  it("clearSelection() nulls sidebar and displayed entry state", () => {
     const store = useEntryTreeStore();
+    store.selectedPath = "Email";
     store.currentPath = "Email/work";
     store.currentEntry = mockEntryDetail;
 
     store.clearSelection();
 
+    expect(store.selectedPath).toBeNull();
     expect(store.currentPath).toBeNull();
     expect(store.currentEntry).toBeNull();
   });
@@ -236,12 +244,14 @@ describe("entry-tree store", () => {
     );
     vi.mocked(Entries.list).mockResolvedValue(Ok(mockTree));
     const store = useEntryTreeStore();
+    store.selectedPath = "Email/work";
     store.currentPath = "Email/work";
     store.currentEntry = mockEntryDetail;
 
     const result = await store.removeEntry("Email/work");
 
     expect(result).toBeNull();
+    expect(store.selectedPath).toBeNull();
     expect(store.currentPath).toBeNull();
     expect(store.currentEntry).toBeNull();
     expect(store.tree).toEqual(mockTree);
@@ -287,6 +297,7 @@ describe("entry-tree store", () => {
     );
     vi.mocked(Entries.list).mockResolvedValue(Ok(mockTree));
     const store = useEntryTreeStore();
+    store.selectedPath = "Social";
 
     const result = await store.moveEntry(
       "Social",
@@ -295,6 +306,25 @@ describe("entry-tree store", () => {
     );
 
     expect(result).toBeNull();
+    expect(Entries.show).not.toHaveBeenCalled();
+    expect(store.selectedPath).toBe("Social/renamed");
+  });
+
+  it("moveEntry() for DIRECTORY updates selected descendants", async () => {
+    vi.mocked(Entries.move).mockResolvedValue(
+      Ok({
+        success: true,
+        path: "Email/renamed",
+        oldPath: "Email",
+      })
+    );
+    vi.mocked(Entries.list).mockResolvedValue(Ok(mockTree));
+    const store = useEntryTreeStore();
+    store.selectedPath = "Email/work";
+
+    await store.moveEntry("Email", "Email/renamed", "DIRECTORY");
+
+    expect(store.selectedPath).toBe("Email/renamed/work");
     expect(Entries.show).not.toHaveBeenCalled();
   });
 

@@ -100,7 +100,7 @@ describe("useTreeState", () => {
     const treeStore = useEntryTreeStore();
     selectFile("unknown/path");
     expect(treeStore.selectEntry).not.toHaveBeenCalled();
-    expect(treeStore.setCurrentPath).not.toHaveBeenCalled();
+    expect(treeStore.setSelectedPath).not.toHaveBeenCalled();
   });
 
   it("selectFile calls treeStore.selectEntry for FILE type", () => {
@@ -108,15 +108,17 @@ describe("useTreeState", () => {
     const treeStore = useEntryTreeStore();
     selectFile("Email/work");
     expect(treeStore.selectEntry).toHaveBeenCalledWith("Email/work");
-    expect(treeStore.setCurrentPath).not.toHaveBeenCalled();
+    expect(treeStore.setSelectedPath).not.toHaveBeenCalled();
   });
 
-  it("selectFile calls treeStore.setCurrentPath for DIRECTORY type", () => {
+  it("selectFile updates sidebar selection without loading DIRECTORY type", () => {
     const { selectFile } = useTreeState();
     const treeStore = useEntryTreeStore();
+    treeStore.currentPath = "Email/work";
     selectFile("Email");
-    expect(treeStore.setCurrentPath).toHaveBeenCalledWith("Email");
+    expect(treeStore.setSelectedPath).toHaveBeenCalledWith("Email");
     expect(treeStore.selectEntry).not.toHaveBeenCalled();
+    expect(treeStore.currentPath).toBe("Email/work");
   });
 
   it("toggleSelect toggles directory then selects for DIRECTORY type", () => {
@@ -127,7 +129,8 @@ describe("useTreeState", () => {
     const treeStore = useEntryTreeStore();
     toggleSelect("Email");
     expect(expandedDirs.value.has("Email")).toBe(true);
-    expect(treeStore.setCurrentPath).toHaveBeenCalledWith("Email");
+    expect(treeStore.setSelectedPath).toHaveBeenCalledWith("Email");
+    expect(treeStore.selectEntry).not.toHaveBeenCalled();
   });
 
   it("toggleSelect selects (no toggle) for FILE type", () => {
@@ -136,7 +139,7 @@ describe("useTreeState", () => {
     toggleSelect("Email/work");
     expect(expandedDirs.value.has("Email/work")).toBe(false);
     expect(treeStore.selectEntry).toHaveBeenCalledWith("Email/work");
-    expect(treeStore.setCurrentPath).not.toHaveBeenCalled();
+    expect(treeStore.setSelectedPath).not.toHaveBeenCalled();
   });
 
   it("focusNext cycles forward through visible nodes", () => {
@@ -200,7 +203,7 @@ describe("useTreeState", () => {
     const treeStore = useEntryTreeStore();
     focusSelect();
     expect(treeStore.selectEntry).not.toHaveBeenCalled();
-    expect(treeStore.setCurrentPath).not.toHaveBeenCalled();
+    expect(treeStore.setSelectedPath).not.toHaveBeenCalled();
   });
 
   it("arrowRight expands a collapsed directory", () => {
@@ -267,11 +270,15 @@ describe("useTreeState", () => {
     expect(buildVisible).toHaveBeenCalled();
   });
 
-  it("exposes selectedPath from treeStore.currentPath", () => {
+  it("exposes selectedPath from treeStore.selectedPath", () => {
     vi.mocked(buildVisible).mockReturnValue(defaultVisible);
     const { selectedPath } = useTreeState();
     const treeStore = useEntryTreeStore();
+    treeStore.selectedPath = "Email";
     treeStore.currentPath = "Email/work";
+    expect(selectedPath.value).toBe("Email");
+
+    treeStore.selectedPath = "Email/work";
     expect(selectedPath.value).toBe("Email/work");
   });
 });
