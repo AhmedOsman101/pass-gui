@@ -155,6 +155,11 @@ class Filesystem {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
+    // Skip creation if it already exists.
+    if ((await Filesystem.isDirectory(resolvedPath.ok)).unwrapOr(false)) {
+      return Ok(true);
+    }
+
     try {
       await filesystem.createDirectory(resolvedPath.ok);
       return Ok(true);
@@ -394,4 +399,4 @@ class Filesystem {
 
 const Fs = Filesystem;
 
-export { Filesystem, Fs, makeIgnoreFilter, type TreeDirectoryEntry };
+export { Fs, makeIgnoreFilter, type TreeDirectoryEntry };

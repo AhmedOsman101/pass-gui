@@ -112,8 +112,9 @@ function confirmDeleteStore(name: string): void {
   emit("save");
 }
 
-function handleStoreCreated(): void {
-  emit("save");
+function handleStoreCreated(store: { name: string; path: string }): void {
+  const updated = { ...props.stores, [store.name]: { path: store.path } };
+  emit("updateStores", updated);
 }
 
 async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {

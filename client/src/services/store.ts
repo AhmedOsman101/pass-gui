@@ -1,3 +1,4 @@
+import { debug } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { StoreConfig } from "@/types/config";
 import { Config } from "./config";
@@ -7,10 +8,32 @@ type StoreDetails = StoreConfig & { name: string };
 
 class Store {
   static async get(name: string): Promise<Result<StoreDetails>> {
-    return (await Config.getValue("stores", name)).map(store => ({
-      ...store,
-      name,
-    }));
+    return (await Config.getValue("stores", name)).andThen(store => {
+      if (!store || (!store.path && !store.gnupg_home)) {
+        return ErrFromText("Store not found");
+      }
+      if (!store.path && store.gnupg_home) {
+        return ErrFromText("Store path is missing");
+      }
+      return Ok({ ...store, name });
+    });
+  }
+
+  static async create(name: string, data: StoreConfig): Promise<Result<void>> {
+    const existsResult = await Store.get(name);
+    await debug.log(
+      `${JSON.stringify(existsResult.ok || {})} - ${existsResult.error?.message}`
+    );
+    if (existsResult.isOk() && existsResult.ok) {
+      return ErrFromText("Store already exists.");
+    }
+
+    const storeResult = await Config.setValue("stores", name, data);
+    if (storeResult.isError()) {
+      return Err(storeResult.error);
+    }
+
+    return Ok(undefined);
   }
 
   static async set(

@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { toast } from "sonner";
-import { FolderOpen, ChevronRight, Loader2 } from "@lucide/vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,14 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Dialog as NeuDialog } from "@/services/dialog";
+import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
-import { Config } from "@/services/config";
-import { Fs } from "@/services/filesystem";
+import { Store } from "@/services/store";
 import { StoreValidation } from "@/services/store-validation";
-import type { StoreConfig } from "@/types/config";
 import type { SecretKey } from "@/types";
+import type { StoreConfig } from "@/types/config";
+import { ChevronRight, FolderOpen, Loader2 } from "@lucide/vue";
+import { toast } from "sonner";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
   stores: Record<string, StoreConfig>;
@@ -84,11 +84,14 @@ const canCreate = computed(
 );
 
 // Load GPG keys when dialog opens
-watch(() => props.open, async (isOpen) => {
-  if (isOpen) {
-    await loadKeys();
-  }
-});
+watch(
+  () => props.open,
+  async (isOpen) => {
+    if (isOpen) {
+      await loadKeys();
+    }
+  },
+);
 
 async function loadKeys(): Promise<void> {
   isLoadingKeys.value = true;
@@ -192,22 +195,10 @@ async function createStore(): Promise<void> {
     Pass.setStorePath(previousPath);
   }
 
-  // 4. Update config
-  const configResult = await Config.load();
-  if (configResult.isError()) {
-    creationError.value = "Failed to load config for update";
-    toast.error(creationError.value);
-    isCreating.value = false;
-    step.value = "gpg";
-    return;
-  }
-
-  const newStores = { ...configResult.ok.data.stores, [name]: { path } };
-  const raw = configResult.ok._raw as Record<string, unknown>;
-  (raw.stores as Record<string, unknown>) = newStores;
-  const saveResult = await Config.save(configResult.ok);
-  if (saveResult.isError()) {
-    creationError.value = "Failed to save config";
+  // 4. Add store to config
+  const createResult = await Store.create(name, { path });
+  if (createResult.isError()) {
+    creationError.value = `Failed to add store to config: ${createResult.error.message}`;
     toast.error(creationError.value);
     isCreating.value = false;
     step.value = "gpg";
@@ -247,11 +238,20 @@ function resetWizard(): void {
 
       <!-- Step indicators -->
       <div class="flex items-center gap-2 text-xs text-muted-foreground">
-        <Badge :variant="step === 'name' ? 'default' : 'outline'">1. Name</Badge>
+        <Badge :variant="step === 'name' ? 'default' : 'outline'"
+          >1. Name</Badge
+        >
         <ChevronRight class="size-3" />
-        <Badge :variant="step === 'path' ? 'default' : 'outline'">2. Path</Badge>
+        <Badge :variant="step === 'path' ? 'default' : 'outline'"
+          >2. Path</Badge
+        >
         <ChevronRight class="size-3" />
-        <Badge :variant="step === 'gpg' || step === 'creating' ? 'default' : 'outline'">3. GPG Key</Badge>
+        <Badge
+          :variant="
+            step === 'gpg' || step === 'creating' ? 'default' : 'outline'
+          "
+          >3. GPG Key</Badge
+        >
       </div>
 
       <Separator />
@@ -268,7 +268,8 @@ function resetWizard(): void {
         />
         <p v-if="nameError" class="text-xs text-destructive">{{ nameError }}</p>
         <p v-else class="text-xs text-muted-foreground">
-          A unique identifier for this store (letters, numbers, hyphens, underscores).
+          A unique identifier for this store (letters, numbers, hyphens,
+          underscores).
         </p>
       </div>
 
@@ -295,7 +296,8 @@ function resetWizard(): void {
         </div>
         <p v-if="pathError" class="text-xs text-destructive">{{ pathError }}</p>
         <p v-else-if="isExistingStore" class="text-xs text-amber-600">
-          Existing store detected — will be added as-is without re-initialization.
+          Existing store detected — will be added as-is without
+          re-initialization.
         </p>
         <p v-else class="text-xs text-muted-foreground">
           The directory will be created if it doesn't exist.
@@ -304,13 +306,18 @@ function resetWizard(): void {
 
       <!-- Step: GPG Key -->
       <div v-else-if="step === 'gpg'" class="flex flex-col gap-3">
-        <p v-if="creationError" class="text-xs text-destructive">{{ creationError }}</p>
+        <p v-if="creationError" class="text-xs text-destructive">
+          {{ creationError }}
+        </p>
         <Label>Encryption Key</Label>
         <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
           <Loader2 class="size-4 animate-spin" />
           <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
         </div>
-        <div v-else-if="secretKeys.length === 0" class="py-4 text-sm text-muted-foreground">
+        <div
+          v-else-if="secretKeys.length === 0"
+          class="py-4 text-sm text-muted-foreground"
+        >
           No GPG secret keys found. Create one with
           <code class="font-mono">gpg --gen-key</code> first.
         </div>
@@ -336,10 +343,15 @@ function resetWizard(): void {
       </div>
 
       <!-- Step: Creating -->
-      <div v-else-if="step === 'creating'" class="flex flex-col items-center gap-3 py-6">
+      <div
+        v-else-if="step === 'creating'"
+        class="flex flex-col items-center gap-3 py-6"
+      >
         <Loader2 class="size-8 animate-spin text-muted-foreground" />
         <span class="text-sm text-muted-foreground">Creating store...</span>
-        <p v-if="creationError" class="text-xs text-destructive">{{ creationError }}</p>
+        <p v-if="creationError" class="text-xs text-destructive">
+          {{ creationError }}
+        </p>
       </div>
 
       <DialogFooter>
@@ -348,7 +360,7 @@ function resetWizard(): void {
           variant="outline"
           @click="step === 'name' ? emit('update:open', false) : goBack()"
         >
-          {{ step === 'name' ? 'Cancel' : 'Back' }}
+          {{ step === "name" ? "Cancel" : "Back" }}
         </Button>
         <Button
           v-if="step === 'name' || step === 'path'"
