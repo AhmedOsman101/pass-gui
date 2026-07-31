@@ -1,6 +1,7 @@
 import { clipboard as neuClipboard } from "@neutralinojs/lib";
-import { Err, type Result, wrapAsync } from "lib-result";
+import { Err, Ok, type Result, wrapAsync } from "lib-result";
 import { ClipboardError } from "@/lib/errors";
+import { Logger } from "@/lib/logger";
 import type { ClipboardAction } from "@/types/entries";
 import { Config } from "./config";
 
@@ -20,7 +21,11 @@ class Clipboard {
    */
   static async readText(): Promise<Result<string, ClipboardError>> {
     const result = await wrapAsync(neuClipboard.readText);
-    return result.mapErr(e => new ClipboardError("clipboard", e.message));
+    if (result.isError()) {
+      await Logger.error(`clipboard.readText failed: ${result.error.message}`);
+      return Err(new ClipboardError("clipboard", result.error.message));
+    }
+    return Ok(result.ok);
   }
 
   /**
@@ -45,6 +50,9 @@ class Clipboard {
   ): Promise<Result<ClipboardAction, ClipboardError>> {
     const configResult = await Config.load();
     if (configResult.isError()) {
+      await Logger.error(
+        `clipboard.writeText failed: ${configResult.error.message}`
+      );
       return Err(new ClipboardError("clipboard", configResult.error.message));
     }
 
@@ -63,7 +71,11 @@ class Clipboard {
       };
     });
 
-    return result.mapErr(e => new ClipboardError(selection, e.message));
+    if (result.isError()) {
+      await Logger.error(`clipboard.writeText failed: ${result.error.message}`);
+      return Err(new ClipboardError(selection, result.error.message));
+    }
+    return Ok(result.ok);
   }
 
   /**

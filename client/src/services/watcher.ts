@@ -1,5 +1,6 @@
 import { events, filesystem } from "@neutralinojs/lib";
 import { ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
+import { Logger } from "@/lib/logger";
 
 type WatcherEntry = {
   watcherId: number;
@@ -39,6 +40,9 @@ class Watcher {
       async () => await filesystem.createWatcher(dirPath)
     );
     if (result.isError()) {
+      await Logger.error(
+        `watcher.watch("${id}") failed to create watcher for ${dirPath}: ${result.error.message}`
+      );
       return ErrFromText(`Failed to create watcher for ${dirPath}`);
     }
     const watcherId = result.ok;
@@ -62,6 +66,9 @@ class Watcher {
       async () => await events.on("watchFile", entry.handler)
     );
     if (onResult.isError()) {
+      await Logger.error(
+        `watcher.watch("${id}") failed to register watcher event for ${dirPath}: ${onResult.error.message}`
+      );
       return ErrFromText(`Failed to register watcher event for ${dirPath}`);
     }
     Watcher.watchers.set(id, entry);

@@ -8,6 +8,7 @@ import {
 import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
 import stripAnsi from "strip-ansi";
 import { CommandFailedError } from "@/lib/errors";
+import { Logger } from "@/lib/logger";
 import Path from "@/lib/path";
 import {
   buildShellCommand,
@@ -87,7 +88,7 @@ class NeutralinoService {
       if (argValidation.isError()) return Err(argValidation.error);
     }
 
-    return await wrapAsync(async () => {
+    const execResult = await wrapAsync(async () => {
       const shellType = this.getShellOsType();
       const fullCmd = buildShellCommand(cmd, args ?? [], shellType);
 
@@ -102,6 +103,18 @@ class NeutralinoService {
 
       return result;
     });
+
+    if (execResult.isError()) {
+      const error = execResult.error;
+      await Logger.error(
+        `exec("${cmd}") failed:`,
+        error instanceof CommandFailedError
+          ? `exit code ${error.exitCode}, stderr: ${error.stdErr}`
+          : error
+      );
+    }
+
+    return execResult;
   }
 
   /**

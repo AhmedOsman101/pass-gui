@@ -1,5 +1,6 @@
 import { type KnownPath, os } from "@neutralinojs/lib";
 import { Err, ErrFromText, Ok, type Result, wrapAsync } from "lib-result";
+import { Logger } from "@/lib/logger";
 
 /**
  * Expands the tilde (~) character at the start of a path to the user's home
@@ -18,6 +19,7 @@ async function resolveUserPath(path: string): Promise<Result<string>> {
 
   const homeDir = await getHomeDir();
   if (homeDir.isError()) {
+    await Logger.error(`resolveUserPath("${path}"): ${homeDir.error.message}`);
     return Err(homeDir.error);
   }
 

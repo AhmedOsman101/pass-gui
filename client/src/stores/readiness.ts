@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import { Logger } from "@/lib/logger";
 import { Readiness } from "@/services/readiness";
 import type {
   ReadinessIssue,
@@ -38,8 +39,20 @@ const useReadinessStore = defineStore("readiness", () => {
     error.value = null;
 
     try {
-      snapshot.value = await Readiness.check(storePath);
+      const result = await Readiness.check(storePath);
+      snapshot.value = result;
+      if (result.state !== "READY") {
+        await Logger.error(
+          `readiness.evaluate("${storePath}") -> ${result.state}:`,
+          result.issues.map(i => `${i.code} (${i.severity})`).join(", ")
+        );
+      }
     } catch (e) {
+      await Logger.error(
+        `readiness.evaluate("${storePath}") failed: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
       error.value = e instanceof Error ? e.message : String(e);
       snapshot.value = null;
     } finally {

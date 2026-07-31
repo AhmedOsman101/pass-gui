@@ -5,6 +5,7 @@ import {
   ConfigValidationError,
   ConfigWriteError,
 } from "@/lib/errors";
+import { Logger } from "@/lib/logger";
 import Path from "@/lib/path";
 import toml from "@/lib/toml";
 import type {
@@ -65,10 +66,20 @@ class Config {
    */
   static async load(): Promise<Result<ParsedToml<AppConfig>>> {
     const ensureResult = await Config.ensure();
-    if (ensureResult.isError()) return Err(ensureResult.error);
+    if (ensureResult.isError()) {
+      await Logger.error(
+        `Config.load(): ensure failed: ${ensureResult.error.message}`
+      );
+      return Err(ensureResult.error);
+    }
 
     const configPath = await Config.getPath();
-    if (configPath.isError()) return Err(configPath.error);
+    if (configPath.isError()) {
+      await Logger.error(
+        `Config.load(): failed to resolve config path: ${configPath.error.message}`
+      );
+      return Err(configPath.error);
+    }
 
     // Lazy-init OS-native watcher for the config directory
     const dirResult = await Fs.getPathParts(configPath.ok);
@@ -97,10 +108,18 @@ class Config {
     configPath: string
   ): Promise<Result<ParsedToml<AppConfig>>> {
     const readResult = await Fs.readFile(configPath);
-    if (readResult.isError()) return Err(readResult.error);
+    if (readResult.isError()) {
+      await Logger.error(
+        `Config.loadFromDisk("${configPath}"): ${readResult.error.message}`
+      );
+      return Err(readResult.error);
+    }
 
     const configResult = toml.parse<AppConfig>(readResult.ok);
     if (configResult.isError()) {
+      await Logger.error(
+        `Config.loadFromDisk("${configPath}"): ${configResult.error.message}`
+      );
       return Err(
         new ConfigParseError(
           configResult.error,
@@ -111,6 +130,9 @@ class Config {
 
     const validationResult = validateAppConfig(configResult.ok.data);
     if (validationResult.isError()) {
+      await Logger.error(
+        `Config.loadFromDisk("${configPath}"): ${formatZodError(validationResult.error)}`
+      );
       return Err(
         new ConfigValidationError(
           formatZodError(validationResult.error),
@@ -136,14 +158,27 @@ class Config {
   static async save(content: ParsedToml<AppConfig>): Promise<Result<void>> {
     // Ensure the config exists
     const ensureResult = await Config.ensure();
-    if (ensureResult.isError()) return Err(ensureResult.error);
+    if (ensureResult.isError()) {
+      await Logger.error(
+        `Config.save(): ensure failed: ${ensureResult.error.message}`
+      );
+      return Err(ensureResult.error);
+    }
 
     const configPath = await Config.getPath();
-    if (configPath.isError()) return Err(configPath.error);
+    if (configPath.isError()) {
+      await Logger.error(
+        `Config.save(): failed to resolve config path: ${configPath.error.message}`
+      );
+      return Err(configPath.error);
+    }
 
     // Validate before saving
     const validationResult = validateAppConfig(content.data);
     if (validationResult.isError()) {
+      await Logger.error(
+        `Config.save("${configPath.ok}"): ${formatZodError(validationResult.error)}`
+      );
       return Err(
         new ConfigValidationError(
           formatZodError(validationResult.error),
@@ -154,11 +189,29 @@ class Config {
 
     // Serialize to TOML
     const tomlContent = toml.stringify(content);
-    if (tomlContent.isError()) return Err(tomlContent.error);
+    if (tomlContent.isError()) {
+      await Logger.error(
+        `Config.save("${configPath.ok}"): ${tomlContent.error.message}`
+      );
+      return Err(tomlContent.error);
+    }
+
+    // DEBUG: who wrote the config + what it looks like. Remove once the
+    // flattening bug is root-caused.
+    // eslint-disable-next-line no-console
+    console.debug(
+      "[config-debug] caller:",
+      new Error().stack?.split("\n").slice(2).join(" <- ")
+    );
+    // eslint-disable-next-line no-console
+    console.debug(`[config-debug] wrote:\n${tomlContent.ok}`);
 
     // Write to file
     const writeResult = await Fs.writeFile(configPath.ok, tomlContent.ok);
     if (writeResult.isError()) {
+      await Logger.error(
+        `Config.save("${configPath.ok}"): ${writeResult.error.message}`
+      );
       return Err(
         new ConfigWriteError(
           configPath.ok,

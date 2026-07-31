@@ -15,6 +15,7 @@ import {
   NEU_ERROR_CODES_MAP,
   type NeuErrorCode,
 } from "@/lib/errors";
+import { Logger } from "@/lib/logger";
 import Path from "@/lib/path";
 import type { NeuErrorObj } from "@/types";
 
@@ -165,6 +166,9 @@ class Filesystem {
       return Ok(true);
     } catch (e) {
       const err = e as NeuErrorObj;
+      await Logger.error(
+        `Fs.mkdir("${resolvedPath.ok}"): ${err?.message ?? String(e)}`
+      );
       if (err?.code === NEU_ERROR_CODES_MAP.DirectoryCreationFailed) {
         const errorCode = err.code as NeuErrorCode;
         return Err(
@@ -226,9 +230,15 @@ class Filesystem {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    return await wrapAsync(
+    const res = await wrapAsync(
       async () => await filesystem.getStats(resolvedPath.ok)
     );
+    if (res.isError()) {
+      await Logger.error(
+        `Fs.getStats("${resolvedPath.ok}"): ${res.error.message}`
+      );
+    }
+    return res;
   }
 
   /**
