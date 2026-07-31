@@ -97,7 +97,7 @@ describe("StoresTab", () => {
     vm.editStoreForm.path = "";
     vm.saveEditStore();
 
-    expect(wrapper.emitted("save")).toBeFalsy();
+    expect(wrapper.emitted("saveStore")).toBeFalsy();
   });
 
   it("saveEditStore: valid edit emits updateStores and save", () => {
@@ -115,7 +115,7 @@ describe("StoresTab", () => {
     const emitted = emittedStores(wrapper);
     expect(emitted.work.path).toBe("/new/work");
     expect(emitted.work.gnupg_home).toBe("/custom/gnupg");
-    expect(wrapper.emitted("save")).toBeTruthy();
+    expect(wrapper.emitted("saveStore")).toBeTruthy();
   });
 
   it("saveEditStore: emits updateStores without gnupgHome when empty", () => {
@@ -129,7 +129,7 @@ describe("StoresTab", () => {
     const emitted = emittedStores(wrapper);
     expect(emitted.default.path).toBe("/new/default");
     expect(emitted.default.gnupg_home).toBeUndefined();
-    expect(wrapper.emitted("save")).toBeTruthy();
+    expect(wrapper.emitted("saveStore")).toBeTruthy();
   });
 
   it("confirmDeleteStore removes store and emits save", () => {
@@ -140,7 +140,7 @@ describe("StoresTab", () => {
 
     const emitted = emittedStores(wrapper);
     expect(emitted.personal).toBeUndefined();
-    expect(wrapper.emitted("save")).toBeTruthy();
+    expect(wrapper.emitted("deleteStore")).toBeTruthy();
   });
 
   it("findStoreByPath: finds store name from path", () => {

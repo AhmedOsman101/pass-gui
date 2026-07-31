@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
+import { Store } from "@/services/store";
 import StoresTab from "@/components/settings/StoresTab.vue";
 import GenerationTab from "@/components/settings/GenerationTab.vue";
 import ClipboardTab from "@/components/settings/ClipboardTab.vue";
@@ -129,21 +130,25 @@ async function saveField<S extends keyof AppConfig>(
   }
 }
 
-async function saveStores(): Promise<void> {
+async function saveStore(name: string, data: StoreConfig): Promise<void> {
   isSaving.value = true;
-  // Rewrite all stores at once via raw
-  if (config.value) {
-    const raw = config.value._raw as AppConfig;
-    (raw.stores as Record<string, unknown>) = storesForm.value;
-    const result = await Config.save(config.value);
-    isSaving.value = false;
-    if (result.isError()) {
-      toast.error("Failed to save stores");
-    } else {
-      toast.success("Stores saved");
-    }
+  const result = await Store.set(name, data);
+  isSaving.value = false;
+  if (result.isError()) {
+    toast.error(`Failed to save store "${name}"`);
   } else {
-    isSaving.value = false;
+    toast.success(`Store "${name}" saved`);
+  }
+}
+
+async function deleteStore(name: string): Promise<void> {
+  isSaving.value = true;
+  const result = await Store.delete(name);
+  isSaving.value = false;
+  if (result.isError()) {
+    toast.error(`Failed to delete store "${name}"`);
+  } else {
+    toast.success(`Store "${name}" deleted`);
   }
 }
 
@@ -225,7 +230,8 @@ function handleSaveExtensions(): void {
               v-model:stores="storesForm"
               v-model:active-store="generalForm.activeStore"
               :is-saving="isSaving"
-              @save="saveStores"
+              @save-store="saveStore"
+              @delete-store="deleteStore"
               @save-active-store="handleSaveGeneral"
               @update-stores="storesForm = $event"
             />

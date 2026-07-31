@@ -35,7 +35,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  save: [];
+  saveStore: [name: string, data: StoreConfig];
+  deleteStore: [name: string];
   saveActiveStore: [];
   updateActiveStore: [store: string];
   updateStores: [stores: Record<string, StoreConfig>];
@@ -94,8 +95,8 @@ function saveEditStore(): void {
   };
   const updated = { ...props.stores, [editingStore.value]: storeData };
   emit("updateStores", updated);
+  emit("saveStore", editingStore.value, storeData);
   editingStore.value = null;
-  emit("save");
 }
 
 function promptDeleteStore(name: string): void {
@@ -109,7 +110,7 @@ function confirmDeleteStore(name: string): void {
   const updated = { ...props.stores };
   delete updated[name];
   emit("updateStores", updated);
-  emit("save");
+  emit("deleteStore", name);
 }
 
 function handleStoreCreated(store: { name: string; path: string }): void {

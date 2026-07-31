@@ -291,6 +291,30 @@ class Config {
 
     return await Config.save(parsed);
   }
+
+  /**
+   * Generic typed remover for configuration values.
+   * Removes a key from a config section (e.g. deleting a store).
+   *
+   * @param section - The config section to query
+   * @param key - The specific key within the section
+   * @returns Result containing void or an error
+   */
+  static async removeValue<S extends ConfigSection, K extends ConfigKey<S>>(
+    section: S,
+    key: K
+  ): Promise<Result<void>> {
+    const configResult = await Config.load();
+    if (configResult.isError()) return Err(configResult.error);
+
+    const parsed = configResult.ok;
+    if (!parsed) return ErrFromText("Config not loaded");
+
+    const raw = parsed._raw as AppConfig;
+    delete (raw[section] as Record<string, unknown>)[key as string];
+
+    return await Config.save(parsed);
+  }
 }
 
 export { Config };

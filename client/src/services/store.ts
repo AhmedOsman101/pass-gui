@@ -49,6 +49,13 @@ class Store {
     });
   }
 
+  static async delete(name: string): Promise<Result<void>> {
+    const store = await Store.get(name);
+    if (store.isError()) return Err(store.error);
+
+    return await Config.removeValue("stores", name);
+  }
+
   static async validatePath(name: string): Promise<Result<void>> {
     const store = await Store.get(name);
     if (store.isError()) return Err(store.error);
