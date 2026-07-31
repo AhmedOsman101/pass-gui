@@ -1,6 +1,7 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 import EntryForm from "@/components/EntryForm.vue";
 import { useEntryFormStore } from "@/stores/entry-form";
 import { useEntryTreeStore } from "@/stores/entry-tree";
@@ -37,6 +38,67 @@ describe("EntryForm", () => {
       },
     });
   }
+
+  it("create mode without preset starts with empty password", () => {
+    const wrapper = mountForm();
+    const vm = wrapper.vm as any;
+    expect(vm.secret).toBe("");
+  });
+
+  it("pressing Generate fills the password field from the generator", async () => {
+    const wrapper = mountForm();
+    const vm = wrapper.vm as any;
+    expect(vm.secret).toBe("");
+    vm.genOptions.generated = "gen-pass-abc";
+
+    const generateBtn = wrapper
+      .findAll("button")
+      .find(b => b.text().includes("Generate"))!;
+    await generateBtn.trigger("click");
+
+    expect(vm.showGeneratorOptions).toBe(true);
+    expect(vm.secret).toBe("gen-pass-abc");
+  });
+
+  it("generator panel does not duplicate the password display", async () => {
+    const wrapper = mountForm();
+    const vm = wrapper.vm as any;
+    vm.genOptions.generated = "my-secret";
+
+    const generateBtn = wrapper
+      .findAll("button")
+      .find(b => b.text().includes("Generate"))!;
+    await generateBtn.trigger("click");
+
+    // Exactly one input holds the value: the form's password field.
+    // The inline generator panel (show-value=false) renders none.
+    const matches = wrapper
+      .findAll("input")
+      .filter(i => (i.element as HTMLInputElement).value === "my-secret");
+    expect(matches).toHaveLength(1);
+  });
+
+  it("password input is editable and toggles type", async () => {
+    const wrapper = mountForm();
+    const vm = wrapper.vm as any;
+    vm.secret = "test-password";
+    await nextTick();
+
+    const secretInput = wrapper
+      .findAll("input")
+      .find(i => (i.element as HTMLInputElement).value === "test-password")!;
+    expect(secretInput.attributes("type")).toBe("text");
+
+    await secretInput.setValue("edited-password");
+    expect(vm.secret).toBe("edited-password");
+
+    const toggleBtn = wrapper
+      .findAll("button")
+      .find(b => b.attributes("type") === "button" && b.text().trim() === "")!;
+    await toggleBtn.trigger("click");
+    expect(vm.isSecretVisible).toBe(false);
+    expect(secretInput.attributes("type")).toBe("password");
+  });
 
   it("handleSubmit: empty path shows error", async () => {
     const wrapper = mountForm();
@@ -168,6 +230,7 @@ describe("EntryForm", () => {
     const wrapper = mountForm();
     const vm = wrapper.vm as any;
     vm.secret = "test-password";
+    await nextTick(); // re-render so the eye toggle is enabled
 
     expect(vm.isSecretVisible).toBe(true);
 

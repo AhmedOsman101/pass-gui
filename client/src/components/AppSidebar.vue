@@ -32,6 +32,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntryTreeStore } from "@/stores/entry-tree";
@@ -216,6 +217,10 @@ onUnmounted(() => {
                 </div>
               </div>
               <Tree v-if="treeStore.hasEntries" :search-query="debouncedSearch" />
+              <SidebarMenuSkeleton
+                v-else-if="treeStore.isLoadingTree"
+                class="mx-2"
+              />
               <div
                 v-else-if="!treeStore.isLoadingTree"
                 class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"

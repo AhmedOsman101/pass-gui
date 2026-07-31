@@ -9,11 +9,18 @@ interface GeneratorState {
 
 const genState = defineModel<GeneratorState>("genState", { required: true });
 const emit = defineEmits<{ regenerate: [] }>();
+
+// Whether the generated value is displayed inside this panel. The standalone
+// dialog needs it; the inline form panel does not (the form field shows it).
+const props = withDefaults(defineProps<{ showValue?: boolean }>(), {
+  showValue: true,
+});
 </script>
 
 <template>
   <div class="space-y-4">
     <div
+      v-if="props.showValue"
       class="flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2"
     >
       <code class="flex-1 text-sm font-mono break-all select-all">

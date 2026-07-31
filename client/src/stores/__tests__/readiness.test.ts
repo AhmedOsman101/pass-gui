@@ -24,6 +24,12 @@ const blockedSnapshot: ReadinessSnapshot = {
   evaluatedAt: Date.now(),
 };
 
+const emptySnapshot: ReadinessSnapshot = {
+  state: "STORE_EMPTY",
+  issues: [{ code: "STORE_NO_ENTRIES", severity: "info", path: "/tmp/test" }],
+  evaluatedAt: Date.now(),
+};
+
 describe("readiness store", () => {
   beforeEach(() => {
     createTestingPinia({ stubActions: false, createSpy: vi.fn });
@@ -118,6 +124,15 @@ describe("readiness store", () => {
     vi.mocked(Readiness.check).mockResolvedValue(blockedSnapshot);
     await store.evaluate("/tmp/store");
     expect(store.isReady).toBe(false);
+  });
+
+  it("isReady is true for STORE_EMPTY (empty store is usable)", async () => {
+    vi.mocked(Readiness.check).mockResolvedValue(emptySnapshot);
+    const store = useReadinessStore();
+    await store.evaluate("/tmp/store");
+    expect(store.state).toBe("STORE_EMPTY");
+    expect(store.blockingIssues).toHaveLength(0);
+    expect(store.isReady).toBe(true);
   });
 
   it("sets isEvaluating true during evaluate()", () => {

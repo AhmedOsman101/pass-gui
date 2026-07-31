@@ -24,7 +24,9 @@ const useReadinessStore = defineStore("readiness", () => {
     () => snapshot.value?.state ?? "NEED_PASS"
   );
 
-  const isReady = computed(() => state.value === "READY");
+  const isReady = computed(
+    () => state.value === "READY" || state.value === "STORE_EMPTY"
+  );
 
   const blockingIssues = computed<ReadinessIssue[]>(
     () => snapshot.value?.issues.filter(i => i.severity === "blocking") ?? []
@@ -41,10 +43,11 @@ const useReadinessStore = defineStore("readiness", () => {
     try {
       const result = await Readiness.check(storePath);
       snapshot.value = result;
-      if (result.state !== "READY") {
+      const blocking = result.issues.filter(i => i.severity === "blocking");
+      if (blocking.length > 0) {
         await Logger.error(
           `readiness.evaluate("${storePath}") -> ${result.state}:`,
-          result.issues.map(i => `${i.code} (${i.severity})`).join(", ")
+          blocking.map(i => i.code).join(", ")
         );
       }
     } catch (e) {

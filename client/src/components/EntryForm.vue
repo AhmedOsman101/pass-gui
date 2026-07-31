@@ -56,24 +56,17 @@ const notes = ref("");
 // Metadata
 const metadata = ref<MetadataEntry[]>([]);
 
-// Auto-generate when form opens in create mode
-watch(
-  () => formStore.formMode,
-  (mode) => {
-    if (mode === "create" && !formStore.formPresetPassword) {
-      secret.value = genOptions.generated;
-      isSecretVisible.value = true;
-    }
-  },
-  { immediate: true },
-);
-
 // Initialize from entry or preset
 watch(
   () => [formStore.formMode, formStore.formPresetPassword, treeStore.currentEntry],
   () => {
-    if (formStore.formMode === "create" && formStore.formPresetPassword) {
-      secret.value = formStore.formPresetPassword;
+    if (formStore.formMode === "create") {
+      // Empty until Generate is pressed (preset from the generator dialog
+      // still applies, everything else resets fresh).
+      secret.value = formStore.formPresetPassword ?? "";
+      otpUri.value = "";
+      metadata.value = [];
+      notes.value = "";
       isSecretVisible.value = true;
     } else if (formStore.formMode === "edit" && treeStore.currentEntry) {
       const draft = parseEntryContent(treeStore.currentEntry.raw);
@@ -83,7 +76,6 @@ watch(
       notes.value = draft.notes;
       isSecretVisible.value = false;
     }
-    // create-without-preset is handled by the config load watcher above
   },
   { immediate: true }
 );
@@ -115,6 +107,14 @@ const duplicateKeys = computed(() => {
 });
 
 const hasDuplicateKeys = computed(() => duplicateKeys.value.size > 0);
+
+function toggleGenerator(): void {
+  showGeneratorOptions.value = !showGeneratorOptions.value;
+  if (showGeneratorOptions.value && genOptions.generated) {
+    secret.value = genOptions.generated;
+    isSecretVisible.value = true;
+  }
+}
 
 function onRegenerate(): void {
   genOptions.regenerate();
@@ -264,20 +264,20 @@ async function handleSubmit(): Promise<void> {
               variant="ghost"
               size="sm"
               class="h-7 px-2 text-xs"
-              @click="showGeneratorOptions = !showGeneratorOptions"
+              @click="toggleGenerator"
             >
               {{ showGeneratorOptions ? "Hide Generator" : "Generate" }}
             </Button>
           </div>
 
           <!-- Password input with toggle -->
-          <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
-            <code class="flex-1 font-mono text-sm break-all">
-              <template v-if="isSecretVisible">{{ secret }}</template>
-              <template v-else>
-                {{ secret ? "••••••••••••••••" : "—" }}
-              </template>
-            </code>
+          <div class="flex items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-2 focus-within:ring-2 focus-within:ring-ring">
+            <input
+              v-model="secret"
+              :type="isSecretVisible ? 'text' : 'password'"
+              placeholder="—"
+              class="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
+            />
             <Button
               type="button"
               variant="ghost"
@@ -294,6 +294,7 @@ async function handleSubmit(): Promise<void> {
           <GeneratorOptionsPanel
             v-if="showGeneratorOptions"
             v-model:gen-state="genOptions"
+            :show-value="false"
             @regenerate="onRegenerate"
           />
         </div>
