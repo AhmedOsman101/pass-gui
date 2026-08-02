@@ -141,7 +141,7 @@ pass-gui/
 │   │   │   ├── entry-form.ts    # Create/edit form state
 │   │   │   └── clipboard.ts     # Clipboard timer and state
 │   │   ├── composables/         # Vue composables
-│   │   │   ├── useTreeState.ts
+│   │   │   ├── use-tree-state.ts
 │   │   │   ├── use-password-generator.ts
 │   │   │   ├── use-clipboard-buffer.ts
 │   │   │   └── use-generation-config.ts

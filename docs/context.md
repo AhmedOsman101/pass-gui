@@ -214,7 +214,7 @@ Full checklist at `TODO.md` — ~55 checked, ~115 pending.
 | P0       | Pure lib              | `parse-pass-show`, `generate-password`, `tree-index`, `tree-state`, `path`                                                                | 69    | ✅     |
 | P1       | Shell/Path services   | `neutralino`, `filesystem`, `gpg`, `pass`, `clipboard`                                                                                    | 152   | ✅     |
 | P2       | Service orchestration | `entries`, `readiness`, `watcher`, `dialog`                                                                                               | 77    | ✅     |
-| P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, useTreeState   | 123   | ✅     |
+| P3       | Stores + composables  | entry-form, readiness, clipboard, active-store, entry-tree, useGenerationConfig, usePasswordGenerator, useClipboardBuffer, use-tree-state | 123   | ✅     |
 | P4       | Core services         | `config`, `config-validation`, `store-validation`                                                                                         | 77    | ✅     |
 | P5       | Components            | EntryForm, Tree, AppSidebar, AddStoreWizard, GpgTab, StoresTab, EntryDetail, CreateFolderDialog, RenameEntryDialog, MoveOrDuplicateDialog | 96    | ✅     |
 | P6       | Integration           | Podman container suite (Future work)                                                                                                      | —     | ⬜     |

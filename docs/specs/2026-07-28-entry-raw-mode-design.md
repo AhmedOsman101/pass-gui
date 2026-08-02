@@ -28,7 +28,7 @@ and notes. Raw mode is a full-text view of that draft.
 - Form to raw serializes in this exact order: secret, OTP URI if present,
   non-empty `key: value` metadata entries, then notes lines.
 - Raw to form parses the raw content into the canonical draft.
-- Mode switches preserve the user’s content. Non-metadata lines remain in
+- Mode switches preserve the user's content. Non-metadata lines remain in
   Notes; they are never discarded.
 - The first `otpauth://...` line must be recognized before generic colon-pair
   parsing so its colon does not turn it into metadata. Later OTP URI lines are

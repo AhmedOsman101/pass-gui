@@ -23,11 +23,13 @@
 ### Task 1: Add raw entry-content conversion utility
 
 **Files:**
+
 - Create: `client/src/lib/entry-content.ts`
 - Modify: `client/src/lib/parse-pass-show.ts:32-48`
 - Test: No test changes — explicitly deferred by user.
 
 **Interfaces:**
+
 - Produces `EntryDraft`, `parseEntryContent(raw: string): EntryDraft`, and `serializeEntryContent(draft: EntryDraft): string` for `EntryForm`.
 - Keeps `parsePassShowOutput()` public return type unchanged.
 
@@ -113,10 +115,12 @@ git add client/src/lib/entry-content.ts client/src/lib/parse-pass-show.ts
 ### Task 2: Add form/raw mode to EntryForm
 
 **Files:**
+
 - Modify: `client/src/components/EntryForm.vue:1-330`
 - Test: No test changes — explicitly deferred by user.
 
 **Interfaces:**
+
 - Consumes `EntryDraft`, `parseEntryContent`, and `serializeEntryContent` from `@/lib/entry-content`.
 - Produces existing `treeStore.insertEntry(path, content)` / `treeStore.editEntry(path, content)` calls with serialized canonical content.
 
