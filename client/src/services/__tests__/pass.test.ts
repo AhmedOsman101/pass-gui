@@ -31,17 +31,17 @@ beforeEach(() => {
 describe("constructor", () => {
   it("starts with default state", () => {
     const pass = new PassService();
-    expect(pass.storeDirectory).toBe("");
+    expect(pass.storePath).toBe("");
     expect(pass.isInitialized).toBe(false);
     expect(pass.version).toEqual({ major: 0, minor: 0, patch: 0 });
   });
 });
 
 describe("setStorePath", () => {
-  it("sets storeDirectory value", () => {
+  it("sets storePath value", () => {
     const pass = new PassService();
     pass.setStorePath("/custom/store");
-    expect(pass.storeDirectory).toBe("/custom/store");
+    expect(pass.storePath).toBe("/custom/store");
   });
 });
 
@@ -54,7 +54,7 @@ describe("init", () => {
 
     expect(result.isOk()).toBe(true);
     expect(result.ok).toBe(true);
-    expect(pass.storeDirectory).toBe("/custom/store");
+    expect(pass.storePath).toBe("/custom/store");
     expect(pass.isInitialized).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe("init", () => {
 
     expect(result.isOk()).toBe(true);
     expect(result.ok).toBe(true);
-    expect(pass.storeDirectory).toBe("/home/user/.password-store");
+    expect(pass.storePath).toBe("/home/user/.password-store");
     expect(pass.isInitialized).toBe(true);
   });
 
@@ -161,54 +161,6 @@ describe("checkVersion", () => {
     expect(result.isOk()).toBe(true);
     expect(result.ok?.valid).toBe(false);
     expect(pass.version).toEqual({ major: 0, minor: 0, patch: 0 });
-  });
-});
-
-describe("validatePassBinary", () => {
-  it("resolves system binary path under /usr/bin", async () => {
-    vi.mocked(os.execCommand).mockResolvedValue({
-      pid: 1,
-      stdOut: "/usr/bin/pass",
-      stdErr: "",
-      exitCode: 0,
-    });
-
-    const pass = new PassService();
-    const result = await pass.validatePassBinary();
-
-    expect(result.isOk()).toBe(true);
-    expect(result.ok?.path).toBe("/usr/bin/pass");
-    expect(result.ok?.isSystemBinary).toBe(true);
-  });
-
-  it("detects custom script path as non-system binary", async () => {
-    vi.mocked(os.execCommand).mockResolvedValue({
-      pid: 1,
-      stdOut: "/usr/local/bin/pass",
-      stdErr: "",
-      exitCode: 0,
-    });
-
-    const pass = new PassService();
-    const result = await pass.validatePassBinary();
-
-    expect(result.isOk()).toBe(true);
-    expect(result.ok?.path).toBe("/usr/local/bin/pass");
-    expect(result.ok?.isSystemBinary).toBe(false);
-  });
-
-  it("returns error when binary cannot be resolved", async () => {
-    vi.mocked(os.execCommand).mockResolvedValue({
-      pid: 0,
-      stdOut: "",
-      stdErr: "not found",
-      exitCode: 1,
-    });
-
-    const pass = new PassService();
-    const result = await pass.validatePassBinary();
-
-    expect(result.isError()).toBe(true);
   });
 });
 

@@ -20,7 +20,7 @@ vi.mock("@/services/filesystem", () => ({
   },
 }));
 vi.mock("@/services/pass", () => ({
-  Pass: { storeDirectory: "/home/user/.password-store" },
+  Pass: { storePath: "/home/user/.password-store" },
 }));
 
 import { MutationError } from "@/lib/errors";

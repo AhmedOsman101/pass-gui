@@ -167,7 +167,7 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
 
   async function createFolder(folderPath: string): Promise<string | null> {
     error.value = null;
-    const storeDir = Pass.storeDirectory;
+    const storeDir = Pass.storePath;
     if (!storeDir) {
       error.value = "No active store";
       return error.value;

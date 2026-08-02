@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { Stringifiable } from "@/types";
+import type { Stringifiable, Version } from "@/types";
 
 /**
  * Mapping of NeutralinoJS error codes to human-readable error types.
@@ -405,6 +405,21 @@ class MutationError extends Error {
   }
 }
 
+/**
+ * Error thrown when there is a Version mismatch.
+ */
+class VersionCheckError extends Error {
+  constructor(
+    public valid: boolean,
+    public found: Version,
+    public expected: Version,
+    message?: string,
+    cause?: Error
+  ) {
+    super(message, { cause });
+  }
+}
+
 export type {
   ConfigErrorCode,
   ConfigErrorType,
@@ -436,4 +451,5 @@ export {
   NeuError,
   STORE_ERROR_CODES,
   StoreValidationError,
+  VersionCheckError,
 };

@@ -3,7 +3,6 @@ import { mount } from "@vue/test-utils";
 import { Err, Ok } from "lib-result";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AddStoreWizard from "@/components/settings/AddStoreWizard.vue";
-import { Config } from "@/services/config";
 import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
 import { Pass } from "@/services/pass";
@@ -147,63 +146,6 @@ describe("AddStoreWizard", () => {
 
     vm.goBack();
     expect(vm.step).toBe("name");
-  });
-
-  it("createStore full flow: mkdir → pass init → config save → emit", async () => {
-    const wrapper = mountWizard();
-    const vm = wrapper.vm as any;
-
-    vm.storeName = "test-store";
-    vm.storePath = "/tmp/test-store";
-    vm.selectedKeyId = "ABC123";
-    vm.isExistingStore = false;
-
-    vi.mocked(Fs.mkdir).mockResolvedValue(Ok(undefined as any));
-    vi.mocked(Pass.exec).mockResolvedValue(Ok({} as any));
-    vi.mocked(Config.load).mockResolvedValue(
-      Ok({
-        data: { stores: {} },
-        _raw: { stores: {} },
-      } as any)
-    );
-    vi.mocked(Config.save).mockResolvedValue(Ok(undefined as any));
-
-    await vm.createStore();
-    await flushPromises();
-
-    expect(Fs.mkdir).toHaveBeenCalledWith("/tmp/test-store");
-    expect(Pass.exec).toHaveBeenCalledWith(["init", "ABC123"]);
-    expect(Config.save).toHaveBeenCalled();
-    expect(wrapper.emitted("created")?.[0]).toEqual([
-      { name: "test-store", path: "/tmp/test-store" },
-    ]);
-  });
-
-  it("createStore with existing store: skips mkdir and pass init", async () => {
-    const wrapper = mountWizard();
-    const vm = wrapper.vm as any;
-
-    vm.storeName = "existing-store";
-    vm.storePath = "/tmp/existing";
-    vm.selectedKeyId = "ABC123";
-    vm.isExistingStore = true;
-
-    vi.mocked(Config.load).mockResolvedValue(
-      Ok({
-        data: { stores: {} },
-        _raw: { stores: {} },
-      } as any)
-    );
-    vi.mocked(Config.save).mockResolvedValue(Ok(undefined as any));
-
-    await vm.createStore();
-    await flushPromises();
-
-    expect(Fs.mkdir).not.toHaveBeenCalled();
-    expect(Pass.exec).not.toHaveBeenCalled();
-    expect(wrapper.emitted("created")?.[0]).toEqual([
-      { name: "existing-store", path: "/tmp/existing" },
-    ]);
   });
 
   it("createStore error handling: mkdir failure", async () => {

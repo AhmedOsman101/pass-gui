@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { ArrowLeft } from "@lucide/vue";
-import { onMounted, ref } from "vue";
-import { RouterLink } from "vue-router";
-import { toast } from "sonner";
+import ClipboardTab from "@/components/settings/ClipboardTab.vue";
+import ExtensionsTab from "@/components/settings/ExtensionsTab.vue";
+import GenerationTab from "@/components/settings/GenerationTab.vue";
+import GpgTab from "@/components/settings/GpgTab.vue";
+import InfoTab from "@/components/settings/InfoTab.vue";
+import StoresTab from "@/components/settings/StoresTab.vue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
+import { Neu } from "@/services/neutralino";
 import { Pass } from "@/services/pass";
 import { Store } from "@/services/store";
-import StoresTab from "@/components/settings/StoresTab.vue";
-import GenerationTab from "@/components/settings/GenerationTab.vue";
-import ClipboardTab from "@/components/settings/ClipboardTab.vue";
-import GpgTab from "@/components/settings/GpgTab.vue";
-import ExtensionsTab from "@/components/settings/ExtensionsTab.vue";
-import InfoTab from "@/components/settings/InfoTab.vue";
 import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
+import { ArrowLeft } from "@lucide/vue";
+import { toast } from "sonner";
+import { onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
 const config = ref<ParsedToml<AppConfig> | null>(null);
 const configPath = ref("");
@@ -75,8 +76,7 @@ onMounted(async () => {
   generationForm.value.characterSet = data.generation.character_set;
   generationForm.value.characterSetNoSymbols =
     data.generation.character_set_no_symbols;
-  clipboardForm.value.clearAfterSeconds =
-    data.clipboard.clear_after_seconds;
+  clipboardForm.value.clearAfterSeconds = data.clipboard.clear_after_seconds;
   clipboardForm.value.selection = data.clipboard.selection;
   gpgForm.value.opts = Array.isArray(data.gpg.opts)
     ? [...(data.gpg.opts as string[])]
@@ -101,15 +101,15 @@ onMounted(async () => {
   };
 
   const [passBinaryResult, passVersionResult] = await Promise.all([
-    Pass.validatePassBinary(),
+    Neu.resolveBinaryPath("pass"),
     Pass.checkVersion(),
   ]);
   passInfo.value = {
-    binary: passBinaryResult.isOk() ? passBinaryResult.ok.path : "Not found",
+    binary: passBinaryResult.isOk() ? passBinaryResult.ok : "Not found",
     version: passVersionResult.isOk()
       ? `${passVersionResult.ok.found.major}.${passVersionResult.ok.found.minor}.${passVersionResult.ok.found.patch}`
       : "Unknown",
-    storeDir: Pass.storeDirectory || "Not set",
+    storeDir: Pass.storePath || "Not set",
   };
 
   isLoading.value = false;
@@ -158,17 +158,9 @@ function handleSaveGeneral(): void {
 
 function handleSaveGeneration(): void {
   saveField("generation", "memorable", generationForm.value.memorable);
-  saveField(
-    "generation",
-    "default_length",
-    generationForm.value.defaultLength,
-  );
+  saveField("generation", "default_length", generationForm.value.defaultLength);
   saveField("generation", "symbols", generationForm.value.symbols);
-  saveField(
-    "generation",
-    "character_set",
-    generationForm.value.characterSet,
-  );
+  saveField("generation", "character_set", generationForm.value.characterSet);
   saveField(
     "generation",
     "character_set_no_symbols",
@@ -243,7 +235,9 @@ function handleSaveExtensions(): void {
               v-model:default-length="generationForm.defaultLength"
               v-model:symbols="generationForm.symbols"
               v-model:character-set="generationForm.characterSet"
-              v-model:character-set-no-symbols="generationForm.characterSetNoSymbols"
+              v-model:character-set-no-symbols="
+                generationForm.characterSetNoSymbols
+              "
               :is-saving="isSaving"
               @save="handleSaveGeneration"
             />

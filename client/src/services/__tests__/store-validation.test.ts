@@ -8,7 +8,7 @@ vi.mock("@/services/gpg", () => ({
 vi.mock("@/services/pass", () => ({
   Pass: {
     exec: vi.fn(),
-    storeDirectory: "/home/user/.password-store",
+    storePath: "/home/user/.password-store",
   },
 }));
 

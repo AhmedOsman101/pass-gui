@@ -29,7 +29,7 @@ vi.mock("@/services/watcher", () => ({
 
 vi.mock("@/services/pass", () => ({
   Pass: {
-    storeDirectory: "",
+    storePath: "",
   },
 }));
 
@@ -102,7 +102,7 @@ describe("AppSidebar", () => {
       pasteEntry: mockPasteEntry as any,
     });
 
-    Pass.storeDirectory = "";
+    Pass.storePath = "";
   });
 
   it("searchQuery updates and debouncedSearch is 300ms delayed", async () => {
@@ -124,8 +124,8 @@ describe("AppSidebar", () => {
     vi.useRealTimers();
   });
 
-  it("Watcher.watch called with correct args when Pass.storeDirectory is set", () => {
-    Pass.storeDirectory = "/home/user/.password-store";
+  it("Watcher.watch called with correct args when Pass.storePath is set", () => {
+    Pass.storePath = "/home/user/.password-store";
 
     mountSidebar();
 
@@ -241,13 +241,13 @@ describe("AppSidebar", () => {
     expect(treeStore.loadTree).toHaveBeenCalled();
   });
 
-  it("Pass.storeDirectory watch triggers startStoreWatcher", async () => {
-    Pass.storeDirectory = "";
+  it("Pass.storePath watch triggers startStoreWatcher", async () => {
+    Pass.storePath = "";
     const wrapper = mountSidebar();
 
     expect(Watcher.watch).not.toHaveBeenCalled();
 
-    Pass.storeDirectory = "/new/path";
+    Pass.storePath = "/new/path";
     await (wrapper.vm as any).startStoreWatcher();
 
     expect(Watcher.watch).toHaveBeenCalledWith("store", "/new/path", ".gpg-id");

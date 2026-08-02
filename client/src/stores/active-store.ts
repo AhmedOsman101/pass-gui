@@ -10,7 +10,7 @@ import type { StoreConfig } from "@/types/config";
  * its resolved path, and its per-store config (e.g. custom GNUPGHOME).
  *
  * On load, reads `core.active_store` from config, resolves the path
- * via `Pass.storeDirectory`, and exposes it to the rest of the app.
+ * via `Pass.storePath`, and exposes it to the rest of the app.
  */
 const useActiveStoreStore = defineStore("active-store", () => {
   const storePath = ref<string | null>(null);

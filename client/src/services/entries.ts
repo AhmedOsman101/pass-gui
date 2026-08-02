@@ -48,10 +48,10 @@ function mapPassError(
 class Entries {
   /**
    * Returns the active store path, with tilde resolved.
-   * Falls back to `pass.storeDirectory` if config doesn't have one yet.
+   * Falls back to `pass.storePath` if config doesn't have one yet.
    */
   private static getActiveStorePath(): Result<string> {
-    const storePath = Pass.storeDirectory;
+    const storePath = Pass.storePath;
     if (!storePath) {
       return ErrFromText("No active store configured");
     }

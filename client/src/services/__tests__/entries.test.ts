@@ -12,7 +12,7 @@ import { Pass } from "@/services/pass";
 vi.mock("@/services/pass", () => ({
   Pass: {
     exec: vi.fn(),
-    storeDirectory: "/home/user/.password-store",
+    storePath: "/home/user/.password-store",
   },
   PassService: vi.fn(),
 }));
@@ -56,8 +56,7 @@ const mockExecSuccess = {
 describe("Entries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (Pass as { storeDirectory: string }).storeDirectory =
-      "/home/user/.password-store";
+    (Pass as { storePath: string }).storePath = "/home/user/.password-store";
   });
 
   describe("list", () => {
@@ -71,7 +70,7 @@ describe("Entries", () => {
     });
 
     it("returns error when no store is configured", async () => {
-      (Pass as { storeDirectory: string }).storeDirectory = "";
+      (Pass as { storePath: string }).storePath = "";
 
       const result = await Entries.list();
 

@@ -7,7 +7,7 @@ vi.mock("@/services/config", () => ({
 }));
 
 vi.mock("@/services/pass", () => ({
-  Pass: { setStorePath: vi.fn(), storeDirectory: "" },
+  Pass: { setStorePath: vi.fn(), storePath: "" },
 }));
 
 vi.mock("@/lib/path", () => ({

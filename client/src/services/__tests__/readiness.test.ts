@@ -1,6 +1,7 @@
 import { Err, Ok } from "lib-result";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CommandFailedError } from "@/lib/errors";
+import { PASS_MIN_VERSION } from "@/lib/constants";
+import { CommandFailedError, VersionCheckError } from "@/lib/errors";
 import { Config } from "@/services/config";
 import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
@@ -135,7 +136,16 @@ describe("check", () => {
   });
 
   it("returns NEED_PASS when checkVersion errors", async () => {
-    vi.mocked(Pass.checkVersion).mockResolvedValue(Err(new Error("oops")));
+    vi.mocked(Pass.checkVersion).mockResolvedValue(
+      Err(
+        new VersionCheckError(
+          false,
+          { major: 0, minor: 0, patch: 0 },
+          PASS_MIN_VERSION,
+          "Oops!"
+        )
+      )
+    );
 
     const result = await Readiness.check(STORE_PATH);
 

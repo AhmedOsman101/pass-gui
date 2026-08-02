@@ -5,7 +5,7 @@ vi.mock("@/services/filesystem", () => ({
   Fs: { join: vi.fn((...p: string[]) => Promise.resolve(p.join("/"))) },
 }));
 vi.mock("@/services/pass", () => ({
-  Pass: { storeDirectory: "/home/user/.password-store" },
+  Pass: { storePath: "/home/user/.password-store" },
 }));
 
 import { useEntryTreeStore } from "@/stores/entry-tree";

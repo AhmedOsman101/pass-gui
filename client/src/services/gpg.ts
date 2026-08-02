@@ -3,9 +3,9 @@ import {
   type ExecCommandOptions,
   type ExecCommandResult,
 } from "@neutralinojs/lib";
-import { Err, ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { GPG_MIN_VERSION } from "@/lib/constants";
-import type { CommandFailedError } from "@/lib/errors";
+import { type CommandFailedError, VersionCheckError } from "@/lib/errors";
 import { compareVersions } from "@/lib/utils";
 import type {
   AllowedCommand,
@@ -107,20 +107,25 @@ class GpgService {
       args: ["--version"],
     });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
-      return ErrFromObject({
-        error: cmdResult.error || new Error(cmdResult.ok.stdErr),
-        valid: false,
-        found: this.version,
-        expected: GPG_MIN_VERSION,
-      });
+      return Err(
+        new VersionCheckError(
+          false,
+          this.version,
+          GPG_MIN_VERSION,
+          cmdResult.ok?.stdErr,
+          cmdResult.error
+        )
+      );
     }
 
     const output = cmdResult.ok.stdOut;
-    const versionMatch = output.match(/gpg \(GnuPG\) (\d+)\.(\d+)\.(\d+)/);
+    const versionMatch = output.match(/gpg \(GnuPG\) (\d+)\.(\d+)\.(\d+)/) as
+      | string[]
+      | null;
     if (versionMatch) {
-      this.version.major = Number.parseInt(versionMatch[1] as string, 10);
-      this.version.minor = Number.parseInt(versionMatch[2] as string, 10);
-      this.version.patch = Number.parseInt(versionMatch[3] as string, 10);
+      this.version.major = Number.parseInt(versionMatch[1], 10);
+      this.version.minor = Number.parseInt(versionMatch[2], 10);
+      this.version.patch = Number.parseInt(versionMatch[3], 10);
     }
 
     if (!this.homeDir) {

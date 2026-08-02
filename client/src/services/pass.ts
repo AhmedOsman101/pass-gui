@@ -1,14 +1,10 @@
-import {
-  debug,
-  type ExecCommandOptions,
-  type ExecCommandResult,
-} from "@neutralinojs/lib";
-import { ErrFromObject, ErrFromText, Ok, type Result } from "lib-result";
-import { PASS_MIN_VERSION, SYSTEM_PASS_PATHS } from "@/lib/constants";
-import type { CommandFailedError } from "@/lib/errors";
+import type { ExecCommandOptions, ExecCommandResult } from "@neutralinojs/lib";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { PASS_MIN_VERSION } from "@/lib/constants";
+import { type CommandFailedError, VersionCheckError } from "@/lib/errors";
 import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
-import type { PassBinaryInfo, Stringifiable, Version } from "@/types";
+import type { Stringifiable, Version } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
 import { Config } from "./config";
 import { Fs } from "./filesystem";
@@ -21,7 +17,7 @@ import { Neu } from "./neutralino";
  * with proper environment scoping for the password store.
  */
 class PassService {
-  public storeDirectory = "";
+  public storePath = "";
   public isInitialized = false;
   public version: Version = { major: 0, minor: 0, patch: 0 };
 
@@ -31,7 +27,7 @@ class PassService {
    * subsequent calls.
    */
   setStorePath(path: string): void {
-    this.storeDirectory = path;
+    this.storePath = path;
   }
 
   /**
@@ -41,10 +37,10 @@ class PassService {
    */
   async init(): Promise<Result<boolean>> {
     const envStoreDir = await Neu.getEnv("PASSWORD_STORE_DIR");
-    this.storeDirectory =
+    this.storePath =
       envStoreDir || (await Fs.join(Neu.HOME_DIR, ".password-store"));
 
-    const result = await this.checkInitialized(this.storeDirectory);
+    const result = await this.checkInitialized(this.storePath);
     if (result.isError()) {
       this.isInitialized = false;
       return Ok(false);
@@ -66,21 +62,26 @@ class PassService {
   /**
    * Checks if pass version meets the minimum supported version requirement.
    */
-  async checkVersion(): Promise<Result<VersionCheck>> {
-    const cmdResult = await Neu.safeExec({ cmd: "pass", args: ["--version"] });
+  async checkVersion(): Promise<Result<VersionCheck, VersionCheckError>> {
+    const cmdResult = await Neu.exec({ cmd: "pass", args: ["--version"] });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
-      return ErrFromObject({
-        error: cmdResult.error || new Error(cmdResult.ok.stdErr),
-        valid: false,
-        found: this.version,
-        expected: PASS_MIN_VERSION,
-      });
+      return Err(
+        new VersionCheckError(
+          false,
+          this.version,
+          PASS_MIN_VERSION,
+          cmdResult.ok?.stdErr,
+          cmdResult.error
+        )
+      );
     }
-    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
+    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/) as
+      | string[]
+      | null;
     if (versionMatch) {
-      this.version.major = Number.parseInt(versionMatch[1] as string, 10);
-      this.version.minor = Number.parseInt(versionMatch[2] as string, 10);
-      this.version.patch = Number.parseInt(versionMatch[3] as string, 10);
+      this.version.major = Number.parseInt(versionMatch[1], 10);
+      this.version.minor = Number.parseInt(versionMatch[2], 10);
+      this.version.patch = Number.parseInt(versionMatch[3], 10);
     }
 
     return Ok({
@@ -91,30 +92,6 @@ class PassService {
   }
 
   /**
-   * Validates the pass binary by resolving its path and checking
-   * if it's a system binary or a custom wrapper/script.
-   */
-  async validatePassBinary(): Promise<Result<PassBinaryInfo>> {
-    const resolveResult = await Neu.resolveBinaryPath("pass");
-    if (resolveResult.isError()) {
-      return ErrFromText(
-        `Could not resolve pass binary: ${resolveResult.error.message}`
-      );
-    }
-
-    const resolvedPath = resolveResult.ok.trim();
-    const isSystemBinary = SYSTEM_PASS_PATHS.some(p =>
-      resolvedPath.startsWith(p)
-    );
-
-    if (!isSystemBinary) {
-      debug.log(`Pass is a custom script/wrapper. Path: ${resolvedPath}`);
-    }
-
-    return Ok({ path: resolvedPath, isSystemBinary });
-  }
-
-  /**
    * Checks if pass is available on the system.
    * On Windows, falls back to checking pass.cmd and pass.ps1 explicitly
    * in case PATHEXT does not resolve them via the bare "pass" name.
@@ -122,10 +99,6 @@ class PassService {
   async passExists(): Promise<Result<boolean>> {
     const existsResult = await Neu.commandExists("pass");
     if (existsResult.isOk() && existsResult.ok) {
-      const validateResult = await this.validatePassBinary();
-      if (validateResult.isError()) {
-        debug.log(`Warning: ${validateResult.error.message}`);
-      }
       return Ok(true);
     }
 
@@ -133,7 +106,6 @@ class PassService {
       for (const name of ["pass.cmd", "pass.ps1"]) {
         const fallback = await Neu.commandExists(name);
         if (fallback.isOk() && fallback.ok) {
-          debug.log(`Pass found as ${name}`);
           return Ok(true);
         }
       }
@@ -151,7 +123,7 @@ class PassService {
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
   ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
-    const storeDirValidation = await validatePath(this.storeDirectory);
+    const storeDirValidation = await validatePath(this.storePath);
     if (storeDirValidation.isError()) {
       return ErrFromText(
         `Invalid store directory: ${storeDirValidation.error.message}`
@@ -168,7 +140,7 @@ class PassService {
     }
 
     const defaultEnvs: Record<string, string> = {
-      PASSWORD_STORE_DIR: this.storeDirectory,
+      PASSWORD_STORE_DIR: this.storePath,
     };
     if (Gpg.homeDir) defaultEnvs.GNUPGHOME = Gpg.homeDir;
 
