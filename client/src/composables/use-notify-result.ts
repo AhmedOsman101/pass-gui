@@ -30,10 +30,10 @@ export type NotifyResultOpts<T, E extends Error> = {
  */
 export function useNotifyResult<T, E extends Error = Error>(
   result: Result<T, E>,
-  opts: NotifyResultOpts<T, E> = {},
+  opts: NotifyResultOpts<T, E> = {}
 ): Result<T, E> {
   result
-    .inspect((value) => {
+    .inspect(value => {
       const msg = opts.ok
         ? typeof opts.ok === "string"
           ? opts.ok
@@ -41,7 +41,7 @@ export function useNotifyResult<T, E extends Error = Error>(
         : "Success";
       toast.success(msg);
     })
-    .inspectErr((error) => {
+    .inspectErr(error => {
       const msg = opts.err
         ? typeof opts.err === "string"
           ? opts.err

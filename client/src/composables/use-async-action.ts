@@ -1,14 +1,16 @@
-import { ref, type Ref } from "vue";
 import type { Result } from "lib-result";
+import { type Ref, ref } from "vue";
 
 /**
  * Function signature accepted by `useAsyncAction`.
  * Any async function returning a `Result` works — store actions,
  * service methods, raw async I/O.
  */
-export type AsyncAction<TArgs extends unknown[], TResult, TError extends Error> = (
-  ...args: TArgs
-) => Promise<Result<TResult, TError>>;
+export type AsyncAction<
+  TArgs extends unknown[],
+  TResult,
+  TError extends Error,
+> = (...args: TArgs) => Promise<Result<TResult, TError>>;
 
 export type UseAsyncActionReturn<
   TArgs extends unknown[],
@@ -38,19 +40,17 @@ export function useAsyncAction<
   TResult,
   TError extends Error,
 >(
-  action: AsyncAction<TArgs, TResult, TError>,
+  action: AsyncAction<TArgs, TResult, TError>
 ): UseAsyncActionReturn<TArgs, TResult, TError> {
   const isLoading = ref(false);
   const error = ref<TError | null>(null) as Ref<TError | null>;
 
-  async function run(
-    ...args: TArgs
-  ): Promise<Result<TResult, TError>> {
+  async function run(...args: TArgs): Promise<Result<TResult, TError>> {
     isLoading.value = true;
     error.value = null;
 
     const result = await action(...args);
-    result.inspectErr((e) => {
+    result.inspectErr(e => {
       error.value = e;
     });
 

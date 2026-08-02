@@ -449,4 +449,33 @@ describe("exec", () => {
       | undefined;
     expect(calledOptions?.envs?.PASSWORD_STORE_GPG_OPTS).toBeUndefined();
   });
+
+  it("scoped-call pattern: Pass.exec with cwd + envs does not mutate storePath", async () => {
+    vi.mocked(os.execCommand).mockResolvedValue({
+      pid: 1,
+      stdOut: "ok",
+      stdErr: "",
+      exitCode: 0,
+    });
+
+    const pass = new PassService();
+    pass.setStorePath("/home/user/.password-store");
+
+    const result = await pass.exec(["init", "KEYID"], {
+      cwd: "/tmp/new-store",
+      envs: { PASSWORD_STORE_DIR: "/tmp/new-store" },
+    });
+
+    expect(result.isOk()).toBe(true);
+    // storePath on the service must remain the active store
+    expect(pass.storePath).toBe("/home/user/.password-store");
+    // The scoped call must use the overridden env
+    expect(os.execCommand).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        cwd: "/tmp/new-store",
+        envs: { PASSWORD_STORE_DIR: "/tmp/new-store" },
+      })
+    );
+  });
 });
