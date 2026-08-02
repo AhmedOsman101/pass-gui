@@ -142,6 +142,13 @@ describe("Watcher", () => {
       expect(result.isError()).toBe(true);
     });
 
+    it("still calls removeWatcher when events.off throws (no native leak)", async () => {
+      await Watcher.watch("test", "/dir", "file.gpg");
+      vi.mocked(events.off).mockRejectedValueOnce(new Error("fail"));
+      await Watcher.unwatch("test");
+      expect(vi.mocked(filesystem.removeWatcher)).toHaveBeenCalledWith(42);
+    });
+
     it("returns error when removeWatcher throws", async () => {
       await Watcher.watch("test", "/dir", "file.gpg");
       vi.mocked(filesystem.removeWatcher).mockRejectedValueOnce(
@@ -149,6 +156,19 @@ describe("Watcher", () => {
       );
       const result = await Watcher.unwatch("test");
       expect(result.isError()).toBe(true);
+    });
+
+    it("removes entry from map on cleanup failure so retries do not happen", async () => {
+      await Watcher.watch("test", "/dir", "file.gpg");
+      vi.mocked(filesystem.removeWatcher).mockRejectedValueOnce(
+        new Error("fail")
+      );
+      await Watcher.unwatch("test");
+      // A second call should be a no-op (entry already gone), not a retry.
+      vi.mocked(filesystem.removeWatcher).mockClear();
+      const result2 = await Watcher.unwatch("test");
+      expect(result2.isOk()).toBe(true);
+      expect(vi.mocked(filesystem.removeWatcher)).not.toHaveBeenCalled();
     });
   });
 
@@ -165,6 +185,19 @@ describe("Watcher", () => {
     it("returns Ok when no watchers exist", async () => {
       const result = await Watcher.unwatchAll();
       expect(result.isOk()).toBe(true);
+    });
+
+    it("continues draining remaining watchers after a failure", async () => {
+      await Watcher.watch("a", "/d1", "f1.gpg");
+      await Watcher.watch("b", "/d2", "f2.gpg");
+      await Watcher.watch("c", "/d3", "f3.gpg");
+      vi.mocked(filesystem.removeWatcher).mockImplementation(id =>
+        id === 42 ? Promise.reject(new Error("fail")) : Promise.resolve(42)
+      );
+      const result = await Watcher.unwatchAll();
+      expect(result.isError()).toBe(true);
+      // All three should have been attempted, not just the first.
+      expect(vi.mocked(filesystem.removeWatcher)).toHaveBeenCalledTimes(3);
     });
   });
 });

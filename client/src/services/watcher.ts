@@ -100,39 +100,53 @@ class Watcher {
 
   /**
    * Stops watching and cleans up a named watcher.
+   * Always removes the entry from the local map before attempting cleanup so
+   * failed cleanups don't get retried forever.
    */
   static async unwatch(id: string): Promise<Result<void>> {
     const entry = Watcher.watchers.get(id);
     if (!entry) return Ok(undefined);
 
+    // Remove from map first — prevents retries on permanent failures.
+    Watcher.watchers.delete(id);
+
+    let lastError: string | null = null;
+
     const offResult = await wrapAsync(
       async () => await events.off("watchFile", entry.handler)
     );
     if (offResult.isError()) {
-      return ErrFromText(`Failed to unregister watcher event for ${id}`);
+      lastError = `Failed to unregister watcher event for ${id}`;
     }
 
+    // Always attempt native cleanup even if events.off failed — otherwise
+    // the OS watcher leaks.
     const removeResult = await wrapAsync(
       async () => await filesystem.removeWatcher(entry.watcherId)
     );
     if (removeResult.isError()) {
-      return ErrFromText(`Failed to remove watcher ${id}`);
+      lastError = `Failed to remove watcher ${id}`;
     }
 
-    Watcher.watchers.delete(id);
+    if (lastError) return ErrFromText(lastError);
     return Ok(undefined);
   }
 
   /**
    * Stops all active watchers. Call during app teardown.
+   * Drains all watchers regardless of individual failures — partial cleanup
+   * is better than leaked OS watchers during shutdown.
    */
   static async unwatchAll(): Promise<Result<void>> {
     const ids = [...Watcher.watchers.keys()];
+    let firstError: Result<void> | null = null;
     for (const id of ids) {
       const result = await Watcher.unwatch(id);
-      if (result.isError()) return result;
+      if (result.isError() && firstError === null) {
+        firstError = result;
+      }
     }
-    return Ok(undefined);
+    return firstError ?? Ok(undefined);
   }
 }
 
