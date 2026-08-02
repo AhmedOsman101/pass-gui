@@ -70,9 +70,9 @@ class Dialog {
     content: string,
     icon?: Icon
   ): Promise<Result<void>> {
-    return await wrapAsync(async () =>
-      os.showNotification(title, content, icon)
-    );
+    return (
+      await wrapAsync(async () => os.showNotification(title, content, icon))
+    ).map(() => undefined);
   }
 
   /**

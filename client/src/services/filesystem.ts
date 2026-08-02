@@ -7,17 +7,17 @@ import {
   type Stats,
 } from "@neutralinojs/lib";
 import ignore from "ignore";
-import { Err, ErrFromUnknown, Ok, type Result, wrapAsync } from "lib-result";
+import { Err, Ok, type Result, wrapAsync } from "lib-result";
 import {
   DirectoryCreationError,
   FileWriteError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
+  type NeuError,
   type NeuErrorCode,
 } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
 import Path from "@/lib/path";
-import type { NeuErrorObj } from "@/types";
 
 /**
  * A directory entry with nested children — the tree form of NeutralinoJS's
@@ -161,14 +161,13 @@ class Filesystem {
       return Ok(true);
     }
 
-    try {
-      await filesystem.createDirectory(resolvedPath.ok);
-      return Ok(true);
-    } catch (e) {
-      const err = e as NeuErrorObj;
-      await Logger.error(
-        `Fs.mkdir("${resolvedPath.ok}"): ${err?.message ?? String(e)}`
-      );
+    const result = await wrapAsync(
+      async () => await filesystem.createDirectory(resolvedPath.ok)
+    );
+    if (result.isError()) {
+      const err = result.error as NeuError;
+
+      await Logger.error(`Fs.mkdir("${resolvedPath.ok}"): ${err.message}`);
       if (err?.code === NEU_ERROR_CODES_MAP.DirectoryCreationFailed) {
         const errorCode = err.code as NeuErrorCode;
         return Err(
@@ -180,9 +179,9 @@ class Filesystem {
           )
         );
       }
-
-      return ErrFromUnknown(e);
+      return Err(result.error);
     }
+    return Ok(result.ok.success);
   }
 
   /**
@@ -386,11 +385,11 @@ class Filesystem {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    try {
-      await filesystem.writeFile(resolvedPath.ok, data);
-      return Ok(true);
-    } catch (e) {
-      const err = e as NeuErrorObj;
+    const result = await wrapAsync(
+      async () => await filesystem.writeFile(resolvedPath.ok, data)
+    );
+    if (result.isError()) {
+      const err = result.error as NeuError;
       if (err?.code === "NE_FS_FILWRER") {
         const errorCode = err.code as NeuErrorCode;
         return Err(
@@ -402,8 +401,9 @@ class Filesystem {
           )
         );
       }
-      return ErrFromUnknown(e);
+      return Err(result.error);
     }
+    return Ok(result.ok.success);
   }
 }
 

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 type OkMessage<T> = string | ((value: T) => string);
 type ErrMessage<E extends Error> = string | ((error: E) => string);
 
-export type NotifyResultOpts<T, E extends Error> = {
+type NotifyResultOpts<T, E extends Error> = {
   ok?: OkMessage<T>;
   err?: ErrMessage<E>;
 };
@@ -28,7 +28,7 @@ export type NotifyResultOpts<T, E extends Error> = {
  *     errFn: () => focusField(),
  *   });
  */
-export function useNotifyResult<T, E extends Error = Error>(
+function useNotifyResult<T, E extends Error = Error>(
   result: Result<T, E>,
   opts: NotifyResultOpts<T, E> = {}
 ): Result<T, E> {
@@ -52,3 +52,5 @@ export function useNotifyResult<T, E extends Error = Error>(
 
   return result;
 }
+
+export { type NotifyResultOpts, useNotifyResult };

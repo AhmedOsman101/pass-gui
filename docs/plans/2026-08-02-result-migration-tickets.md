@@ -14,11 +14,11 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] `composables/use-async-action.ts` created with signature `(action: (...args) => Promise<Result<T, E>>)` returning `{ isLoading: Ref<boolean>, error: Ref<E | null>, run: (...args) => Promise<Result<T, E>> }`
-- [ ] `error` resets to `null` before each call
-- [ ] `isLoading` set to `false` on completion (success or failure)
-- [ ] Unit test: `__tests__/use-async-action.test.ts` — happy path + error path
-- [ ] `mask typecheck` clean
+- [x] `composables/use-async-action.ts` created with signature `(action: (...args) => Promise<Result<T, E>>)` returning `{ isLoading: Ref<boolean>, error: Ref<E | null>, run: (...args) => Promise<Result<T, E>> }`
+- [x] `error` resets to `null` before each call
+- [x] `isLoading` set to `false` on completion (success or failure)
+- [x] Unit test: `__tests__/use-async-action.test.ts` — happy path + error path
+- [x] `mask typecheck` clean
 
 ---
 
@@ -28,13 +28,13 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] `composables/use-notify-result.ts` created with signature `(result: Result<T, E>, opts?: { ok?: string | ((v: T) => string), err?: string | ((e: E) => string) }) => Result<T, E>`
-- [ ] On `Ok`: call `toast.success(msg)` where msg is `opts.ok` string or derived from function
-- [ ] On `Err`: call `toast.error(msg)` where msg is `opts.err` string or derived from function
-- [ ] Returns the original Result unchanged (no side effects on the value)
-- [ ] Default messages: `"Success"` for ok, `error.message` for err
-- [ ] Unit test: `__tests__/use-notify-result.test.ts` — ok + err paths
-- [ ] `mask typecheck` clean
+- [x] `composables/use-notify-result.ts` created with signature `(result: Result<T, E>, opts?: { ok?: string | ((v: T) => string), err?: string | ((e: E) => string) }) => Result<T, E>`
+- [x] On `Ok`: call `toast.success(msg)` where msg is `opts.ok` string or derived from function
+- [x] On `Err`: call `toast.error(msg)` where msg is `opts.err` string or derived from function
+- [x] Returns the original Result unchanged (no side effects on the value)
+- [x] Default messages: `"Success"` for ok, `error.message` for err
+- [x] Unit test: `__tests__/use-notify-result.test.ts` — ok + err paths
+- [x] `mask typecheck` clean
 
 ---
 
@@ -44,9 +44,9 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] Add a JSDoc note on `Pass.exec` explaining the scoped-call pattern: pass `cwd` and override `PASSWORD_STORE_DIR` via `envs`
-- [ ] Add a smoke test: assert `Pass.exec(["show", "test"], { cwd: "/tmp", envs: { PASSWORD_STORE_DIR: "/tmp" }})` resolves without mutating `Pass.storePath`
-- [ ] `mask typecheck` clean
+- [x] Add a JSDoc note on `Pass.exec` explaining the scoped-call pattern: pass `cwd` and override `PASSWORD_STORE_DIR` via `envs`
+- [x] Add a smoke test: assert `Pass.exec(["show", "test"], { cwd: "/tmp", envs: { PASSWORD_STORE_DIR: "/tmp" }})` resolves without mutating `Pass.storePath`
+- [x] `mask typecheck` clean
 
 ---
 
@@ -56,12 +56,12 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] `Clipboard.readText()` returns `Result<string, ClipboardReadError>` (rename `ClipboardError` → `ClipboardReadError` for clarity)
-- [ ] `Clipboard.writeText()` returns `Result<ClipboardAction, ClipboardWriteError>`
-- [ ] `Clipboard.clear()` returns `Result<void, ClipboardClearError>`
-- [ ] Each error class extends `Error` with a typed `cause` field
-- [ ] No `try/catch` in service body
-- [ ] `mask typecheck` clean
+- [x] `Clipboard.readText()` returns `Result<string, ClipboardReadError>` (rename `ClipboardError` → `ClipboardReadError` for clarity)
+- [x] `Clipboard.writeText()` returns `Result<ClipboardAction, ClipboardWriteError>`
+- [x] `Clipboard.clear()` returns `Result<void, ClipboardClearError>`
+- [x] Each error class extends `Error` with a typed `cause` field
+- [x] No `try/catch` in service body
+- [x] `mask typecheck` clean
 
 ---
 
@@ -75,7 +75,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [ ] `clear()` returns `Result<void, ClipboardClearError>` — sets `error.value` via `.inspectErr()`, stops timer
 - [ ] `error` ref typed as `Error | null` (not `string | null`)
 - [ ] No `try/catch` in store body
-- [ ] Unit test: `__tests__/clipboard.test.ts` — happy path + error path for both actions
+- [x] Unit test: `__tests__/clipboard.test.ts` — happy path + error path for both actions
 - [ ] `mask typecheck` clean
 
 ---
@@ -99,9 +99,9 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T6 (code is finalized before tests).
 
-- [ ] `services/__tests__/clipboard.test.ts` — `readText`, `writeText`, `clear` happy + error paths
-- [ ] `stores/__tests__/clipboard.test.ts` — `copy` + `clear` happy + error paths with mock service
-- [ ] All tests pass
+- [x] `services/__tests__/clipboard.test.ts` — `readText`, `writeText`, `clear` happy + error paths
+- [x] `stores/__tests__/clipboard.test.ts` — `copy` + `clear` happy + error paths with mock service
+- [x] All tests pass
 - [ ] `mask typecheck` clean
 
 ---
@@ -129,7 +129,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [ ] `error` ref typed as `Error | null`
 - [ ] No `try/catch` in store body
 - [ ] Optimistic updates use the pattern: save previous → apply optimistic → on error, revert
-- [ ] Unit test: `__tests__/entry-tree.test.ts` — happy + rollback paths
+- [x] Unit test: `__tests__/entry-tree.test.ts` — happy + rollback paths
 - [ ] `mask typecheck` clean
 
 ---
@@ -167,10 +167,10 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T11 (code is finalized before tests).
 
-- [ ] `services/__tests__/entries.test.ts` — all methods, happy + error paths
-- [ ] `services/__tests__/filesystem.test.ts` — all methods, happy + error paths
-- [ ] `stores/__tests__/entry-tree.test.ts` — happy + rollback paths for each action
-- [ ] All tests pass
+- [x] `services/__tests__/entries.test.ts` — all methods, happy + error paths
+- [x] `services/__tests__/filesystem.test.ts` — all methods, happy + error paths
+- [x] `stores/__tests__/entry-tree.test.ts` — happy + rollback paths for each action
+- [x] All tests pass
 - [ ] `mask typecheck` clean
 
 ---
@@ -199,7 +199,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [ ] No `try/catch` in store body
 - [ ] Multi-step orchestration uses `.andThen()` chaining
 - [ ] Rollback: if step N fails, undo steps 0..N-1
-- [ ] Unit test: `__tests__/entry-form.test.ts` — happy + rollback paths
+- [x] Unit test: `__tests__/entry-form.test.ts` — happy + rollback paths
 - [ ] `mask typecheck` clean
 
 ---
@@ -237,10 +237,10 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T16 (code is finalized before tests).
 
-- [ ] `services/__tests__/pass.test.ts` — updated for new error classes, all methods
-- [ ] `services/__tests__/gpg.test.ts` — updated for new error classes, all methods
-- [ ] `stores/__tests__/entry-form.test.ts` — happy + rollback paths for each action
-- [ ] All tests pass
+- [x] `services/__tests__/pass.test.ts` — updated for new error classes, all methods
+- [x] `services/__tests__/gpg.test.ts` — updated for new error classes, all methods
+- [x] `stores/__tests__/entry-form.test.ts` — happy + rollback paths for each action
+- [x] All tests pass
 - [ ] `mask typecheck` clean
 
 ---
@@ -270,7 +270,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [ ] `addStore()` returns `Result<StoreConfig, AddStoreError>` — adds to `stores` map on success
 - [ ] `switchStore()` still uses `Pass.setStorePath` (last legitimate caller)
 - [ ] No `try/catch` in store body
-- [ ] Unit test: `__tests__/active-store.test.ts` — happy + rollback paths
+- [x] Unit test: `__tests__/active-store.test.ts` — happy + rollback paths
 - [ ] `mask typecheck` clean
 
 ---
@@ -321,7 +321,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T22 (code is finalized before tests).
 
-- [ ] `services/__tests__/store.test.ts` — `create` + `add` happy + error + rollback paths
-- [ ] `stores/__tests__/active-store.test.ts` — happy + rollback paths for each action
-- [ ] All tests pass
+- [x] `services/__tests__/store.test.ts` — `create` + `add` happy + error + rollback paths
+- [x] `stores/__tests__/active-store.test.ts` — happy + rollback paths for each action
+- [x] All tests pass
 - [ ] `mask typecheck` clean

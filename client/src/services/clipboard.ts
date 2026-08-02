@@ -1,9 +1,52 @@
 import { clipboard as neuClipboard } from "@neutralinojs/lib";
 import { Err, Ok, type Result, wrapAsync } from "lib-result";
-import { ClipboardError } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
 import type { ClipboardAction } from "@/types/entries";
 import { Config } from "./config";
+
+/**
+ * Error thrown by `Clipboard.readText()`.
+ * Carries the underlying cause for debugging — the OS-level failure
+ * that prevented reading the clipboard.
+ */
+class ClipboardReadError extends Error {
+  public cause: Error | null;
+
+  constructor(message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.cause = cause ?? null;
+  }
+}
+
+/**
+ * Error thrown by `Clipboard.writeText()`.
+ * Captures the target clipboard selection so callers can show
+ * a precise message ("primary" vs "clipboard") and the underlying
+ * cause for logging.
+ */
+class ClipboardWriteError extends Error {
+  public selection: string;
+  public cause: Error | null;
+
+  constructor(selection: string, message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.selection = selection;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
+ * Error thrown by `Clipboard.clear()`.
+ * Captures the underlying cause for logging.
+ */
+class ClipboardClearError extends Error {
+  public cause: Error | null;
+
+  constructor(message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.cause = cause ?? null;
+  }
+}
 
 /**
  * Service for clipboard operations.
@@ -11,7 +54,7 @@ import { Config } from "./config";
  * clipboard — no browser sandbox restrictions.
  *
  * All methods return Result types — never throws.
- * Does NOT manage auto-clear timers. The Phase 04 Pinia store consumes
+ * Does NOT manage auto-clear timers. The Pinia store consumes
  * `ClipboardAction.expiresAt` and calls `clear()` when the timer fires.
  */
 class Clipboard {
@@ -19,11 +62,11 @@ class Clipboard {
    * Reads the current clipboard text content.
    * Returns empty string `""` if clipboard is empty or has no text format.
    */
-  static async readText(): Promise<Result<string, ClipboardError>> {
+  static async readText(): Promise<Result<string, ClipboardReadError>> {
     const result = await wrapAsync(neuClipboard.readText);
     if (result.isError()) {
       await Logger.error(`clipboard.readText failed: ${result.error.message}`);
-      return Err(new ClipboardError("clipboard", result.error.message));
+      return Err(new ClipboardReadError(result.error.message, result.error));
     }
     return Ok(result.ok);
   }
@@ -31,10 +74,10 @@ class Clipboard {
   /**
    * Writes a secret to the clipboard and returns timer metadata.
    *
-   * The caller (EntriesService or UI) passes the raw secret to write.
-   * This method reads `clipboard.clear_after_seconds` and
-   * `clipboard.selection` from config, writes to the OS clipboard,
-   * and returns a `ClipboardAction` with the expiration timestamp.
+   * The caller passes the raw secret to write. This method reads
+   * `clipboard.clear_after_seconds` and `clipboard.selection` from config,
+   * writes to the OS clipboard, and returns a `ClipboardAction` with
+   * the expiration timestamp.
    *
    * **NeutralinoJS limitation:** The C++ controller always reports success
    * for `writeText` — even if the clipboard is locked by another process.
@@ -47,13 +90,19 @@ class Clipboard {
   static async writeText(
     secret: string,
     entryPath: string
-  ): Promise<Result<ClipboardAction, ClipboardError>> {
+  ): Promise<Result<ClipboardAction, ClipboardWriteError>> {
     const configResult = await Config.load();
     if (configResult.isError()) {
       await Logger.error(
         `clipboard.writeText failed: ${configResult.error.message}`
       );
-      return Err(new ClipboardError("clipboard", configResult.error.message));
+      return Err(
+        new ClipboardWriteError(
+          "clipboard",
+          configResult.error.message,
+          configResult.error
+        )
+      );
     }
 
     const selection = configResult.ok.data.clipboard?.selection ?? "clipboard";
@@ -73,7 +122,9 @@ class Clipboard {
 
     if (result.isError()) {
       await Logger.error(`clipboard.writeText failed: ${result.error.message}`);
-      return Err(new ClipboardError(selection, result.error.message));
+      return Err(
+        new ClipboardWriteError(selection, result.error.message, result.error)
+      );
     }
     return Ok(result.ok);
   }
@@ -81,12 +132,19 @@ class Clipboard {
   /**
    * Clears the clipboard unconditionally.
    * Does not check whether the current content matches what we copied.
-   * The Phase 04 Pinia store calls this when the auto-clear timer fires.
+   * The Pinia store calls this when the auto-clear timer fires.
    */
-  static async clear(): Promise<Result<void, ClipboardError>> {
+  static async clear(): Promise<Result<void, ClipboardClearError>> {
     const result = await wrapAsync(neuClipboard.clear);
-    return result.mapErr(e => new ClipboardError("clipboard", e.message));
+    return result
+      .map(() => undefined)
+      .mapErr(e => new ClipboardClearError(e.message, e));
   }
 }
 
-export { Clipboard };
+export {
+  Clipboard,
+  ClipboardClearError,
+  ClipboardReadError,
+  ClipboardWriteError,
+};

@@ -6,13 +6,11 @@ import { type Ref, ref } from "vue";
  * Any async function returning a `Result` works — store actions,
  * service methods, raw async I/O.
  */
-export type AsyncAction<
-  TArgs extends unknown[],
-  TResult,
-  TError extends Error,
-> = (...args: TArgs) => Promise<Result<TResult, TError>>;
+type AsyncAction<TArgs extends unknown[], TResult, TError extends Error> = (
+  ...args: TArgs
+) => Promise<Result<TResult, TError>>;
 
-export type UseAsyncActionReturn<
+type UseAsyncActionReturn<
   TArgs extends unknown[],
   TResult,
   TError extends Error,
@@ -35,11 +33,7 @@ export type UseAsyncActionReturn<
  *   const result = await run("secret", "Email/work");
  *   if (result.isOk()) closeModal();
  */
-export function useAsyncAction<
-  TArgs extends unknown[],
-  TResult,
-  TError extends Error,
->(
+function useAsyncAction<TArgs extends unknown[], TResult, TError extends Error>(
   action: AsyncAction<TArgs, TResult, TError>
 ): UseAsyncActionReturn<TArgs, TResult, TError> {
   const isLoading = ref(false);
@@ -60,3 +54,5 @@ export function useAsyncAction<
 
   return { isLoading, error, run };
 }
+
+export { type AsyncAction, type UseAsyncActionReturn, useAsyncAction };
