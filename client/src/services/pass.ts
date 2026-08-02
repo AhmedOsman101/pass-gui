@@ -118,6 +118,24 @@ class PassService {
    * Executes a pass command with `PASSWORD_STORE_DIR` and `GNUPGHOME`
    * environment variables set. Caller-provided envs merge on top of
    * the defaults. All arguments are validated against path traversal.
+   *
+   * **Scoped-call pattern** (preferred for one-off operations):
+   * Pass `cwd` and override `PASSWORD_STORE_DIR` via `options.envs`
+   * to scope a single call without mutating `this.storePath`. Use this
+   * from recipes (e.g. `Store.create`) that operate on a temporary
+   * store path different from the active one.
+   *
+   * ```ts
+   * // One-off init against a new store path — does NOT mutate Pass.storePath
+   * await Pass.exec(["init", gpgKeyId], {
+   *   cwd: newPath,
+   *   envs: { PASSWORD_STORE_DIR: newPath },
+   * });
+   * ```
+   *
+   * `Pass.setStorePath` should be reserved for the active-store
+   * switcher and app startup only. Recipes and components must use
+   * the scoped-call pattern above.
    */
   async exec(
     args: Stringifiable[] = [],
