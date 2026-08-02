@@ -75,7 +75,7 @@ neu run dev
 > Build the project (frontend + Neutralino)
 
 ```bash
-$MASK build frontend && neu build
+neu build
 ```
 
 ### frontend

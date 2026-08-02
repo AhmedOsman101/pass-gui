@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ChevronRight, Copy, File, Folder, FolderPlus, Pencil, Scissors, Trash2 } from "@lucide/vue";
-import { computed, ref, TransitionGroup } from "vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
+import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
+import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,19 +10,30 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import {
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useEntryTreeStore } from "@/stores/entry-tree";
+import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
-import { useTreeState } from "@/composables/useTreeState";
-import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
-import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
-import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
+import { useTreeState } from "@/composables/use-tree-state";
+import { useEntryTreeStore } from "@/stores/entry-tree";
+import {
+  ChevronRight,
+  Copy,
+  File,
+  Folder,
+  FolderPlus,
+  Pencil,
+  Scissors,
+  Trash2,
+} from "@lucide/vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
+import { computed, ref, TransitionGroup } from "vue";
 
 const treeStore = useEntryTreeStore();
-const { buffer: copyBuffer, pasteEntry, copyEntry, cutEntry } = useClipboardBuffer();
+const {
+  buffer: copyBuffer,
+  pasteEntry,
+  copyEntry,
+  cutEntry,
+} = useClipboardBuffer();
 
 const props = defineProps<{
   searchQuery?: string;
@@ -100,23 +111,43 @@ function isSearchMatch(path: string): boolean {
 // Hotkeys — global for the tree
 const hasSelected = computed(() => !!selectedPath.value);
 
-useHotkey("F2", () => {
-  if (selectedPath.value) {
-    const node = visibleNodes.value.find((n) => n.path === selectedPath.value);
-    openRename(selectedPath.value, node?.isDirectory ? "DIRECTORY" : "FILE");
-  }
-}, { enabled: hasSelected });
+useHotkey(
+  "F2",
+  () => {
+    if (selectedPath.value) {
+      const node = visibleNodes.value.find(
+        (n) => n.path === selectedPath.value,
+      );
+      openRename(selectedPath.value, node?.isDirectory ? "DIRECTORY" : "FILE");
+    }
+  },
+  { enabled: hasSelected },
+);
 
-useHotkey("Delete", () => {
-  if (selectedPath.value) openDelete(selectedPath.value);
-}, { enabled: hasSelected });
+useHotkey(
+  "Delete",
+  () => {
+    if (selectedPath.value) openDelete(selectedPath.value);
+  },
+  { enabled: hasSelected },
+);
 
 // Keyboard navigation
-useHotkey("ArrowDown", () => { focusNext(); });
-useHotkey("ArrowUp", () => { focusPrev(); });
-useHotkey("ArrowRight", () => { arrowRight(); });
-useHotkey("ArrowLeft", () => { arrowLeft(); });
-useHotkey("Enter", () => { focusSelect(); });
+useHotkey("ArrowDown", () => {
+  focusNext();
+});
+useHotkey("ArrowUp", () => {
+  focusPrev();
+});
+useHotkey("ArrowRight", () => {
+  arrowRight();
+});
+useHotkey("ArrowLeft", () => {
+  arrowLeft();
+});
+useHotkey("Enter", () => {
+  focusSelect();
+});
 </script>
 
 <template>
@@ -127,17 +158,15 @@ useHotkey("Enter", () => { focusSelect(); });
     class="flex w-full min-w-0 flex-col gap-1"
     name="tree-node"
   >
-    <SidebarMenuItem
-      v-for="node in visibleNodes"
-      :key="node.path"
-    >
+    <SidebarMenuItem v-for="node in visibleNodes" :key="node.path">
       <ContextMenu>
         <ContextMenuTrigger as-child>
           <SidebarMenuButton
             :is-active="isSelectedNode(node.path)"
             class="overflow-hidden"
             :class="{
-              'bg-accent/30': isFocusedNode(node.path) && !isSelectedNode(node.path),
+              'bg-accent/30':
+                isFocusedNode(node.path) && !isSelectedNode(node.path),
               'cut-dimmed': isCutDimmed(node.path),
               'copy-pulse': hasCopyBuffer(node.path),
               'search-highlight': isSearchMatch(node.path),
@@ -175,7 +204,10 @@ useHotkey("Enter", () => { focusSelect(); });
             <ContextMenuShortcut>F2</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem class="text-destructive" @click="openDelete(node.path)">
+          <ContextMenuItem
+            class="text-destructive"
+            @click="openDelete(node.path)"
+          >
             <Trash2 class="size-4 mr-2" />
             Delete
             <ContextMenuShortcut>Del</ContextMenuShortcut>
@@ -184,7 +216,10 @@ useHotkey("Enter", () => { focusSelect(); });
 
         <!-- File context menu -->
         <ContextMenuContent v-else class="min-w-64 p-2">
-          <ContextMenuItem v-if="copyBuffer" @click="pasteEntry(dirPath(node.path))">
+          <ContextMenuItem
+            v-if="copyBuffer"
+            @click="pasteEntry(dirPath(node.path))"
+          >
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
@@ -205,7 +240,10 @@ useHotkey("Enter", () => { focusSelect(); });
             <ContextMenuShortcut>F2</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem class="text-destructive" @click="openDelete(node.path)">
+          <ContextMenuItem
+            class="text-destructive"
+            @click="openDelete(node.path)"
+          >
             <Trash2 class="size-4 mr-2" />
             Delete
             <ContextMenuShortcut>Del</ContextMenuShortcut>
@@ -238,8 +276,13 @@ useHotkey("Enter", () => { focusSelect(); });
   animation: copy-pulse 1.5s ease-in-out infinite;
 }
 @keyframes copy-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .cut-dimmed {

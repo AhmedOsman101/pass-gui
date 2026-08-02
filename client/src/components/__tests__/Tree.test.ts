@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 import Tree from "@/components/Tree.vue";
 import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
-import { useTreeState } from "@/composables/useTreeState";
+import { useTreeState } from "@/composables/use-tree-state";
 
 const { hotkeyCallbacks } = vi.hoisted(() => ({
   hotkeyCallbacks: new Map<string, () => void>(),

@@ -16,7 +16,7 @@ import { buildIndex } from "@/lib/tree-index";
 import { buildSearchResults, buildVisible, toggleSet } from "@/lib/tree-state";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import type { TreeIndex, VisibleNode } from "@/types/entries";
-import { useTreeState } from "../useTreeState";
+import { useTreeState } from "../use-tree-state";
 
 const rootIndex: TreeIndex = {
   byPath: new Map([
