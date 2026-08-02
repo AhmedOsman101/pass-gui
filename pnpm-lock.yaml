@@ -16,7 +16,7 @@ importers:
         version: 1.26.0(vue@3.5.40(typescript@6.0.3))
       '@neutralinojs/lib':
         specifier: github:AhmedOsman101/neutralino.js#pnpm
-        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/c9d0c72d255999eea8a522f1f83867b46418f972
+        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/294d74758b27950e6b1a5e1d7ff628acab64c2c6
       '@tanstack/vue-hotkeys':
         specifier: ^0.10.0
         version: 0.10.0(vue@3.5.40(typescript@6.0.3))
@@ -539,9 +539,9 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/c9d0c72d255999eea8a522f1f83867b46418f972':
-    resolution: {gitHosted: true, integrity: sha512-ymm7P5cK7GKGpOaMKbe//+jv3UgzjTkJ8ipbKTV/3QHJB0Z/dGcSeoRCTHh0fKt4bGB0pQcobF1AwKKPlmG+9Q==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/c9d0c72d255999eea8a522f1f83867b46418f972}
-    version: 6.8.0
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/294d74758b27950e6b1a5e1d7ff628acab64c2c6':
+    resolution: {gitHosted: true, integrity: sha512-djX5ivlWPWbhoPug6Y01kavVLpxlNF5VFQtz5P/056QFpOe2mPrIHRnKh+226OFkg8axipwYq8ePEv9q1oIH+A==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/294d74758b27950e6b1a5e1d7ff628acab64c2c6}
+    version: 6.9.0
 
   '@neutralinojs/neu@11.7.2':
     resolution: {integrity: sha512-Cy/ihUXak1q9M9qybNTDbf5LeiUvL/WyNu91qzzKX1FXQil93CqGr4jrC7d64FPjGNTAu3Yo9LTe6h1zRWdvIg==}
@@ -675,13 +675,13 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rollup/rollup-darwin-x64@4.62.2':
-    resolution: {integrity: sha512-yl0y2vq3S3lHeuXhEdss6TWfKW8vkujImO12tn4ZkG/4oghr09LvdYm2RElVjokTQiUvDUGXLGsYeLqUMCKpGA==}
+  '@rollup/rollup-darwin-x64@4.62.4':
+    resolution: {integrity: sha512-wsTxtgApb4PrOsNJIm0FZ1h3WvCC+k9uxLJ4ad75hgoS4NiRes2SoJFlDAyMwiUY8IssDqGcHbXuN0sx1tfF1A==}
     cpu: [x64]
     os: [darwin]
 
-  '@rollup/rollup-linux-x64-gnu@4.62.2':
-    resolution: {integrity: sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==}
+  '@rollup/rollup-linux-x64-gnu@4.62.4':
+    resolution: {integrity: sha512-W69hukhZ3KKNRCaMIEzKvcFye42hh0FE1+YoYaf5+Ikacuftoco6yO/xouz0hc5d5W/s3yBro5jRiuEE/Q5vUw==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
@@ -1136,8 +1136,8 @@ packages:
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
 
-  brace-expansion@1.1.16:
-    resolution: {integrity: sha512-IDw48K2/2kRkg9LdJxurvq3lV3aBgq0REY89duEqFRthjlPdXHKMj7EnQOXVckxzgisinf3nHfrcE2FufFLXMw==}
+  brace-expansion@1.1.18:
+    resolution: {integrity: sha512-Edep/X9fGqVNmzKBVsDYIOtD+z1tuezV70LBjdCst9Tqu76lsnvRiZ6oTic1n+/BIwX6QDGAO94PN4N2SADvtw==}
 
   brace-expansion@2.1.2:
     resolution: {integrity: sha512-w5JZcKgdhDOgOwm8H+KgbosopHMuGcl6qbulwjtz3SM7I7P3yW1eAjzMPLrIE+NQ9vjgANKHWeMHnrT0OXW1oA==}
@@ -3843,10 +3843,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/c9d0c72d255999eea8a522f1f83867b46418f972':
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/294d74758b27950e6b1a5e1d7ff628acab64c2c6':
     optionalDependencies:
-      '@rollup/rollup-darwin-x64': 4.62.2
-      '@rollup/rollup-linux-x64-gnu': 4.62.2
+      '@rollup/rollup-darwin-x64': 4.62.4
+      '@rollup/rollup-linux-x64-gnu': 4.62.4
 
   '@neutralinojs/neu@11.7.2(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)':
     dependencies:
@@ -3949,10 +3949,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rollup/rollup-darwin-x64@4.62.2':
+  '@rollup/rollup-darwin-x64@4.62.4':
     optional: true
 
-  '@rollup/rollup-linux-x64-gnu@4.62.2':
+  '@rollup/rollup-linux-x64-gnu@4.62.4':
     optional: true
 
   '@standard-schema/spec@1.1.0': {}
@@ -4439,7 +4439,7 @@ snapshots:
 
   boolbase@1.0.0: {}
 
-  brace-expansion@1.1.16:
+  brace-expansion@1.1.18:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
@@ -5509,7 +5509,7 @@ snapshots:
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.16
+      brace-expansion: 1.1.18
 
   minimatch@9.0.9:
     dependencies:
