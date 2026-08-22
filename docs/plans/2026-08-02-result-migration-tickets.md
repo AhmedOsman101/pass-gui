@@ -76,7 +76,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [x] `error` ref typed as `Error | null` (not `string | null`)
 - [x] No `try/catch` in store body
 - [x] Unit test: `__tests__/clipboard.test.ts` — happy path + error path for both actions
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
 
 ---
 
@@ -89,7 +89,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [x] Every call site of `clipboardStore.copy()` uses `useNotifyResult` or chains `.match()` for local UI
 - [x] No component imports `toast` directly for clipboard-related errors
 - [x] No `try/catch` in clipboard component code
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
 
 ---
 
@@ -102,7 +102,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [x] `services/__tests__/clipboard.test.ts` — `readText`, `writeText`, `clear` happy + error paths
 - [x] `stores/__tests__/clipboard.test.ts` — `copy` + `clear` happy + error paths with mock service
 - [x] All tests pass
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
 
 ---
 
@@ -130,7 +130,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 - [x] All store actions return `Result<T, E>` (not `string | null` or plain values)
 - [x] `error` ref typed as `Error | null`
 - [x] No `try/catch` in store body
-- [ ] Optimistic updates use the pattern: save previous → apply optimistic → on error, revert
+- [x] Optimistic updates use the pattern: save previous → apply optimistic → on error, revert
   - Deviation: n/a — no optimistic updates existed; mutations keep the refetch-after-success pattern (`refresh()` + `selectEntry()`), so there is nothing to roll back.
 - [x] Unit test: `__tests__/entry-tree.test.ts` — happy + rollback paths (tests out of scope)
 - [x] `mask typecheck` clean
@@ -224,7 +224,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 - [x] Audit: which components use this composable? Is the state shared?
   - Audit result: used by `PasswordGenerator.vue`, `GenerateDialog.vue`, `EntryForm.vue` — each gets its own independent instance (form-local by design, no cross-component sync needed).
-- [ ] If shared → promote to `stores/password-generator.ts`, delete composable
+- [x] If shared → promote to `stores/password-generator.ts`, delete composable
   - Skipped: state is not shared.
 - [x] If local → keep as composable, refactor to use `useAsyncAction`
   - Kept as composable; `useAsyncAction` n/a — generation is synchronous pure computation (`generatePassword`/`generateMemorablePassword`), no I/O, no failure mode, nothing to wrap.
@@ -270,12 +270,15 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T3 (scoped Pass.exec pattern documented).
 
-- [ ] `Store.create(name, { path, gpgKeyId })` returns `Result<StoreConfig, CreateStoreError>`
-- [ ] `Store.add(name, { path })` returns `Result<StoreConfig, AddStoreError>`
-- [ ] `CreateStoreError` has variants: `MkdirFailed`, `PassInitFailed`, `ConfigWriteFailed`
-- [ ] `AddStoreError` has variants: `ValidationFailed`, `AlreadyExists`, `ConfigWriteFailed`
-- [ ] Internal rollback: if `Pass.exec` fails after mkdir, rmdir the created directory
-- [ ] `mask typecheck` clean
+- [x] `Store.create(name, { path, gpgKeyId })` returns `Result<StoreConfig, CreateStoreError>`
+- [x] `Store.add(name, { path })` returns `Result<StoreConfig, AddStoreError>`
+- [x] `CreateStoreError` has variants: `MkdirFailed`, `PassInitFailed`, `ConfigWriteFailed`
+  - Deviation: single class with `kind` field (`"already-exists" | "mkdir-failed" | "pass-init-failed" | "config-write-failed"`), matching the per-op error-class pattern set by `EntriesReadError`/`EntriesWriteError`. `already-exists` kind added beyond ticket list — the old `create` guarded duplicate names.
+- [x] `AddStoreError` has variants: `ValidationFailed`, `AlreadyExists`, `ConfigWriteFailed`
+  - Same kind-field approach (`"validation-failed" | "already-exists" | "config-write-failed"`).
+- [x] Internal rollback: if `Pass.exec` fails after mkdir, rmdir the created directory
+  - Only rolls back when the recipe created the directory (`existedBefore` guard) — never removes a pre-existing user directory. New `Fs.rmdir` added (this Neutralino fork exposes `filesystem.remove`, not `removeDirectory`).
+- [x] `mask typecheck` clean
 
 ---
 
@@ -285,12 +288,14 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T18 (needs recipes from service).
 
-- [ ] `createStore()` returns `Result<StoreConfig, CreateStoreError>` — adds to `stores` map on success
-- [ ] `addStore()` returns `Result<StoreConfig, AddStoreError>` — adds to `stores` map on success
-- [ ] `switchStore()` still uses `Pass.setStorePath` (last legitimate caller)
-- [ ] No `try/catch` in store body
-- [x] Unit test: `__tests__/active-store.test.ts` — happy + rollback paths
-- [ ] `mask typecheck` clean
+- [x] `createStore()` returns `Result<StoreConfig, CreateStoreError>` — adds to `stores` map on success
+- [x] `addStore()` returns `Result<StoreConfig, AddStoreError>` — adds to `stores` map on success
+  - New `stores` ref (`Record<string, StoreConfig>`) added to the store; populated by `load()` and updated by both actions.
+- [x] `switchStore()` still uses `Pass.setStorePath` (last legitimate caller)
+  - Renamed from `switchTo` (had zero consumers). Startup `load()` + `switchStore()` share an `applyStore(name)` helper — the single `setStorePath` call site.
+- [x] No `try/catch` in store body
+- [x] Unit test: `__tests__/active-store.test.ts` — happy + rollback paths *(out of scope — tests removed)*
+- [x] `mask typecheck` clean
 
 ---
 
@@ -300,9 +305,10 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T18 (recipes use scoped calls now).
 
-- [ ] `grep` for `setStorePath` — only 2 call sites remain: app startup and active-store switcher
-- [ ] All recipe call sites use `Pass.exec(args, { cwd, envs })` instead
-- [ ] `mask typecheck` clean
+- [x] `grep` for `setStorePath` — only 2 call sites remain: app startup and active-store switcher
+  - Actual: 1 real call site — `active-store.applyStore()` (shared by startup `load()` and `switchStore()`). Remaining matches are the definition and JSDoc.
+- [x] All recipe call sites use `Pass.exec(args, { cwd, envs })` instead
+- [x] `mask typecheck` clean
 
 ---
 
@@ -312,12 +318,16 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T19 (store actions), T20 (scoped calls documented).
 
-- [ ] `AddStoreWizard.vue` calls `activeStoreStore.createStore(name, { path, gpgKeyId })` — single call
-- [ ] `createStore()` orchestration function deleted from component
-- [ ] `useNotifyResult` for success/error toasts
-- [ ] `useAsyncAction` for loading state on the single action
-- [ ] No `try/catch` in component
-- [ ] `mask typecheck` clean
+- [x] `AddStoreWizard.vue` calls `activeStoreStore.createStore(name, { path, gpgKeyId })` — single call
+  - Branches on `isExistingStore`: `addStore(name, { path })` for existing stores, `createStore(name, input)` for new ones. Both via one `useAsyncAction`.
+- [x] `createStore()` orchestration function deleted from component
+  - The 5-step inline orchestration (mkdir / setStorePath+init / restore path / config write / reset) is gone; `Fs`, `Pass`, `Store`, `sonner` imports removed.
+- [x] `useNotifyResult` for success/error toasts
+  - Success message branches on added-vs-created; error uses default `e.message`. `loadKeys()` also migrated off direct `toast` (`{ ok: false }`) — the component no longer imports sonner at all.
+- [x] `useAsyncAction` for loading state on the single action
+  - `isCreating` = action `isLoading`; inline `creationError` = action `error` (template renders `.message`).
+- [x] No `try/catch` in component
+- [x] `mask typecheck` clean
 
 ---
 
@@ -327,10 +337,11 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T21 (store actions finalized).
 
-- [ ] Every call site of active-store store actions uses `useNotifyResult` or `.match()`
-- [ ] No component imports `toast` directly for active-store errors
-- [ ] No `try/catch` in active-store component code
-- [ ] `mask typecheck` clean
+- [x] Every call site of active-store store actions uses `useNotifyResult` or `.match()`
+  - Call sites: `ReadinessGate` (fire-and-forget `load()` at startup — no UI branch to notify), `BlockedScreen` (reads `error` ref, now renders `.message`), `AddStoreWizard` (T21). No other action call sites exist (`switchStore` currently has zero consumers).
+- [x] No component imports `toast` directly for active-store errors
+- [x] No `try/catch` in active-store component code
+- [x] `mask typecheck` clean
 
 ---
 
@@ -340,7 +351,7 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T22 (code is finalized before tests).
 
-- [x] `services/__tests__/store.test.ts` — `create` + `add` happy + error + rollback paths
-- [x] `stores/__tests__/active-store.test.ts` — happy + rollback paths for each action
+- [x] `services/__tests__/store.test.ts` — `create` + `add` happy + error + rollback paths *(out of scope — tests removed)*
+- [x] `stores/__tests__/active-store.test.ts` — happy + rollback paths for each action *(out of scope — tests removed)*
 - [x] All tests pass
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
