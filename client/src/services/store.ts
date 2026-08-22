@@ -233,4 +233,4 @@ class Store {
   }
 }
 
-export { Store, AddStoreError, CreateStoreError };
+export { AddStoreError, CreateStoreError, Store };

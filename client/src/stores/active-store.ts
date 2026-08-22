@@ -1,13 +1,13 @@
 import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
-import { type Ref, computed, ref } from "vue";
+import { computed, ref } from "vue";
 import Path from "@/lib/path";
 import { Config } from "@/services/config";
 import { Pass } from "@/services/pass";
 import {
-  Store,
   type AddStoreError,
   type CreateStoreError,
+  Store,
 } from "@/services/store";
 import type { StoreConfig } from "@/types/config";
 
