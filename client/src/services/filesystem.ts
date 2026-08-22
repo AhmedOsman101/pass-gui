@@ -252,6 +252,27 @@ class Filesystem {
   }
 
   /**
+   * Removes a directory at the specified path.
+   * Used by recipes (e.g. `Store.create`) to roll back a directory
+   * they created when a later step fails.
+   */
+  static async rmdir(path: string): Promise<Result<boolean, Error>> {
+    const resolvedPath = await Filesystem.resolvePath(path);
+    if (resolvedPath.isError()) return Err(resolvedPath.error);
+
+    const result = await wrapAsync(
+      async () => await filesystem.remove(resolvedPath.ok)
+    );
+    if (result.isError()) {
+      await Logger.error(
+        `Fs.rmdir("${resolvedPath.ok}"): ${result.error.message}`
+      );
+      return Err(result.error);
+    }
+    return Ok(true);
+  }
+
+  /**
    * Checks if a file or directory exists at the given path.
    */
   static async exists(

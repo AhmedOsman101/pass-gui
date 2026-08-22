@@ -8,7 +8,7 @@ const readiness = useReadinessStore();
 const activeStore = useActiveStoreStore();
 
 const primaryIssue = computed(() => readiness.blockingIssues[0] ?? null);
-const storeError = computed(() => activeStore.error);
+const storeError = computed(() => activeStore.error?.message ?? null);
 </script>
 
 <template>

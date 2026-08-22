@@ -1,8 +1,14 @@
+import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { type Ref, computed, ref } from "vue";
 import Path from "@/lib/path";
 import { Config } from "@/services/config";
 import { Pass } from "@/services/pass";
+import {
+  Store,
+  type AddStoreError,
+  type CreateStoreError,
+} from "@/services/store";
 import type { StoreConfig } from "@/types/config";
 
 /**
@@ -16,94 +22,116 @@ const useActiveStoreStore = defineStore("active-store", () => {
   const storePath = ref<string | null>(null);
   const storeName = ref<string | null>(null);
   const isValidating = ref(false);
-  const error = ref<string | null>(null);
+  const error = ref<Error | null>(null);
   const currentStoreConfig = ref<StoreConfig | null>(null);
+  const stores = ref<Record<string, StoreConfig>>({});
 
   const hasStore = computed(() => storePath.value !== null);
+
+  /**
+   * Loads config and applies the named store as active.
+   * `Pass.setStorePath` here is one of the two legitimate callers
+   * (app startup / switching) — everything else uses scoped calls.
+   */
+  async function applyStore(name: string): Promise<Result<void, Error>> {
+    const configResult = await Config.load();
+    if (configResult.isError()) {
+      return Err(
+        new Error(`Failed to load config: ${configResult.error.message}`)
+      );
+    }
+
+    stores.value = configResult.ok.data.stores;
+    const storeCfg = configResult.ok.data.stores[name];
+    if (!storeCfg) {
+      return Err(new Error(`Store "${name}" not found in config`));
+    }
+
+    const resolved = await Path.resolveUserPath(storeCfg.path);
+    if (resolved.isError()) {
+      return Err(
+        new Error(`Failed to resolve store path: ${resolved.error.message}`)
+      );
+    }
+
+    currentStoreConfig.value = storeCfg;
+    Pass.setStorePath(resolved.ok);
+    storePath.value = resolved.ok;
+    return Ok(undefined);
+  }
 
   async function load(): Promise<void> {
     isValidating.value = true;
     error.value = null;
 
-    try {
-      const nameResult = await Config.getValue("core", "active_store");
-      if (nameResult.isError()) {
-        error.value = `Failed to read active store: ${nameResult.error.message}`;
-        return;
-      }
-
+    const nameResult = await Config.getValue("core", "active_store");
+    if (nameResult.isOk()) {
       storeName.value = nameResult.ok;
-
-      // Read the full config to get the store's path and settings
-      const configResult = await Config.load();
-      if (configResult.isError()) {
-        error.value = `Failed to load config: ${configResult.error.message}`;
-        return;
-      }
-
-      const storeCfg = configResult.ok.data.stores[nameResult.ok];
-      if (!storeCfg) {
-        error.value = `Store "${nameResult.ok}" not found in config`;
-        return;
-      }
-
-      currentStoreConfig.value = storeCfg;
-      const resolved = await Path.resolveUserPath(storeCfg.path);
-      if (resolved.isError()) {
-        error.value = `Failed to resolve store path: ${resolved.error.message}`;
-        return;
-      }
-      Pass.setStorePath(resolved.ok);
-      storePath.value = resolved.ok;
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
-    } finally {
-      isValidating.value = false;
+      const result = await applyStore(nameResult.ok);
+      if (result.isError()) error.value = result.error;
+    } else {
+      error.value = new Error(
+        `Failed to read active store: ${nameResult.error.message}`
+      );
     }
+
+    isValidating.value = false;
   }
 
-  async function switchTo(newStoreName: string): Promise<void> {
+  async function switchStore(
+    newStoreName: string
+  ): Promise<Result<void, Error>> {
     isValidating.value = true;
     error.value = null;
 
-    try {
-      const setResult = await Config.setValue(
-        "core",
-        "active_store",
-        newStoreName
+    let result: Result<void, Error>;
+    const setResult = await Config.setValue(
+      "core",
+      "active_store",
+      newStoreName
+    );
+    if (setResult.isError()) {
+      result = Err(
+        new Error(`Failed to switch store: ${setResult.error.message}`)
       );
-      if (setResult.isError()) {
-        error.value = `Failed to switch store: ${setResult.error.message}`;
-        return;
-      }
-
-      // Reload config to pick up the new store's path
-      const configResult = await Config.load();
-      if (configResult.isError()) {
-        error.value = `Failed to reload config: ${configResult.error.message}`;
-        return;
-      }
-
-      const storeCfg = configResult.ok.data.stores[newStoreName];
-      if (!storeCfg) {
-        error.value = `Store "${newStoreName}" not found in config`;
-        return;
-      }
-
-      currentStoreConfig.value = storeCfg;
-      const resolved = await Path.resolveUserPath(storeCfg.path);
-      if (resolved.isError()) {
-        error.value = `Failed to resolve store path: ${resolved.error.message}`;
-        return;
-      }
-      Pass.setStorePath(resolved.ok);
-      storePath.value = resolved.ok;
-      storeName.value = newStoreName;
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
-    } finally {
-      isValidating.value = false;
+    } else {
+      result = await applyStore(newStoreName);
+      if (result.isOk()) storeName.value = newStoreName;
     }
+
+    if (result.isError()) error.value = result.error;
+    isValidating.value = false;
+    return result;
+  }
+
+  /**
+   * Creates a brand-new store via the `Store.create` recipe
+   * (mkdir → pass init → config write) and registers it on success.
+   */
+  async function createStore(
+    name: string,
+    data: { path: string; gpgKeyId: string }
+  ): Promise<Result<StoreConfig, CreateStoreError>> {
+    const result = await Store.create(name, data);
+    if (result.isOk()) {
+      stores.value = { ...stores.value, [name]: result.ok };
+    }
+    return result;
+  }
+
+  /**
+   * Adds an existing initialized store via the `Store.add` recipe
+   * and registers it on success.
+   */
+  async function addStore(
+    name: string,
+    data: { path: string }
+  ): Promise<Result<StoreConfig, AddStoreError>> {
+    const result = await Store.add(name, data);
+    if (result.isOk()) {
+      stores.value = { ...stores.value, [name]: result.ok };
+    }
+    return result;
   }
 
   function getGpgHome(): string | undefined {
@@ -115,10 +143,13 @@ const useActiveStoreStore = defineStore("active-store", () => {
     storeName,
     isValidating,
     error,
+    stores,
     hasStore,
     currentStoreConfig,
     load,
-    switchTo,
+    switchStore,
+    createStore,
+    addStore,
     getGpgHome,
   };
 });

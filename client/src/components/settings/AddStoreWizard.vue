@@ -20,16 +20,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useAsyncAction } from "@/composables/use-async-action";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { Dialog as NeuDialog } from "@/services/dialog";
-import { Fs } from "@/services/filesystem";
 import { Gpg } from "@/services/gpg";
-import { Pass } from "@/services/pass";
-import { Store } from "@/services/store";
+import {
+  type AddStoreError,
+  type CreateStoreError,
+} from "@/services/store";
 import { StoreValidation } from "@/services/store-validation";
+import { useActiveStoreStore } from "@/stores/active-store";
 import type { SecretKey } from "@/types";
 import type { StoreConfig } from "@/types/config";
 import { ChevronRight, FolderOpen, Loader2 } from "@lucide/vue";
-import { toast } from "sonner";
+import type { Result } from "lib-result";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -43,6 +47,8 @@ const emit = defineEmits<{
   created: [store: { name: string; path: string }];
 }>();
 
+const activeStoreStore = useActiveStoreStore();
+
 // Wizard state
 type WizardStep = "name" | "path" | "gpg" | "creating";
 const step = ref<WizardStep>("name");
@@ -51,8 +57,6 @@ const storePath = ref("");
 const selectedKeyId = ref("");
 const secretKeys = ref<SecretKey[]>([]);
 const isLoadingKeys = ref(true);
-const isCreating = ref(false);
-const creationError = ref("");
 const isExistingStore = ref(false);
 
 // Validation
@@ -83,6 +87,24 @@ const canCreate = computed(
   () => selectedKeyId.value !== "" && !isCreating.value,
 );
 
+/**
+ * Single call into the active-store store — the recipe decides
+ * between full creation (mkdir + pass init + config write) and
+ * add-as-is (validation + config write).
+ */
+const {
+  isLoading: isCreating,
+  error: creationError,
+  run: runCreateAction,
+} = useAsyncAction(
+  async (
+    input: { name: string; path: string; gpgKeyId: string }
+  ): Promise<Result<StoreConfig, CreateStoreError | AddStoreError>> =>
+    isExistingStore.value
+      ? activeStoreStore.addStore(input.name, { path: input.path })
+      : activeStoreStore.createStore(input.name, input),
+);
+
 // Load GPG keys when dialog opens
 watch(
   () => props.open,
@@ -98,9 +120,8 @@ async function loadKeys(): Promise<void> {
   const result = await Gpg.listSecretKeys();
   if (result.isOk()) {
     secretKeys.value = result.ok;
-  } else {
-    toast.error("Failed to load GPG keys");
   }
+  useNotifyResult(result, { ok: false });
   isLoadingKeys.value = false;
 }
 
@@ -157,63 +178,28 @@ function goBack(): void {
 async function createStore(): Promise<void> {
   if (!canCreate.value) return;
   step.value = "creating";
-  isCreating.value = true;
-  creationError.value = "";
 
   const name = storeName.value.trim();
   const path = storePath.value.trim();
-  const gpgKeyId = selectedKeyId.value;
 
-  // 1. Create directory if it doesn't exist
-  if (!isExistingStore.value) {
-    const mkdirResult = await Fs.mkdir(path);
-    if (mkdirResult.isError()) {
-      creationError.value = `Failed to create directory: ${mkdirResult.error.message}`;
-      toast.error(creationError.value);
-      isCreating.value = false;
-      step.value = "gpg";
-      return;
-    }
-  }
+  const result = await runCreateAction({
+    name,
+    path,
+    gpgKeyId: selectedKeyId.value,
+  });
 
-  // 2. Run pass init only for NEW stores (existing stores already have .gpg-id)
-  if (!isExistingStore.value) {
-    Pass.setStorePath(path);
-    const initResult = await Pass.exec(["init", gpgKeyId]);
-    if (initResult.isError()) {
-      creationError.value = `pass init failed: ${initResult.error.message}`;
-      toast.error(creationError.value);
-      isCreating.value = false;
-      step.value = "gpg";
-      return;
-    }
-  }
+  useNotifyResult(result, {
+    ok: () =>
+      isExistingStore.value ? `Store "${name}" added` : `Store "${name}" created`,
+  });
 
-  // 3. Restore previous store path
-  const previousPath = props.stores[props.activeStore]?.path;
-  if (previousPath) {
-    Pass.setStorePath(previousPath);
-  }
-
-  // 4. Add store to config
-  const createResult = await Store.create(name, { path });
-  if (createResult.isError()) {
-    creationError.value = `Failed to add store to config: ${createResult.error.message}`;
-    toast.error(creationError.value);
-    isCreating.value = false;
+  if (result.isOk()) {
+    emit("created", { name, path });
+    emit("update:open", false);
+    resetWizard();
+  } else {
     step.value = "gpg";
-    return;
   }
-
-  // 5. Reset and close
-  isCreating.value = false;
-  const msg = isExistingStore.value
-    ? `Store "${name}" added`
-    : `Store "${name}" created`;
-  toast.success(msg);
-  emit("created", { name, path });
-  emit("update:open", false);
-  resetWizard();
 }
 
 function resetWizard(): void {
@@ -221,7 +207,6 @@ function resetWizard(): void {
   storeName.value = "";
   storePath.value = "";
   selectedKeyId.value = "";
-  creationError.value = "";
   isExistingStore.value = false;
 }
 </script>
@@ -307,7 +292,7 @@ function resetWizard(): void {
       <!-- Step: GPG Key -->
       <div v-else-if="step === 'gpg'" class="flex flex-col gap-3">
         <p v-if="creationError" class="text-xs text-destructive">
-          {{ creationError }}
+          {{ creationError?.message }}
         </p>
         <Label>Encryption Key</Label>
         <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
@@ -350,7 +335,7 @@ function resetWizard(): void {
         <Loader2 class="size-8 animate-spin text-muted-foreground" />
         <span class="text-sm text-muted-foreground">Creating store...</span>
         <p v-if="creationError" class="text-xs text-destructive">
-          {{ creationError }}
+          {{ creationError?.message }}
         </p>
       </div>
 
