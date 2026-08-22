@@ -1,6 +1,6 @@
-import { computed, type Ref, ref } from "vue";
 import { wrapAsync } from "lib-result";
 import { defineStore } from "pinia";
+import { computed, type Ref, ref } from "vue";
 import { Logger } from "@/lib/logger";
 import { Readiness } from "@/services/readiness";
 import type {
@@ -41,7 +41,9 @@ const useReadinessStore = defineStore("readiness", () => {
     isEvaluating.value = true;
     error.value = null;
 
-    const result = await wrapAsync(async () => await Readiness.check(storePath));
+    const result = await wrapAsync(
+      async () => await Readiness.check(storePath)
+    );
     if (result.isError()) {
       await Logger.error(
         `readiness.evaluate("${storePath}") failed: ${result.error.message}`
