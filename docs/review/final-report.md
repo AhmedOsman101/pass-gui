@@ -1,0 +1,85 @@
+# pass-gui Full Codebase Review — Final Report
+
+Date: 2026-08-22 · Scope: `client/src` app code (~86 files) · Method: 10 parallel subagent batch reviews (vertical slices by domain), pilot-validated house-style brief. Raw per-batch reports: `batch-01.md` … `batch-10.md` in this directory.
+
+Skipped as vendored/scaffold: `components/ui/**` (shadcn-vue), `components/icons/*`, generated `route-map.d.ts` (drift-checked only), tests/infra configs.
+
+Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-loss-critical beyond those listed below.
+
+---
+
+## Critical bugs (fix first)
+
+| # | File | Bug | Batch |
+|---|------|-----|-------|
+| C1 | `lib/shell.ts` | Windows quoting doubles backslashes before normal chars and fails to double them before embedded quotes → argument boundaries break for any Windows path with backslashes. All execs route through this. Fix = count pending backslash run, emit `run*2` before each `"`. | 02 |
+| C2 | `services/config.ts` | `setValue`/`removeValue` mutate `_raw` but `save()` validates the stale `data` snapshot → written values bypass Zod validation; an invalid write (empty `active_store`, removed active store) bricks config loading on next startup. | 06 |
+| C3 | `pages/settings.vue` | Failed `Config.load()` leaves `config` null yet renders tabs via `config!` → white-screen crash exactly when the config file is broken. Needs a `loadError` branch. | 09 |
+| C4 | `pages/settings.vue` | Multi-field tab saves fire unawaited concurrent read-modify-write cycles over the whole config file → last-writer-wins silently reverts sibling fields (Generation ×5, Clipboard ×2, GPG ×3) with false success toasts. Sequentialize now; proper fix is a batch setter in the service. | 09 |
+| C5 | `Tree.vue` + `AppSidebar.vue` | Context-menu and Mod+V paste discard the `pasteEntry` Result (`void …`) → failed pastes are silent AND the buffer was already cleared pre-flight, so the user loses their cut/copy state. | 04 |
+| C6 | `services/gpg.ts` | `checkVersion()` returns stale singleton version data as a successful `Ok` when `gpg --version` output is unparseable (regex miss keeps previous/zeros version, still returns Ok). Reset version + Err on unparseable output. | 07 |
+| C7 | `services/filesystem.ts` | `exists()` returns `Err` when the path simply doesn't exist — the one query where absence is an expected answer. Every caller conflates "absent" with "failed" (`pass.checkInitialized`, `Config.exists`). Return `Ok(stat succeeded)` or distinguish ENOENT. | 03 |
+
+## Systemic patterns (flagged in ≥3 batches)
+
+### S1 — Silent Err drops at the last hop
+Results are produced correctly by services and stored canonically, then discarded by consumers: clipboard-clear consumers (B01), paste call sites (B04), `Watcher.watch` results in `config.load` and `AppSidebar` (B06/B04), `Fs.rmdir` rollback result (B08), `main.ts` init Results (B10), `use-generation-config` fallbacks (B05). The Result chain breaking at its final consumer is the single most repeated defect class.
+**Fix-once direction:** lint rule or convention review for unhandled Results; route through `useNotifyResult`/`.match`/Logger.
+
+### S2 — Dead code accumulation
+`InsertDialog`, `EditEntryDialog` (B04), `GenerateDialog` (B05), `PreferencesTab` (B09), `makeIgnoreFilter` (B03), `validateBehavior` (B08), `brand()`, `SYSTEM_PASS_PATHS`, unused types (B10), dead `Scissors` import (B01). Several dead components duplicate live ones and have already drifted (weaker validators, latent open-prop bug in GenerateDialog).
+**Fix-once direction:** delete all; git history preserves them.
+
+### S3 — Treating any Err as "absent", then proceeding destructively
+`pass.init` swallows check errors as `Ok(false)` (B02); `exists()` semantics (C7/B03); `Config.ensure()` treats an exists-*error* as missing and writes defaults over a possibly-real config (B06); readiness swallows `hasEntries` errors → reports READY (B07); `Store.create/add` guard treats config-read errors as not-found → silent clobber path (B08); AddStoreWizard defaults failed store detection to *create* mode → risks `pass init` rewriting an existing `.gpg-id` (B08).
+**Fix-once direction:** fail closed at trust boundaries; distinguish not-found from failure everywhere an action follows the check.
+
+### S4 — Duplicate parallel implementations
+Two divergent pass-format parsers (`parse-pass-show.ts` vs `entry-content.ts`, disagreeing on comment stripping) (B02); byte-identical `EntriesReadError`/`EntriesWriteError` classes (B02); dead dialog twins of EntryForm (S2/B04); path-segment splitting re-implemented ×5 (B04); OS-type vocabulary triplicated (B10).
+**Fix-once direction:** one canonical parser + shared helpers.
+
+### S5 — Manual `cause` fields shadow ES2022 `Error.cause`
+Every per-op error class redeclares `public cause: Error | null` after passing it via `super(message, { cause })`: clipboard trio (B01), `PassExecError` (B02), `FsReadError`/`FsStatError` (B03), `GpgKeyListError` (B07), `CreateStoreError`/`AddStoreError` (B08).
+**Fix-once direction:** drop the field declarations; rely on the standard property.
+
+## Design issues worth escalating (one line each)
+
+- `stores/clipboard.ts` + `EntryDetail.vue`: failed clipboard clear resets UI state while the secret stays live in the OS clipboard — core safety path (B01).
+- `DeleteConfirmDialog.vue`: native `AlertDialogAction` close fires before the awaited Result resolves → dialog closes even on failure (B01).
+- `stores/entry-tree.ts`: `moveEntry` selection rewrite uses naive substring replace (`"a"` matches inside `"a2"`) → corrupted selected paths; paste into own descendant unguarded (B03).
+- `filesystem.ts`: `join`/`relativePath` return bare promises (can reject) violating the Result contract used everywhere else (B03).
+- `entries.ts`: `generate()` accepts length/symbols options and never uses them; `-f` force-overwrites without consent while `insert` respects force; `copy()` round-trips plaintext through JS instead of `pass cp` (B02).
+- `shell.ts`: `checkSneakyPath` fails open on normalization errors; lib→services import inversion (B02).
+- `errors.ts`: `CommandFailedError` mangles stored args (phantom entries) and builds a malformed message (B02).
+- `config.ts`: watcher-setup failure swallowed; `getValue` can return `Ok(undefined)` typed as required (B06).
+- `readiness.ts`: keyring-listing failure misreported as ".gpg-id parse error"; `GPG_VERSION_TOO_OLD` issue exists but no check ever runs it (B07).
+- `store.ts` recipes: partial-failure states (init succeeded, config write failed) leave initialized-but-unregistered stores — acceptable, document the ceiling (B08).
+- `active-store.ts`: `switchStore` persists config before applying → broken name persisted if apply fails (B08).
+- `AddStoreWizard.vue`: GPG-key step mandatory even when adding an existing store where the selection is discarded (B08).
+- `main.ts` + `neutralino.ts`: `Neu.init()` throws (only non-Result service method) → unhandled top-level rejection path; app mounts before init completes (B10).
+- `AppSidebar.vue`: filesystem-watcher/polling infra (setInterval + service imports) embedded in a component; sidebar never renders `treeStore.error` so failed loads look like an empty store (B04).
+- `generate-password.ts`: modulo bias in `secureRandomInt` (negligible magnitude, wrong place to be approximate in a password manager) (B05).
+
+## Minor issues (collapsed lists)
+
+- **Stale/duplicated docs:** doc comments saying errors are "thrown" (filesystem), stale `EntryDetail.path` doc, misleading watcher comment in AppSidebar, JSDoc length bounds that nothing enforces.
+- **Unvalidated numeric inputs:** Generation/Clipboard/Preferences tabs rely on `:min`/`:max` which don't clamp typed values (B09); three disagreeing password-length ceilings (64 slider / 128 docs / 128 schema) (B05).
+- **Timer/ref hygiene:** uncleared `setTimeout`s on unmount (EntryDetail skeleton, InfoTab copied flags); `timerId` in a ref needlessly reactive (clipboard store).
+- **Duplication nits:** copySecret/copyValue toast blocks; memorable/symbols switch blocks; folder-picker button markup ×3; `SortMode` type duplicated; `Table` alias duplicated.
+- **Dead flexibility:** dialog trigger branches never rendered (RenameEntryDialog, StoreDeleteDialog); seven unused per-section config validators; redundant `isFile` re-check in `parseGpgId`.
+- **UX polish:** five success toasts per Save click; silent no-op on duplicate-path edit save (StoresTab); retry button dead when no store configured; password visible-by-default in create mode; misleading "No GPG keys found" copy on load failure.
+
+## Open questions for owner
+
+1. Is Windows a supported target? Determines urgency of C1.
+2. Is the `[config-debug]` flattening-bug investigation still live? The debug stack-capture in `Config.save` is its only observability — coordinate before deleting (and note C2 lives in the same function).
+3. Are InsertDialog/EditEntryDialog/GenerateDialog/PreferencesTab retained for planned flows, or deletable?
+4. Should a failed clipboard clear keep the countdown UI alive ("still copied" state) or is best-effort clearing the accepted ceiling?
+5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts.
+6. Is mounting before `Neutralino.init()` known-safe, or should boot order invert?
+7. First-run semantics: does `DEFAULT_CONFIG.core.active_store` guarantee validity, and should `ensure()` fail closed on exists-errors?
+8. Inline comments in entry files: stripped (parse-pass-show) or preserved (entry-content) as canonical read behavior?
+
+## Coverage
+
+Reviewed in full: 74 app files across 10 batches (see batch files for per-file verdicts). Not deep-reviewed: vendored `components/ui/**`, icons scaffold, integration tests (`tests/integration/*`), build configs.
