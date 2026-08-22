@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import type { Result } from "lib-result";
 import { Clipboard } from "@/services/clipboard";
+import type {
+  ClipboardClearError,
+  ClipboardWriteError,
+} from "@/services/clipboard";
 import type { ClipboardAction } from "@/types/entries";
 
 /**
@@ -11,15 +16,18 @@ import type { ClipboardAction } from "@/types/entries";
  * If the app is backgrounded and `setTimeout` fires late, the clear
  * still happens immediately.
  *
- * Timer ownership: this store owns the setTimeout. Phase 04 views
+ * Timer ownership: this store owns the setTimeout. Views
  * read `formattedRemaining` and `isActive` for the countdown UI.
+ *
+ * Actions return `Result` — state mutations happen via `.inspect()` /
+ * `.inspectErr()` side effects. No try/catch, no toasts.
  */
 const useClipboardStore = defineStore("clipboard", () => {
   const lastAction = ref<ClipboardAction | null>(null);
   const remainingMs = ref(0);
   const timerId = ref<ReturnType<typeof setTimeout> | null>(null);
   const isCopied = ref(false);
-  const error = ref<string | null>(null);
+  const error = ref<Error | null>(null);
 
   const isActive = computed(() => isCopied.value && remainingMs.value > 0);
 
@@ -63,33 +71,36 @@ const useClipboardStore = defineStore("clipboard", () => {
   async function copy(
     secret: string,
     entryPath: string
-  ): Promise<ClipboardAction | null> {
+  ): Promise<Result<ClipboardAction, ClipboardWriteError>> {
     error.value = null;
 
     const result = await Clipboard.writeText(secret, entryPath);
-    if (result.isError()) {
-      error.value = `Clipboard write failed: ${result.error.message}`;
-      return null;
-    }
+    result
+      .inspect((action) => {
+        lastAction.value = action;
+        isCopied.value = true;
+        startTimer(action.expiresAt);
+      })
+      .inspectErr((err) => {
+        error.value = err;
+      });
 
-    lastAction.value = result.ok;
-    isCopied.value = true;
-    startTimer(result.ok.expiresAt);
-
-    return result.ok;
+    return result;
   }
 
-  async function clear(): Promise<void> {
+  async function clear(): Promise<Result<void, ClipboardClearError>> {
     error.value = null;
     stopTimer();
 
     const result = await Clipboard.clear();
-    if (result.isError()) {
-      error.value = `Clipboard clear failed: ${result.error.message}`;
-    }
+    result.inspectErr((err) => {
+      error.value = err;
+    });
 
     isCopied.value = false;
     lastAction.value = null;
+
+    return result;
   }
 
   return {

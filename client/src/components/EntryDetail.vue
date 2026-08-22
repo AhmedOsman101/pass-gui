@@ -91,31 +91,40 @@ function toggleSecret(): void {
 
 async function copySecret(): Promise<void> {
   if (!entry.value || !treeStore.currentPath) return;
-  const action = await clipboard.copy(entry.value.secret, treeStore.currentPath);
-  if (action) {
-    toast("Password copied", {
-      description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
-      action: {
-        label: "Clear",
-        onClick: () => clipboard.clear(),
-      },
-      duration: action.timerSeconds * 1000,
-    });
-  }
+  const result = await clipboard.copy(
+    entry.value.secret,
+    treeStore.currentPath
+  );
+  result.match({
+    okFn: (action) => {
+      toast.success("Password copied", {
+        description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
+        action: {
+          label: "Clear",
+          onClick: () => void clipboard.clear(),
+        },
+        duration: action.timerSeconds * 1000,
+      });
+    },
+    errFn: (e) => toast.error(`Copy failed: ${e.message}`),
+  });
 }
 
 async function copyValue(value: string, label: string): Promise<void> {
-  const action = await clipboard.copy(value, treeStore.currentPath ?? "");
-  if (action) {
-    toast(`${label} copied`, {
-      description: `Clears in ${action.timerSeconds}s`,
-      action: {
-        label: "Clear",
-        onClick: () => clipboard.clear(),
-      },
-      duration: action.timerSeconds * 1000,
-    });
-  }
+  const result = await clipboard.copy(value, treeStore.currentPath ?? "");
+  result.match({
+    okFn: (action) => {
+      toast.success(`${label} copied`, {
+        description: `Clears in ${action.timerSeconds}s`,
+        action: {
+          label: "Clear",
+          onClick: () => void clipboard.clear(),
+        },
+        duration: action.timerSeconds * 1000,
+      });
+    },
+    errFn: (e) => toast.error(`Copy failed: ${e.message}`),
+  });
 }
 </script>
 

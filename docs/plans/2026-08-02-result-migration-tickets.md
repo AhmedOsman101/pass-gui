@@ -71,10 +71,10 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T4 (needs error classes from service).
 
-- [ ] `copy()` returns `Result<ClipboardAction, ClipboardWriteError>` — sets `error.value` via `.inspectErr()`, starts timer on success
-- [ ] `clear()` returns `Result<void, ClipboardClearError>` — sets `error.value` via `.inspectErr()`, stops timer
-- [ ] `error` ref typed as `Error | null` (not `string | null`)
-- [ ] No `try/catch` in store body
+- [x] `copy()` returns `Result<ClipboardAction, ClipboardWriteError>` — sets `error.value` via `.inspectErr()`, starts timer on success
+- [x] `clear()` returns `Result<void, ClipboardClearError>` — sets `error.value` via `.inspectErr()`, stops timer
+- [x] `error` ref typed as `Error | null` (not `string | null`)
+- [x] No `try/catch` in store body
 - [x] Unit test: `__tests__/clipboard.test.ts` — happy path + error path for both actions
 - [ ] `mask typecheck` clean
 
@@ -86,9 +86,9 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T1, T2, T5.
 
-- [ ] Every call site of `clipboardStore.copy()` uses `useNotifyResult` or chains `.match()` for local UI
-- [ ] No component imports `toast` directly for clipboard-related errors
-- [ ] No `try/catch` in clipboard component code
+- [x] Every call site of `clipboardStore.copy()` uses `useNotifyResult` or chains `.match()` for local UI
+- [x] No component imports `toast` directly for clipboard-related errors
+- [x] No `try/catch` in clipboard component code
 - [ ] `mask typecheck` clean
 
 ---

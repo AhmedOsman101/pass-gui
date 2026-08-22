@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useClipboardStore } from "@/stores/clipboard";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { usePasswordGenerator } from "@/composables/use-password-generator";
 import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
 
@@ -23,10 +24,13 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 
-function copyToClipboard(): void {
-  if (genOptions.generated) {
-    void clipboard.copy(genOptions.generated, "password-generator");
-  }
+async function copyToClipboard(): Promise<void> {
+  if (!genOptions.generated) return;
+  const result = await clipboard.copy(
+    genOptions.generated,
+    "password-generator"
+  );
+  useNotifyResult(result, { ok: "Password copied" });
 }
 
 function handleSave(): void {
