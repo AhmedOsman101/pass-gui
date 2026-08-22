@@ -35,7 +35,7 @@ const storeError = computed(() => activeStore.error?.message ?? null);
       </div>
 
       <div v-if="readiness.error" class="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-        <p class="text-sm text-destructive">{{ readiness.error }}</p>
+        <p class="text-sm text-destructive">{{ readiness.error?.message }}</p>
       </div>
 
       <div class="text-center">

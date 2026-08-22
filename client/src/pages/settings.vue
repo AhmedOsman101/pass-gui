@@ -6,6 +6,7 @@ import GpgTab from "@/components/settings/GpgTab.vue";
 import InfoTab from "@/components/settings/InfoTab.vue";
 import StoresTab from "@/components/settings/StoresTab.vue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
 import { Neu } from "@/services/neutralino";
@@ -14,7 +15,6 @@ import { Store } from "@/services/store";
 import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { ArrowLeft } from "@lucide/vue";
-import { toast } from "sonner";
 import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -59,8 +59,8 @@ onMounted(async () => {
   if (pathResult.isOk()) configPath.value = pathResult.ok;
 
   const result = await Config.load();
+  useNotifyResult(result, { ok: false });
   if (result.isError()) {
-    toast.error("Failed to load config");
     isLoading.value = false;
     return;
   }
@@ -123,33 +123,30 @@ async function saveField<S extends keyof AppConfig>(
   isSaving.value = true;
   const result = await Config.setValue(section, key, value);
   isSaving.value = false;
-  if (result.isError()) {
-    toast.error(`Failed to save ${String(section)} settings`);
-  } else {
-    toast.success(`${String(section)} settings saved`);
-  }
+  useNotifyResult(result, {
+    ok: `${String(section)} settings saved`,
+    err: `Failed to save ${String(section)} settings`,
+  });
 }
 
 async function saveStore(name: string, data: StoreConfig): Promise<void> {
   isSaving.value = true;
   const result = await Store.set(name, data);
   isSaving.value = false;
-  if (result.isError()) {
-    toast.error(`Failed to save store "${name}"`);
-  } else {
-    toast.success(`Store "${name}" saved`);
-  }
+  useNotifyResult(result, {
+    ok: `Store "${name}" saved`,
+    err: `Failed to save store "${name}"`,
+  });
 }
 
 async function deleteStore(name: string): Promise<void> {
   isSaving.value = true;
   const result = await Store.delete(name);
   isSaving.value = false;
-  if (result.isError()) {
-    toast.error(`Failed to delete store "${name}"`);
-  } else {
-    toast.success(`Store "${name}" deleted`);
-  }
+  useNotifyResult(result, {
+    ok: `Store "${name}" deleted`,
+    err: `Failed to delete store "${name}"`,
+  });
 }
 
 function handleSaveGeneral(): void {

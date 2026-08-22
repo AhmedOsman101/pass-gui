@@ -1,5 +1,6 @@
+import { computed, type Ref, ref } from "vue";
+import { wrapAsync } from "lib-result";
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
 import { Logger } from "@/lib/logger";
 import { Readiness } from "@/services/readiness";
 import type {
@@ -18,7 +19,7 @@ import type {
 const useReadinessStore = defineStore("readiness", () => {
   const snapshot = ref<ReadinessSnapshot | null>(null);
   const isEvaluating = ref(false);
-  const error = ref<string | null>(null);
+  const error = ref<Error | null>(null) as Ref<Error | null>;
 
   const state = computed<ReadinessState>(
     () => snapshot.value?.state ?? "NEED_PASS"
@@ -40,27 +41,25 @@ const useReadinessStore = defineStore("readiness", () => {
     isEvaluating.value = true;
     error.value = null;
 
-    try {
-      const result = await Readiness.check(storePath);
-      snapshot.value = result;
-      const blocking = result.issues.filter(i => i.severity === "blocking");
+    const result = await wrapAsync(async () => await Readiness.check(storePath));
+    if (result.isError()) {
+      await Logger.error(
+        `readiness.evaluate("${storePath}") failed: ${result.error.message}`
+      );
+      error.value = result.error;
+      snapshot.value = null;
+    } else {
+      snapshot.value = result.ok;
+      const blocking = result.ok.issues.filter(i => i.severity === "blocking");
       if (blocking.length > 0) {
         await Logger.error(
-          `readiness.evaluate("${storePath}") -> ${result.state}:`,
+          `readiness.evaluate("${storePath}") -> ${result.ok.state}:`,
           blocking.map(i => i.code).join(", ")
         );
       }
-    } catch (e) {
-      await Logger.error(
-        `readiness.evaluate("${storePath}") failed: ${
-          e instanceof Error ? e.message : String(e)
-        }`
-      );
-      error.value = e instanceof Error ? e.message : String(e);
-      snapshot.value = null;
-    } finally {
-      isEvaluating.value = false;
     }
+
+    isEvaluating.value = false;
   }
 
   function reset(): void {

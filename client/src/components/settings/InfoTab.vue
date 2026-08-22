@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Copy, Check } from "@lucide/vue";
 import { ref } from "vue";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -11,8 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Config } from "@/services/config";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import toml from "@/lib/toml";
+import { Clipboard } from "@/services/clipboard";
 import type { AppConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 
@@ -57,33 +57,36 @@ function buildInfoText(): string {
 }
 
 async function copyInfo(): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(buildInfoText());
+  const result = await Clipboard.writeText(buildInfoText(), "app-info");
+  useNotifyResult(result, {
+    ok: "Info copied to clipboard",
+    err: "Failed to copy info",
+  });
+  if (result.isOk()) {
     copiedInfo.value = true;
-    toast.success("Info copied to clipboard");
     setTimeout(() => {
       copiedInfo.value = false;
     }, 2000);
-  } catch {
-    toast.error("Failed to copy info");
   }
 }
 
 async function copyConfig(): Promise<void> {
-  const result = toml.stringify(props.config);
-  if (result.isError()) {
-    toast.error("Failed to serialize config");
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(result.ok);
+  const serialized = useNotifyResult(toml.stringify(props.config), {
+    ok: false,
+    err: "Failed to serialize config",
+  });
+  if (serialized.isError()) return;
+
+  const result = await Clipboard.writeText(serialized.ok, "app-config");
+  useNotifyResult(result, {
+    ok: "Config copied to clipboard",
+    err: "Failed to copy config",
+  });
+  if (result.isOk()) {
     copiedConfig.value = true;
-    toast.success("Config copied to clipboard");
     setTimeout(() => {
       copiedConfig.value = false;
     }, 2000);
-  } catch {
-    toast.error("Failed to copy config");
   }
 }
 </script>
