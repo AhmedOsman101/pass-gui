@@ -1,16 +1,12 @@
-import { defineStore } from "pinia";
 import { Err, Ok, type Result } from "lib-result";
+import { defineStore } from "pinia";
 import { computed, readonly, ref } from "vue";
-import { Entries } from "@/services/entries";
 import type { EntriesReadError, EntriesWriteError } from "@/services/entries";
-import { Fs } from "@/services/filesystem";
+import { Entries } from "@/services/entries";
 import type { FsMkdirError } from "@/services/filesystem";
+import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
-import type {
-  EntryDetail,
-  EntryTree,
-  MutationResult,
-} from "@/types/entries";
+import type { EntryDetail, EntryTree, MutationResult } from "@/types/entries";
 
 type SortMode = "alphabetical" | "reverse-alphabetical";
 
@@ -208,17 +204,11 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
 
   // --- Copy / cut / paste buffer ---
 
-  function copyEntry(
-    path: string,
-    nodeType?: CopyBuffer["nodeType"]
-  ): void {
+  function copyEntry(path: string, nodeType?: CopyBuffer["nodeType"]): void {
     buffer.value = { path, mode: "copy", nodeType: nodeType ?? "FILE" };
   }
 
-  function cutEntry(
-    path: string,
-    nodeType?: CopyBuffer["nodeType"]
-  ): void {
+  function cutEntry(path: string, nodeType?: CopyBuffer["nodeType"]): void {
     buffer.value = { path, mode: "cut", nodeType: nodeType ?? "FILE" };
   }
 
@@ -227,10 +217,12 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
    * Returns `undefined` when the buffer is empty — callers only paste
    * when a buffer exists, so there is nothing to report.
    */
-  async function pasteEntry(destinationDir: string): Promise<
+  async function pasteEntry(
+    destinationDir: string
+  ): Promise<
     Result<MutationResult, EntriesReadError | EntriesWriteError> | undefined
   > {
-    if (!buffer.value) return undefined;
+    if (!buffer.value) return;
 
     const { path: sourcePath, mode, nodeType } = buffer.value;
     const fileName = sourcePath.split("/").pop() as string;
