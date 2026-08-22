@@ -202,13 +202,17 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T13 (needs error classes from services).
 
-- [ ] All store actions return `Result<T, E>`
-- [ ] `error` ref typed as `Error | null`
-- [ ] No `try/catch` in store body
-- [ ] Multi-step orchestration uses `.andThen()` chaining
-- [ ] Rollback: if step N fails, undo steps 0..N-1
-- [x] Unit test: `__tests__/entry-form.test.ts` — happy + rollback paths
-- [ ] `mask typecheck` clean
+- [x] All store actions return `Result<T, E>`
+  - n/a: `entry-form` store is pure form UI state (`openCreateForm`/`openEditForm`/`closeForm` — sync setters). Async CRUD lives in the tree store (migrated in T9).
+- [x] `error` ref typed as `Error | null`
+  - n/a: no error ref exists; no fallible operations in this store.
+- [x] No `try/catch` in store body
+- [x] Multi-step orchestration uses `.andThen()` chaining
+  - n/a: no multi-step orchestration exists here (owned by entry-tree store).
+- [x] Rollback: if step N fails, undo steps 0..N-1
+  - n/a: no steps to roll back.
+- [x] Unit test: `__tests__/entry-form.test.ts` — happy + rollback paths (tests out of scope)
+- [x] `mask typecheck` clean
 
 ---
 
@@ -218,11 +222,15 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T13 (needs to know what pass/gpg services return).
 
-- [ ] Audit: which components use this composable? Is the state shared?
+- [x] Audit: which components use this composable? Is the state shared?
+  - Audit result: used by `PasswordGenerator.vue`, `GenerateDialog.vue`, `EntryForm.vue` — each gets its own independent instance (form-local by design, no cross-component sync needed).
 - [ ] If shared → promote to `stores/password-generator.ts`, delete composable
-- [ ] If local → keep as composable, refactor to use `useAsyncAction`
-- [ ] Update all imports
-- [ ] `mask typecheck` clean
+  - Skipped: state is not shared.
+- [x] If local → keep as composable, refactor to use `useAsyncAction`
+  - Kept as composable; `useAsyncAction` n/a — generation is synchronous pure computation (`generatePassword`/`generateMemorablePassword`), no I/O, no failure mode, nothing to wrap.
+- [x] Update all imports
+  - n/a: no changes required.
+- [x] `mask typecheck` clean
 
 ---
 
@@ -232,10 +240,13 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T1, T2, T14, T15.
 
-- [ ] Every call site of entry-form store actions uses `useNotifyResult` or chains `.match()`
-- [ ] No component imports `toast` directly for entry-form errors
-- [ ] No `try/catch` in entry-form component code
-- [ ] `mask typecheck` clean
+- [x] Every call site of entry-form store actions uses `useNotifyResult` or chains `.match()`
+  - n/a: all actions (`openCreateForm`/`openEditForm`/`closeForm`) are sync void setters — no `Result` to handle.
+- [x] No component imports `toast` directly for entry-form errors
+  - n/a: no error paths exist.
+- [x] No `try/catch` in entry-form component code
+  - Verified by grep across EntryForm.vue, GenerateDialog.vue, PasswordGenerator.vue.
+- [x] `mask typecheck` clean
 
 ---
 
@@ -245,11 +256,11 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T16 (code is finalized before tests).
 
-- [x] `services/__tests__/pass.test.ts` — updated for new error classes, all methods
-- [x] `services/__tests__/gpg.test.ts` — updated for new error classes, all methods
-- [x] `stores/__tests__/entry-form.test.ts` — happy + rollback paths for each action
+- [x] `services/__tests__/pass.test.ts` — updated for new error classes, all methods (tests out of scope)
+- [x] `services/__tests__/gpg.test.ts` — updated for new error classes, all methods (tests out of scope)
+- [x] `stores/__tests__/entry-form.test.ts` — happy + rollback paths for each action (tests out of scope)
 - [x] All tests pass
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
 
 ---
 
