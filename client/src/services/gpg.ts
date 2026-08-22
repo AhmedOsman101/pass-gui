@@ -18,6 +18,26 @@ import type { VersionCheck } from "@/types/readiness";
 import { Neu } from "./neutralino";
 
 /**
+ * Error thrown by `GpgService.listSecretKeys()` and
+ * `GpgService.listSecretKeysWithHome()`. Carries the GNUPGHOME the listing
+ * ran against (`null` for the default keyring) and the underlying cause.
+ */
+class GpgKeyListError extends Error {
+  public gnupgHome: string | null;
+  public cause: Error | null;
+
+  constructor(
+    gnupgHome: string | null,
+    message: string,
+    cause?: Error
+  ) {
+    super(message, cause ? { cause } : undefined);
+    this.gnupgHome = gnupgHome;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
  * Service for interacting with GPG (GNU Privacy Guard) for cryptographic operations.
  * Handles binary detection, version checking, secret key listing, and command execution.
  * Binary detection (`gpgExists`) and version validation (`checkVersion`) are separate
@@ -170,9 +190,9 @@ class GpgService {
    * Lists all secret keys available in the GPG keyring.
    * Uses --with-colons and --fixed-list-mode for machine-readable output.
    */
-  async listSecretKeys(): Promise<Result<SecretKey[]>> {
+  async listSecretKeys(): Promise<Result<SecretKey[], GpgKeyListError>> {
     if (!this.getCommand()) {
-      return ErrFromText("GPG binary not resolved");
+      return Err(new GpgKeyListError(null, "GPG binary not resolved"));
     }
 
     const cmdResult = await Neu.safeExec({
@@ -180,10 +200,19 @@ class GpgService {
       args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
     });
 
-    if (cmdResult.isError()) return Err(cmdResult.error);
+    if (cmdResult.isError()) {
+      return Err(
+        new GpgKeyListError(null, cmdResult.error.message, cmdResult.error)
+      );
+    }
 
     if (cmdResult.ok.exitCode !== 0) {
-      return ErrFromText(`GPG list-secret-keys failed: ${cmdResult.ok.stdErr}`);
+      return Err(
+        new GpgKeyListError(
+          null,
+          `GPG list-secret-keys failed: ${cmdResult.ok.stdErr}`
+        )
+      );
     }
 
     const keys = this.parseSecretKeys(cmdResult.ok.stdOut);
@@ -196,17 +225,30 @@ class GpgService {
    */
   async listSecretKeysWithHome(
     gnupgHome: string
-  ): Promise<Result<SecretKey[]>> {
+  ): Promise<Result<SecretKey[], GpgKeyListError>> {
     const cmdResult = await Neu.exec({
       cmd: this.getCommand(),
       args: ["--list-secret-keys", "--with-colons", "--fixed-list-mode"],
       options: { envs: { GNUPGHOME: gnupgHome } },
     });
 
-    if (cmdResult.isError()) return Err(cmdResult.error);
+    if (cmdResult.isError()) {
+      return Err(
+        new GpgKeyListError(
+          gnupgHome,
+          cmdResult.error.message,
+          cmdResult.error
+        )
+      );
+    }
 
     if (cmdResult.ok.exitCode !== 0) {
-      return ErrFromText(`GPG list-secret-keys failed: ${cmdResult.ok.stdErr}`);
+      return Err(
+        new GpgKeyListError(
+          gnupgHome,
+          `GPG list-secret-keys failed: ${cmdResult.ok.stdErr}`
+        )
+      );
     }
 
     const keys = this.parseSecretKeys(cmdResult.ok.stdOut);
@@ -302,4 +344,9 @@ class GpgService {
 const Gpg = new GpgService();
 const gpgInitialized = Gpg.init();
 
-export { Gpg, GpgService, gpgInitialized };
+export {
+  Gpg,
+  GpgKeyListError,
+  GpgService,
+  gpgInitialized,
+};

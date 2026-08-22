@@ -1,11 +1,11 @@
+import type { Result } from "lib-result";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import type { Result } from "lib-result";
-import { Clipboard } from "@/services/clipboard";
 import type {
   ClipboardClearError,
   ClipboardWriteError,
 } from "@/services/clipboard";
+import { Clipboard } from "@/services/clipboard";
 import type { ClipboardAction } from "@/types/entries";
 
 /**
@@ -76,12 +76,12 @@ const useClipboardStore = defineStore("clipboard", () => {
 
     const result = await Clipboard.writeText(secret, entryPath);
     result
-      .inspect((action) => {
+      .inspect(action => {
         lastAction.value = action;
         isCopied.value = true;
         startTimer(action.expiresAt);
       })
-      .inspectErr((err) => {
+      .inspectErr(err => {
         error.value = err;
       });
 
@@ -93,7 +93,7 @@ const useClipboardStore = defineStore("clipboard", () => {
     stopTimer();
 
     const result = await Clipboard.clear();
-    result.inspectErr((err) => {
+    result.inspectErr(err => {
       error.value = err;
     });
 

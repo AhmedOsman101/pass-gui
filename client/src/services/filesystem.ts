@@ -9,11 +9,10 @@ import {
 import ignore from "ignore";
 import { Err, Ok, type Result, wrapAsync } from "lib-result";
 import {
-  DirectoryCreationError,
-  FileWriteError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
-  type NeuError,
+  NeuError,
+  type NeuErrorMap,
   type NeuErrorCode,
 } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
@@ -138,6 +137,74 @@ function makeIgnoreFilter(
 }
 
 /**
+ * Error thrown by `Filesystem.mkdir()`. Extends `NeuError` to keep the
+ * NeutralinoJS error code (e.g. `NE_FS_DIRCRER`) and the target path.
+ */
+class FsMkdirError extends NeuError {
+  public path: string;
+
+  constructor(
+    type: NeuErrorMap,
+    code: NeuErrorCode,
+    path: string,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(type, code, message, options);
+    this.path = path;
+  }
+}
+
+/**
+ * Error thrown by `Filesystem.writeFile()`. Extends `NeuError` to keep the
+ * NeutralinoJS error code (e.g. `NE_FS_FILWRER`) and the target path.
+ */
+class FsWriteError extends NeuError {
+  public path: string;
+
+  constructor(
+    type: NeuErrorMap,
+    code: NeuErrorCode,
+    path: string,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(type, code, message, options);
+    this.path = path;
+  }
+}
+
+/**
+ * Error thrown by file read operations (`readFile`, `readDirectory`).
+ * Carries the path that failed and the underlying cause for debugging.
+ */
+class FsReadError extends Error {
+  public path: string;
+  public cause: Error | null;
+
+  constructor(path: string, message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.path = path;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
+ * Error thrown by stat operations (`getStats`, `exists`, `isFile`,
+ * `isDirectory`). Carries the path that failed and the underlying cause.
+ */
+class FsStatError extends Error {
+  public path: string;
+  public cause: Error | null;
+
+  constructor(path: string, message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.path = path;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
  * Filesystem abstraction layer wrapping NeutralinoJS filesystem operations.
  * All methods return Result types for safe error handling.
  */
@@ -148,11 +215,11 @@ class Filesystem {
 
   /**
    * Creates a directory at the specified path.
-   * Returns a DirectoryCreationError on failure for detailed error context.
+   * Returns a `FsMkdirError` on failure for detailed error context.
    */
   static async mkdir(
     path: string
-  ): Promise<Result<boolean, DirectoryCreationError | Error>> {
+  ): Promise<Result<boolean, FsMkdirError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -171,7 +238,7 @@ class Filesystem {
       if (err?.code === NEU_ERROR_CODES_MAP.DirectoryCreationFailed) {
         const errorCode = err.code as NeuErrorCode;
         return Err(
-          new DirectoryCreationError(
+          new FsMkdirError(
             NEU_ERROR_CODES[errorCode],
             errorCode,
             resolvedPath.ok,
@@ -187,7 +254,9 @@ class Filesystem {
   /**
    * Checks if a file or directory exists at the given path.
    */
-  static async exists(path: string): Promise<Result<boolean>> {
+  static async exists(
+    path: string
+  ): Promise<Result<boolean, FsStatError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -199,7 +268,9 @@ class Filesystem {
   /**
    * Checks if the path points to a regular file.
    */
-  static async isFile(path: string): Promise<Result<boolean>> {
+  static async isFile(
+    path: string
+  ): Promise<Result<boolean, FsStatError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -213,7 +284,9 @@ class Filesystem {
   /**
    * Checks if the path points to a directory.
    */
-  static async isDirectory(path: string): Promise<Result<boolean>> {
+  static async isDirectory(
+    path: string
+  ): Promise<Result<boolean, FsStatError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -225,9 +298,11 @@ class Filesystem {
   /**
    * Gets file/directory statistics (size, dates, type, etc.).
    */
-  static async getStats(path: string): Promise<Result<Stats>> {
+  static async getStats(path: string): Promise<Result<Stats, FsStatError>> {
     const resolvedPath = await Filesystem.resolvePath(path);
-    if (resolvedPath.isError()) return Err(resolvedPath.error);
+    if (resolvedPath.isError()) {
+      return Err(new FsStatError(path, resolvedPath.error.message));
+    }
 
     const res = await wrapAsync(
       async () => await filesystem.getStats(resolvedPath.ok)
@@ -236,8 +311,9 @@ class Filesystem {
       await Logger.error(
         `Fs.getStats("${resolvedPath.ok}"): ${res.error.message}`
       );
+      return Err(new FsStatError(resolvedPath.ok, res.error.message, res.error));
     }
-    return res;
+    return Ok(res.ok);
   }
 
   /**
@@ -247,13 +323,19 @@ class Filesystem {
   static async readFile(
     path: string,
     options?: FileReaderOptions
-  ): Promise<Result<string>> {
+  ): Promise<Result<string, FsReadError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    return await wrapAsync(
+    const result = await wrapAsync(
       async () => await filesystem.readFile(resolvedPath.ok, options)
     );
+    if (result.isError()) {
+      return Err(
+        new FsReadError(resolvedPath.ok, result.error.message, result.error)
+      );
+    }
+    return Ok(result.ok);
   }
 
   /**
@@ -328,25 +410,29 @@ class Filesystem {
   static async readDirectory(
     path: string,
     options: DirectoryReaderOptions & { flat: true; ignore?: string[] }
-  ): Promise<Result<DirectoryEntry[]>>;
+  ): Promise<Result<DirectoryEntry[], FsReadError | Error>>;
   static async readDirectory(
     path: string,
     options?: DirectoryReaderOptions & { ignore?: string[] }
-  ): Promise<Result<TreeDirectoryEntry[]>>;
+  ): Promise<Result<TreeDirectoryEntry[], FsReadError | Error>>;
   static async readDirectory(
     path: string,
     options?: DirectoryReaderOptions & {
       ignore?: string[];
       flat?: boolean;
     }
-  ): Promise<Result<TreeDirectoryEntry[] | DirectoryEntry[]>> {
+  ): Promise<Result<TreeDirectoryEntry[] | DirectoryEntry[], FsReadError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
     const flatResult = await wrapAsync(
       async () => await filesystem.readDirectory(resolvedPath.ok, options)
     );
-    if (flatResult.isError()) return Err(flatResult.error);
+    if (flatResult.isError()) {
+      return Err(
+        new FsReadError(resolvedPath.ok, flatResult.error.message, flatResult.error)
+      );
+    }
 
     let entries = flatResult.ok;
 
@@ -376,12 +462,12 @@ class Filesystem {
   /**
    * Writes content to a file at the specified path.
    * Creates the file if it doesn't exist, overwrites if it does.
-   * Returns a FileWriteError on failure.
+   * Returns a `FsWriteError` on failure.
    */
   static async writeFile(
     path: string,
     data: string
-  ): Promise<Result<boolean, FileWriteError | Error>> {
+  ): Promise<Result<boolean, FsWriteError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -393,7 +479,7 @@ class Filesystem {
       if (err?.code === "NE_FS_FILWRER") {
         const errorCode = err.code as NeuErrorCode;
         return Err(
-          new FileWriteError(
+          new FsWriteError(
             NEU_ERROR_CODES[errorCode],
             errorCode,
             resolvedPath.ok,
@@ -409,4 +495,12 @@ class Filesystem {
 
 const Fs = Filesystem;
 
-export { Fs, makeIgnoreFilter, type TreeDirectoryEntry };
+export {
+  Fs,
+  FsMkdirError,
+  FsReadError,
+  FsStatError,
+  FsWriteError,
+  makeIgnoreFilter,
+  type TreeDirectoryEntry,
+};

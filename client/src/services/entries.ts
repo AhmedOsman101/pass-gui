@@ -1,11 +1,6 @@
 import type { ExecCommandResult } from "@neutralinojs/lib";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import {
-  CommandFailedError,
-  EntryAlreadyExistsError,
-  EntryNotFoundError,
-  MutationError,
-} from "@/lib/errors";
+import { Err, Ok, type Result } from "lib-result";
+import { CommandFailedError } from "@/lib/errors";
 import { generateMemorablePassword } from "@/lib/generate-password";
 import { parsePassShowOutput } from "@/lib/parse-pass-show";
 import { walkStore } from "@/lib/store-walker";
@@ -17,27 +12,102 @@ import type {
 } from "@/types/entries";
 import { Pass } from "./pass";
 
+/** Why an entry operation failed, derived from `pass` stderr content. */
+type EntriesFailureKind = "not-found" | "exists" | "parse" | "failed";
+
 /**
- * Maps a `pass.exec()` error to a domain-specific error.
- * Pass exits with code 1 for "entry not found" and code 255 for
- * general failures. Stderr content disambiguates further.
+ * Error thrown by entry read operations (`list`, `show`).
+ * `kind` preserves the stderr-derived distinction (missing entry vs
+ * parse failure vs generic failure) so callers can tailor messages.
  */
-function mapPassError(
-  err: CommandFailedError | Error
-): MutationError | EntryNotFoundError | EntryAlreadyExistsError {
+class EntriesReadError extends Error {
+  public path: string;
+  public kind: EntriesFailureKind;
+  public cause: Error | null;
+
+  constructor(
+    path: string,
+    kind: EntriesFailureKind,
+    message: string,
+    cause?: Error
+  ) {
+    super(message, cause ? { cause } : undefined);
+    this.path = path;
+    this.kind = kind;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
+ * Error thrown by entry mutation operations (`insert`, `generate`,
+ * `remove`, `copy`, `move`, `edit`). Same shape as `EntriesReadError`
+ * but a distinct type so call sites can match on the operation family.
+ */
+class EntriesWriteError extends Error {
+  public path: string;
+  public kind: EntriesFailureKind;
+  public cause: Error | null;
+
+  constructor(
+    path: string,
+    kind: EntriesFailureKind,
+    message: string,
+    cause?: Error
+  ) {
+    super(message, cause ? { cause } : undefined);
+    this.path = path;
+    this.kind = kind;
+    this.cause = cause ?? null;
+  }
+}
+
+/**
+ * Maps a `pass.exec()` error to an `EntriesReadError` for read operations.
+ * Pass exits with code 1 for "entry not found"; stderr content disambiguates.
+ */
+function mapReadError(err: CommandFailedError | Error, path: string): EntriesReadError {
+  if (
+    err instanceof CommandFailedError &&
+    err.stdErr.includes("is not in the password store")
+  ) {
+    return new EntriesReadError(
+      path,
+      "not-found",
+      `Entry not found: ${err.stdErr}`,
+      err
+    );
+  }
+  return new EntriesReadError(path, "failed", err.message, err);
+}
+
+/**
+ * Maps a `pass.exec()` error to an `EntriesWriteError` for mutations.
+ * Pass exits with code 1 for "entry not found" and code 255 for general
+ * failures; stderr content disambiguates further.
+ */
+function mapWriteError(
+  err: CommandFailedError | Error,
+  path: string
+): EntriesWriteError {
   if (err instanceof CommandFailedError) {
     if (err.stdErr.includes("is not in the password store")) {
-      return new EntryNotFoundError(
-        "(unknown)",
-        `Entry not found: ${err.stdErr}`
+      return new EntriesWriteError(
+        path,
+        "not-found",
+        `Entry not found: ${err.stdErr}`,
+        err
       );
     }
     if (err.stdErr.includes("already exists")) {
-      return new EntryAlreadyExistsError("(unknown)");
+      return new EntriesWriteError(
+        path,
+        "exists",
+        `Entry already exists: ${path}`,
+        err
+      );
     }
-    return new MutationError(err.exitCode, err.stdErr, err.message);
   }
-  return new MutationError(-1, err.message, err.message);
+  return new EntriesWriteError(path, "failed", err.message, err);
 }
 
 /**
@@ -47,26 +117,22 @@ function mapPassError(
  */
 class Entries {
   /**
-   * Returns the active store path, with tilde resolved.
-   * Falls back to `pass.storePath` if config doesn't have one yet.
-   */
-  private static getActiveStorePath(): Result<string> {
-    const storePath = Pass.storePath;
-    if (!storePath) {
-      return ErrFromText("No active store configured");
-    }
-    return Ok(storePath);
-  }
-
-  /**
    * Lists all entries in the password store as a nested tree.
    * Uses `walkStore()` which reads the filesystem directly — no `pass ls` parsing.
    */
-  static async list(): Promise<Result<EntryTree, MutationError | Error>> {
-    const storePath = Entries.getActiveStorePath();
-    if (storePath.isError()) return Err(storePath.error);
+  static async list(): Promise<Result<EntryTree, EntriesReadError>> {
+    const storePath = Pass.storePath;
+    if (!storePath) {
+      return Err(new EntriesReadError("", "failed", "No active store configured"));
+    }
 
-    return await walkStore(storePath.ok);
+    const tree = await walkStore(storePath);
+    if (tree.isError()) {
+      return Err(
+        new EntriesReadError("", "failed", tree.error.message, tree.error)
+      );
+    }
+    return Ok(tree.ok);
   }
 
   /**
@@ -75,38 +141,34 @@ class Entries {
    */
   static async show(
     path: string
-  ): Promise<
-    Result<EntryDetail, EntryNotFoundError | MutationError | CommandFailedError>
-  > {
+  ): Promise<Result<EntryDetail, EntriesReadError>> {
     const result = await Pass.exec(["show", path]);
     if (result.isError()) {
-      const mapped = mapPassError(result.error);
-      return Err(mapped);
+      return Err(mapReadError(result.error, path));
     }
 
     const parsed = parsePassShowOutput(result.ok.stdOut, path);
     if (parsed.isError()) {
-      return Err(new MutationError(-1, result.ok.stdErr, parsed.error.message));
+      return Err(new EntriesReadError(path, "parse", parsed.error.message));
     }
 
     return Ok(parsed.ok);
   }
 
   /**
-   * Creates a new password entry. Fails with `EntryAlreadyExistsError`
-   * if the entry already exists (unless `force: true`).
+   * Creates a new password entry. Fails with `kind: "exists"` on the
+   * `EntriesWriteError` if the entry already exists (unless `force: true`).
    */
   static async insert(
     input: MutationInput
-  ): Promise<Result<MutationResult, EntryAlreadyExistsError | MutationError>> {
+  ): Promise<Result<MutationResult, EntriesWriteError>> {
     const args = ["insert"];
     if (input.force) args.push("-f");
     args.push("-m", input.path);
 
     const result = await Pass.exec(args, { stdIn: input.content });
     if (result.isError()) {
-      const mapped = mapPassError(result.error);
-      return Err(mapped);
+      return Err(mapWriteError(result.error, input.path));
     }
 
     return Ok({ success: true, path: input.path });
@@ -126,12 +188,7 @@ class Entries {
       symbols?: boolean;
       memorable?: boolean;
     }
-  ): Promise<
-    Result<
-      MutationResult,
-      MutationError | EntryNotFoundError | EntryAlreadyExistsError
-    >
-  > {
+  ): Promise<Result<MutationResult, EntriesWriteError>> {
     let result: Result<ExecCommandResult, CommandFailedError | Error>;
     if (options?.memorable) {
       result = await Pass.exec(["insert", "-f", path], {
@@ -141,8 +198,7 @@ class Entries {
       result = await Pass.exec(["generate", "-f", path]);
     }
     if (result.isError()) {
-      const mapped = mapPassError(result.error);
-      return Err(mapped);
+      return Err(mapWriteError(result.error, path));
     }
 
     return Ok({ success: true, path });
@@ -154,16 +210,10 @@ class Entries {
    */
   static async remove(
     path: string
-  ): Promise<
-    Result<
-      MutationResult,
-      MutationError | EntryNotFoundError | EntryAlreadyExistsError
-    >
-  > {
+  ): Promise<Result<MutationResult, EntriesWriteError>> {
     const result = await Pass.exec(["rm", "-rf", path]);
     if (result.isError()) {
-      const mapped = mapPassError(result.error);
-      return Err(mapped);
+      return Err(mapWriteError(result.error, path));
     }
 
     return Ok({ success: true, path });
@@ -177,13 +227,7 @@ class Entries {
     oldPath: string,
     newPath: string
   ): Promise<
-    Result<
-      MutationResult,
-      | MutationError
-      | EntryNotFoundError
-      | EntryAlreadyExistsError
-      | CommandFailedError
-    >
+    Result<MutationResult, EntriesReadError | EntriesWriteError>
   > {
     const showResult = await Entries.show(oldPath);
     if (showResult.isError()) return Err(showResult.error);
@@ -205,16 +249,10 @@ class Entries {
   static async move(
     oldPath: string,
     newPath: string
-  ): Promise<
-    Result<
-      MutationResult,
-      MutationError | EntryNotFoundError | EntryAlreadyExistsError
-    >
-  > {
+  ): Promise<Result<MutationResult, EntriesWriteError>> {
     const result = await Pass.exec(["mv", oldPath, newPath]);
     if (result.isError()) {
-      const mapped = mapPassError(result.error);
-      return Err(mapped);
+      return Err(mapWriteError(result.error, newPath));
     }
 
     return Ok({ success: true, path: newPath, oldPath });
@@ -226,12 +264,7 @@ class Entries {
   static async edit(
     path: string,
     content: string
-  ): Promise<
-    Result<
-      MutationResult,
-      EntryNotFoundError | MutationError | CommandFailedError
-    >
-  > {
+  ): Promise<Result<MutationResult, EntriesReadError | EntriesWriteError>> {
     const exists = await Entries.show(path);
     if (exists.isError()) return Err(exists.error);
 
@@ -242,4 +275,4 @@ class Entries {
   }
 }
 
-export { Entries };
+export { Entries, EntriesReadError, EntriesWriteError };

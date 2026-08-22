@@ -1,8 +1,7 @@
 import { Err, Ok, type Result } from "lib-result";
-import type { TreeDirectoryEntry } from "@/services/filesystem";
+import type { FsReadError, TreeDirectoryEntry } from "@/services/filesystem";
 import { Fs } from "@/services/filesystem";
 import type { EntryNode, EntryTree } from "@/types/entries";
-import type { MutationError } from "./errors";
 
 /**
  * Default patterns for the ignore filter.
@@ -88,7 +87,7 @@ function toEntryNodes(nodes: TreeDirectoryEntry[]): EntryNode[] {
  */
 async function walkStore(
   storePath: string
-): Promise<Result<EntryTree, MutationError | Error>> {
+): Promise<Result<EntryTree, FsReadError | Error>> {
   const tree = await Fs.readDirectory(storePath, {
     recursive: true,
     ignore: DEFAULT_IGNORE,

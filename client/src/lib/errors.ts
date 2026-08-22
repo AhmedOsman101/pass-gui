@@ -110,44 +110,6 @@ class NeuError extends Error {
 }
 
 /**
- * Specialized error for directory creation failures.
- * Includes the path that failed to be created.
- */
-class DirectoryCreationError extends NeuError {
-  public path: string;
-
-  constructor(
-    type: NeuErrorMap,
-    code: NeuErrorCode,
-    path: string,
-    message?: string,
-    options?: ErrorOptions
-  ) {
-    super(type, code, message, options);
-    this.path = path;
-  }
-}
-
-/**
- * Specialized error for file write failures.
- * Includes the path that failed to be written.
- */
-class FileWriteError extends NeuError {
-  public path: string;
-
-  constructor(
-    type: NeuErrorMap,
-    code: NeuErrorCode,
-    path: string,
-    message?: string,
-    options?: ErrorOptions
-  ) {
-    super(type, code, message, options);
-    this.path = path;
-  }
-}
-
-/**
  * Error types for configuration-related failures.
  */
 const CONFIG_ERROR_CODES = Object.freeze({
@@ -307,14 +269,10 @@ class CommandFailedError extends Error {
 }
 
 /**
- * Error codes for entry operation failures (show, insert, rm, mv, generate, clipboard).
+ * Error codes for entry operation failures (parse).
  */
 const ENTRY_ERROR_CODES = Object.freeze({
-  ENTRY_NOT_FOUND: "EntryNotFound",
-  ENTRY_ALREADY_EXISTS: "EntryAlreadyExists",
   ENTRY_PARSE_ERROR: "EntryParseError",
-  CLIPBOARD_ERROR: "ClipboardError",
-  MUTATION_FAILED: "MutationFailed",
 } as const);
 
 /** Union of all entry error code keys. */
@@ -322,38 +280,6 @@ type EntryErrorCode = keyof typeof ENTRY_ERROR_CODES;
 
 /** Union of all entry error type string values. */
 type EntryErrorType = (typeof ENTRY_ERROR_CODES)[EntryErrorCode];
-
-/**
- * Error thrown when a password entry is not found in the store.
- */
-class EntryNotFoundError extends Error {
-  public code: EntryErrorCode;
-  public type: EntryErrorType;
-  public path: string;
-
-  constructor(path: string, message?: string) {
-    super(message ?? `Entry not found: ${path}`);
-    this.code = "ENTRY_NOT_FOUND";
-    this.type = ENTRY_ERROR_CODES.ENTRY_NOT_FOUND;
-    this.path = path;
-  }
-}
-
-/**
- * Error thrown when attempting to create an entry that already exists.
- */
-class EntryAlreadyExistsError extends Error {
-  public code: EntryErrorCode;
-  public type: EntryErrorType;
-  public path: string;
-
-  constructor(path: string, message?: string) {
-    super(message ?? `Entry already exists: ${path}`);
-    this.code = "ENTRY_ALREADY_EXISTS";
-    this.type = ENTRY_ERROR_CODES.ENTRY_ALREADY_EXISTS;
-    this.path = path;
-  }
-}
 
 /**
  * Error thrown when `pass show` output cannot be parsed.
@@ -368,40 +294,6 @@ class EntryParseError extends Error {
     this.code = "ENTRY_PARSE_ERROR";
     this.type = ENTRY_ERROR_CODES.ENTRY_PARSE_ERROR;
     this.raw = raw;
-  }
-}
-
-/**
- * Error thrown when a clipboard operation fails.
- */
-class ClipboardError extends Error {
-  public code: EntryErrorCode;
-  public type: EntryErrorType;
-  public selection: string;
-
-  constructor(selection: string, message?: string) {
-    super(message ?? `Clipboard operation failed: ${selection}`);
-    this.code = "CLIPBOARD_ERROR";
-    this.type = ENTRY_ERROR_CODES.CLIPBOARD_ERROR;
-    this.selection = selection;
-  }
-}
-
-/**
- * Error thrown when a pass mutation (insert, rm, mv, generate) fails.
- */
-class MutationError extends Error {
-  public code: EntryErrorCode;
-  public type: EntryErrorType;
-  public exitCode: number;
-  public stderr: string;
-
-  constructor(exitCode: number, stderr: string, message?: string) {
-    super(message ?? `Mutation failed (exit code ${exitCode}): ${stderr}`);
-    this.code = "MUTATION_FAILED";
-    this.type = ENTRY_ERROR_CODES.MUTATION_FAILED;
-    this.exitCode = exitCode;
-    this.stderr = stderr;
   }
 }
 
@@ -432,20 +324,14 @@ export type {
 };
 
 export {
-  ClipboardError,
   CONFIG_ERROR_CODES,
   CommandFailedError,
   ConfigNotFoundError,
   ConfigParseError,
   ConfigValidationError,
   ConfigWriteError,
-  DirectoryCreationError,
   ENTRY_ERROR_CODES,
-  EntryAlreadyExistsError,
-  EntryNotFoundError,
   EntryParseError,
-  FileWriteError,
-  MutationError,
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
   NeuError,

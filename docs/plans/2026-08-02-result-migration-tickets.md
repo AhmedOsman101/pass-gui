@@ -112,10 +112,12 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] `entries.ts` methods have distinct error classes per operation (`EntriesReadError`, `EntriesWriteError`, etc.)
-- [ ] `filesystem.ts` methods have distinct error classes per operation (`FsMkdirError`, `FsReadError`, etc.)
-- [ ] No `try/catch` in service body (the two existing in `filesystem.ts` are converted)
-- [ ] `mask typecheck` clean
+- [x] `entries.ts` methods have distinct error classes per operation (`EntriesReadError`, `EntriesWriteError`, etc.)
+- [x] `filesystem.ts` methods have distinct error classes per operation (`FsMkdirError`, `FsReadError`, etc.)
+- [x] No `try/catch` in service body (the two existing in `filesystem.ts` are converted)
+- [x] `mask typecheck` clean
+
+> Note: `EntriesReadError`/`EntriesWriteError` carry a `kind` field (`not-found | exists | parse | failed`) preserving the old stderr-derived semantics of the deleted shared classes. Orphaned `lib/errors` classes removed: `MutationError`, `EntryNotFoundError`, `EntryAlreadyExistsError`, `ClipboardError`, `DirectoryCreationError`, `FileWriteError`.
 
 ---
 
@@ -181,10 +183,12 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** None — can start immediately.
 
-- [ ] `pass.ts` methods have distinct error classes: `PassInitError`, `PassShowError`, `PassInsertError`, `PassVersionCheckError`
-- [ ] `gpg.ts` methods have distinct error classes: `GpgKeyListError`, `GpgEncryptError`, `GpgDecryptError`
-- [ ] No `try/catch` in service body
-- [ ] `mask typecheck` clean
+- [x] `pass.ts` methods have distinct error classes: `PassInitError`, `PassShowError`, `PassInsertError`, `PassVersionCheckError`
+  - Deviation: `PassInitError` n/a — `init()` never errors by design (returns `Ok(false)`). `PassShowError`/`PassInsertError` live in `entries.ts` as `EntriesReadError`/`EntriesWriteError` (those ops belong to the Entries service). Added `PassExecError` for exec validation failures instead.
+- [x] `gpg.ts` methods have distinct error classes: `GpgKeyListError`, `GpgEncryptError`, `GpgDecryptError`
+  - Deviation: no encrypt/decrypt methods exist in `gpg.ts`; added `GpgKeyListError` only. `checkVersion` keeps the shared `VersionCheckError`.
+- [x] No `try/catch` in service body
+- [x] `mask typecheck` clean
 
 ---
 

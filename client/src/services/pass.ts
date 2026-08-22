@@ -1,5 +1,5 @@
 import type { ExecCommandOptions, ExecCommandResult } from "@neutralinojs/lib";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION } from "@/lib/constants";
 import { type CommandFailedError, VersionCheckError } from "@/lib/errors";
 import { validatePath } from "@/lib/shell";
@@ -10,6 +10,29 @@ import { Config } from "./config";
 import { Fs } from "./filesystem";
 import { Gpg } from "./gpg";
 import { Neu } from "./neutralino";
+
+/**
+ * Error thrown by `PassService.checkVersion()`. Same payload as the shared
+ * `VersionCheckError` but a distinct type so call sites can match on the
+ * pass operation family specifically.
+ */
+class PassVersionCheckError extends VersionCheckError {}
+
+/**
+ * Error thrown by `PassService.exec()` when pre-execution validation
+ * rejects the store directory or one of the arguments. Carries the
+ * rejected value and the underlying cause.
+ */
+class PassExecError extends Error {
+  public argument: string;
+  public cause: Error | null;
+
+  constructor(argument: string, message: string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.argument = argument;
+    this.cause = cause ?? null;
+  }
+}
 
 /**
  * Service for interacting with the `pass` password manager.
@@ -62,11 +85,11 @@ class PassService {
   /**
    * Checks if pass version meets the minimum supported version requirement.
    */
-  async checkVersion(): Promise<Result<VersionCheck, VersionCheckError>> {
+  async checkVersion(): Promise<Result<VersionCheck, PassVersionCheckError>> {
     const cmdResult = await Neu.exec({ cmd: "pass", args: ["--version"] });
     if (cmdResult.isError() || cmdResult.ok.exitCode !== 0) {
       return Err(
-        new VersionCheckError(
+        new PassVersionCheckError(
           false,
           this.version,
           PASS_MIN_VERSION,
@@ -140,11 +163,17 @@ class PassService {
   async exec(
     args: Stringifiable[] = [],
     options?: ExecCommandOptions
-  ): Promise<Result<ExecCommandResult, CommandFailedError | Error>> {
+  ): Promise<
+    Result<ExecCommandResult, PassExecError | CommandFailedError | Error>
+  > {
     const storeDirValidation = await validatePath(this.storePath);
     if (storeDirValidation.isError()) {
-      return ErrFromText(
-        `Invalid store directory: ${storeDirValidation.error.message}`
+      return Err(
+        new PassExecError(
+          this.storePath,
+          `Invalid store directory: ${storeDirValidation.error.message}`,
+          storeDirValidation.error
+        )
       );
     }
 
@@ -152,7 +181,13 @@ class PassService {
     for (const arg of args) {
       const argValidation = await validatePath(arg);
       if (argValidation.isError()) {
-        return ErrFromText(`Invalid argument: ${argValidation.error.message}`);
+        return Err(
+          new PassExecError(
+            String(arg),
+            `Invalid argument: ${argValidation.error.message}`,
+            argValidation.error
+          )
+        );
       }
       validatedArgs.push(argValidation.ok);
     }
@@ -185,4 +220,10 @@ class PassService {
 const Pass = new PassService();
 const passInitialized = Pass.init();
 
-export { Pass, PassService, passInitialized };
+export {
+  Pass,
+  PassExecError,
+  PassService,
+  PassVersionCheckError,
+  passInitialized,
+};
