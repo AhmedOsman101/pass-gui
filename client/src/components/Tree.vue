@@ -11,7 +11,6 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
 import { useTreeState } from "@/composables/use-tree-state";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import {
@@ -28,12 +27,6 @@ import { useHotkey } from "@tanstack/vue-hotkeys";
 import { computed, ref, TransitionGroup } from "vue";
 
 const treeStore = useEntryTreeStore();
-const {
-  buffer: copyBuffer,
-  pasteEntry,
-  copyEntry,
-  cutEntry,
-} = useClipboardBuffer();
 
 const props = defineProps<{
   searchQuery?: string;
@@ -96,11 +89,11 @@ function isFocusedNode(path: string): boolean {
 }
 
 function isCutDimmed(path: string): boolean {
-  return copyBuffer.value?.mode === "cut" && copyBuffer.value?.path === path;
+  return treeStore.buffer?.mode === "cut" && treeStore.buffer.path === path;
 }
 
 function hasCopyBuffer(path: string): boolean {
-  return !!copyBuffer.value && copyBuffer.value.path === path;
+  return !!treeStore.buffer && treeStore.buffer.path === path;
 }
 
 function isSearchMatch(path: string): boolean {
@@ -189,7 +182,7 @@ useHotkey("Enter", () => {
 
         <!-- Directory context menu -->
         <ContextMenuContent v-if="node.isDirectory" class="min-w-64 p-2">
-          <ContextMenuItem v-if="copyBuffer" @click="pasteEntry(node.path)">
+          <ContextMenuItem v-if="treeStore.buffer" @click="treeStore.pasteEntry(node.path)">
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
@@ -217,19 +210,19 @@ useHotkey("Enter", () => {
         <!-- File context menu -->
         <ContextMenuContent v-else class="min-w-64 p-2">
           <ContextMenuItem
-            v-if="copyBuffer"
-            @click="pasteEntry(dirPath(node.path))"
+            v-if="treeStore.buffer"
+            @click="treeStore.pasteEntry(dirPath(node.path))"
           >
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="copyEntry(node.path, 'FILE')">
+          <ContextMenuItem @click="treeStore.copyEntry(node.path, 'FILE')">
             <Copy class="size-4 mr-2" />
             Copy
             <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuItem @click="cutEntry(node.path, 'FILE')">
+          <ContextMenuItem @click="treeStore.cutEntry(node.path, 'FILE')">
             <Scissors class="size-4 mr-2" />
             Cut
             <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>

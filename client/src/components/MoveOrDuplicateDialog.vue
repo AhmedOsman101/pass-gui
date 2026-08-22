@@ -93,13 +93,15 @@ async function createNewFolder(): Promise<void> {
 
   isCreatingFolder.value = false;
 
-  if (result) {
-    folderError.value = result;
-    return;
-  }
-
-  selectedFolder.value = fullPath;
-  newFolderName.value = "";
+  result.match({
+    okFn: () => {
+      selectedFolder.value = fullPath;
+      newFolderName.value = "";
+    },
+    errFn: e => {
+      folderError.value = e.message;
+    },
+  });
 }
 
 async function handleSubmit(): Promise<void> {
@@ -125,12 +127,14 @@ async function handleSubmit(): Promise<void> {
 
   isSubmitting.value = false;
 
-  if (result) {
-    formError.value = result;
-    return;
-  }
-
-  isOpen.value = false;
+  result.match({
+    okFn: () => {
+      isOpen.value = false;
+    },
+    errFn: e => {
+      formError.value = e.message;
+    },
+  });
 }
 </script>
 

@@ -44,12 +44,14 @@ async function handleSubmit(): Promise<void> {
 
   isSubmitting.value = false;
 
-  if (result) {
-    formError.value = result;
-    return;
-  }
-
-  isOpen.value = false;
+  result.match({
+    okFn: () => {
+      isOpen.value = false;
+    },
+    errFn: e => {
+      formError.value = e.message;
+    },
+  });
 }
 </script>
 

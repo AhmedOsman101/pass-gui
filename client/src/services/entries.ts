@@ -65,7 +65,10 @@ class EntriesWriteError extends Error {
  * Maps a `pass.exec()` error to an `EntriesReadError` for read operations.
  * Pass exits with code 1 for "entry not found"; stderr content disambiguates.
  */
-function mapReadError(err: CommandFailedError | Error, path: string): EntriesReadError {
+function mapReadError(
+  err: CommandFailedError | Error,
+  path: string
+): EntriesReadError {
   if (
     err instanceof CommandFailedError &&
     err.stdErr.includes("is not in the password store")
@@ -123,7 +126,9 @@ class Entries {
   static async list(): Promise<Result<EntryTree, EntriesReadError>> {
     const storePath = Pass.storePath;
     if (!storePath) {
-      return Err(new EntriesReadError("", "failed", "No active store configured"));
+      return Err(
+        new EntriesReadError("", "failed", "No active store configured")
+      );
     }
 
     const tree = await walkStore(storePath);
@@ -226,9 +231,7 @@ class Entries {
   static async copy(
     oldPath: string,
     newPath: string
-  ): Promise<
-    Result<MutationResult, EntriesReadError | EntriesWriteError>
-  > {
+  ): Promise<Result<MutationResult, EntriesReadError | EntriesWriteError>> {
     const showResult = await Entries.show(oldPath);
     if (showResult.isError()) return Err(showResult.error);
 

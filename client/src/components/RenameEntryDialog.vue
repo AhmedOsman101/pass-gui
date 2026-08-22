@@ -86,12 +86,14 @@ async function handleSubmit(): Promise<void> {
 
   isSubmitting.value = false;
 
-  if (result) {
-    formError.value = result;
-    return;
-  }
-
-  emit("update:open", false);
+  result.match({
+    okFn: () => {
+      emit("update:open", false);
+    },
+    errFn: e => {
+      formError.value = e.message;
+    },
+  });
 }
 </script>
 

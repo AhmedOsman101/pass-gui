@@ -5,8 +5,10 @@ type OkMessage<T> = string | ((value: T) => string);
 type ErrMessage<E extends Error> = string | ((error: E) => string);
 
 type NotifyResultOpts<T, E extends Error> = {
-  ok?: OkMessage<T>;
-  err?: ErrMessage<E>;
+  /** Message for the Ok branch. `false` suppresses the success toast. */
+  ok?: OkMessage<T> | false;
+  /** Message for the Err branch. `false` suppresses the error toast. */
+  err?: ErrMessage<E> | false;
 };
 
 /**
@@ -15,8 +17,9 @@ type NotifyResultOpts<T, E extends Error> = {
  * chain `.match()` for local UI (close modal, focus field).
  *
  * Default messages: `"Success"` for `Ok`, `error.message` for `Err`.
- * Pass `ok`/`err` as a string for a fixed message or a function
- * to derive it from the value/error.
+ * Pass `ok`/`err` as a string for a fixed message, a function
+ * to derive it from the value/error, or `false` to suppress that
+ * branch's toast entirely.
  *
  * @example
  *   const result = useNotifyResult(
@@ -34,6 +37,7 @@ function useNotifyResult<T, E extends Error = Error>(
 ): Result<T, E> {
   result
     .inspect(value => {
+      if (opts.ok === false) return;
       const msg = opts.ok
         ? typeof opts.ok === "string"
           ? opts.ok
@@ -42,6 +46,7 @@ function useNotifyResult<T, E extends Error = Error>(
       toast.success(msg);
     })
     .inspectErr(error => {
+      if (opts.err === false) return;
       const msg = opts.err
         ? typeof opts.err === "string"
           ? opts.err

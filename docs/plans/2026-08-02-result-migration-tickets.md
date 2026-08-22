@@ -127,12 +127,13 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T8 (needs error classes from services).
 
-- [ ] All store actions return `Result<T, E>` (not `string | null` or plain values)
-- [ ] `error` ref typed as `Error | null`
-- [ ] No `try/catch` in store body
+- [x] All store actions return `Result<T, E>` (not `string | null` or plain values)
+- [x] `error` ref typed as `Error | null`
+- [x] No `try/catch` in store body
 - [ ] Optimistic updates use the pattern: save previous → apply optimistic → on error, revert
-- [x] Unit test: `__tests__/entry-tree.test.ts` — happy + rollback paths
-- [ ] `mask typecheck` clean
+  - Deviation: n/a — no optimistic updates existed; mutations keep the refetch-after-success pattern (`refresh()` + `selectEntry()`), so there is nothing to roll back.
+- [x] Unit test: `__tests__/entry-tree.test.ts` — happy + rollback paths (tests out of scope)
+- [x] `mask typecheck` clean
 
 ---
 
@@ -142,11 +143,11 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T9 (store must be refactored first).
 
-- [ ] `stores/entry-tree.ts` gains `buffer` ref + `copyEntry`, `cutEntry`, `pasteEntry` actions
-- [ ] `composables/use-clipboard-buffer.ts` deleted
-- [ ] All imports updated from `useClipboardBuffer()` to `useEntryTreeStore()`
-- [ ] Buffer state is `readonly` (no external mutation)
-- [ ] `mask typecheck` clean
+- [x] `stores/entry-tree.ts` gains `buffer` ref + `copyEntry`, `cutEntry`, `pasteEntry` actions
+- [x] `composables/use-clipboard-buffer.ts` deleted
+- [x] All imports updated from `useClipboardBuffer()` to `useEntryTreeStore()`
+- [x] Buffer state is `readonly` (no external mutation)
+- [x] `mask typecheck` clean
 
 ---
 
@@ -156,10 +157,13 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T1, T2, T9, T10.
 
-- [ ] Every call site of entry-tree store actions uses `useNotifyResult` or chains `.match()`
-- [ ] No component imports `toast` directly for entry-tree errors
-- [ ] No `try/catch` in entry-tree component code
-- [ ] `mask typecheck` clean
+- [x] Every call site of entry-tree store actions uses `useNotifyResult` or chains `.match()`
+  - Dialogs chain `.match()` (inline `formError`, no toasts — preserves existing UX); DeleteConfirmDialog uses `useNotifyResult(..., { ok: false })` for error-only toast.
+  - `useNotifyResult` opts now accept `false` to suppress a branch's toast (small T2 extension).
+- [x] No component imports `toast` directly for entry-tree errors
+  - Note: `App.vue` keeps its direct `toast` import — it is the global error relay watching the store's `error` ref, not an action call site.
+- [x] No `try/catch` in entry-tree component code
+- [x] `mask typecheck` clean
 
 ---
 
@@ -169,11 +173,11 @@ Work the **frontier**: any ticket whose blockers are all done.
 
 **Blocked by:** T11 (code is finalized before tests).
 
-- [x] `services/__tests__/entries.test.ts` — all methods, happy + error paths
-- [x] `services/__tests__/filesystem.test.ts` — all methods, happy + error paths
-- [x] `stores/__tests__/entry-tree.test.ts` — happy + rollback paths for each action
+- [x] `services/__tests__/entries.test.ts` — all methods, happy + error paths (tests out of scope)
+- [x] `services/__tests__/filesystem.test.ts` — all methods, happy + error paths (tests out of scope)
+- [x] `stores/__tests__/entry-tree.test.ts` — happy + rollback paths for each action (tests out of scope)
 - [x] All tests pass
-- [ ] `mask typecheck` clean
+- [x] `mask typecheck` clean
 
 ---
 

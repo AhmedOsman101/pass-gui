@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
@@ -27,9 +28,14 @@ const isDeleting = ref(false);
 
 async function handleDelete(): Promise<void> {
   isDeleting.value = true;
-  await treeStore.removeEntry(props.entryPath);
+  const result = useNotifyResult(
+    await treeStore.removeEntry(props.entryPath),
+    { ok: false }
+  );
   isDeleting.value = false;
-  emit("update:open", false);
+  if (result.isOk()) {
+    emit("update:open", false);
+  }
 }
 </script>
 

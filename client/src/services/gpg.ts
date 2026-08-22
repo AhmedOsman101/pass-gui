@@ -26,11 +26,7 @@ class GpgKeyListError extends Error {
   public gnupgHome: string | null;
   public cause: Error | null;
 
-  constructor(
-    gnupgHome: string | null,
-    message: string,
-    cause?: Error
-  ) {
+  constructor(gnupgHome: string | null, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.gnupgHome = gnupgHome;
     this.cause = cause ?? null;
@@ -234,11 +230,7 @@ class GpgService {
 
     if (cmdResult.isError()) {
       return Err(
-        new GpgKeyListError(
-          gnupgHome,
-          cmdResult.error.message,
-          cmdResult.error
-        )
+        new GpgKeyListError(gnupgHome, cmdResult.error.message, cmdResult.error)
       );
     }
 
@@ -344,9 +336,4 @@ class GpgService {
 const Gpg = new GpgService();
 const gpgInitialized = Gpg.init();
 
-export {
-  Gpg,
-  GpgKeyListError,
-  GpgService,
-  gpgInitialized,
-};
+export { Gpg, GpgKeyListError, GpgService, gpgInitialized };

@@ -25,7 +25,6 @@ import {
   SidebarHeader,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { useClipboardBuffer } from "@/composables/use-clipboard-buffer";
 import { Pass } from "@/services/pass";
 import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
@@ -51,7 +50,6 @@ const props = defineProps<SidebarProps>();
 
 const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
-const clipboard = useClipboardBuffer();
 const activeStore = useActiveStoreStore();
 
 const hasSelection = computed(() => !!treeStore.selectedPath);
@@ -83,7 +81,7 @@ useHotkey(
   () => {
     if (treeStore.selectedPath) {
       const node = findNode(treeStore.tree, treeStore.selectedPath);
-      clipboard.copyEntry(treeStore.selectedPath, node?.type);
+      treeStore.copyEntry(treeStore.selectedPath, node?.type);
     }
   },
   { enabled: hasSelection },
@@ -94,7 +92,7 @@ useHotkey(
   () => {
     if (treeStore.selectedPath) {
       const node = findNode(treeStore.tree, treeStore.selectedPath);
-      clipboard.cutEntry(treeStore.selectedPath, node?.type);
+      treeStore.cutEntry(treeStore.selectedPath, node?.type);
     }
   },
   { enabled: hasSelection },
@@ -103,7 +101,7 @@ useHotkey(
 useHotkey(
   "Mod+V",
   () => {
-    if (clipboard.buffer.value) {
+    if (treeStore.buffer) {
       const selected = treeStore.selectedPath;
       if (selected) {
         const node = findNode(treeStore.tree, selected);
@@ -111,13 +109,13 @@ useHotkey(
           node?.type === "DIRECTORY"
             ? selected
             : selected.split("/").slice(0, -1).join("/");
-        clipboard.pasteEntry(destDir);
+        void treeStore.pasteEntry(destDir);
       } else {
-        clipboard.pasteEntry("");
+        void treeStore.pasteEntry("");
       }
     }
   },
-  { enabled: computed(() => !!clipboard.buffer.value) },
+  { enabled: computed(() => !!treeStore.buffer) },
 );
 
 function findNode(nodes: EntryTree, path: string): EntryNode | undefined {

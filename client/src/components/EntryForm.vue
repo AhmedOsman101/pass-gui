@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Result } from "lib-result";
 import { ref, computed, watch } from "vue";
 import {
   Eye,
@@ -18,6 +19,8 @@ import {
   serializeEntryContent,
   type MetadataEntry,
 } from "@/lib/entry-content";
+import type { EntriesReadError, EntriesWriteError } from "@/services/entries";
+import type { MutationResult } from "@/types/entries";
 
 const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
@@ -189,7 +192,7 @@ async function handleSubmit(): Promise<void> {
   formError.value = null;
 
   const content = buildContent();
-  let result: string | null;
+  let result: Result<MutationResult, EntriesReadError | EntriesWriteError>;
 
   if (isEdit.value) {
     result = await treeStore.editEntry(path.value, content);
@@ -199,12 +202,14 @@ async function handleSubmit(): Promise<void> {
 
   isSubmitting.value = false;
 
-  if (result) {
-    formError.value = result;
-    return;
-  }
-
-  formStore.closeForm();
+  result.match({
+    okFn: () => {
+      formStore.closeForm();
+    },
+    errFn: e => {
+      formError.value = e.message;
+    },
+  });
 }
 </script>
 

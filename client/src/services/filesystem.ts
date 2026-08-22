@@ -12,8 +12,8 @@ import {
   NEU_ERROR_CODES,
   NEU_ERROR_CODES_MAP,
   NeuError,
-  type NeuErrorMap,
   type NeuErrorCode,
+  type NeuErrorMap,
 } from "@/lib/errors";
 import { Logger } from "@/lib/logger";
 import Path from "@/lib/path";
@@ -311,7 +311,9 @@ class Filesystem {
       await Logger.error(
         `Fs.getStats("${resolvedPath.ok}"): ${res.error.message}`
       );
-      return Err(new FsStatError(resolvedPath.ok, res.error.message, res.error));
+      return Err(
+        new FsStatError(resolvedPath.ok, res.error.message, res.error)
+      );
     }
     return Ok(res.ok);
   }
@@ -421,7 +423,9 @@ class Filesystem {
       ignore?: string[];
       flat?: boolean;
     }
-  ): Promise<Result<TreeDirectoryEntry[] | DirectoryEntry[], FsReadError | Error>> {
+  ): Promise<
+    Result<TreeDirectoryEntry[] | DirectoryEntry[], FsReadError | Error>
+  > {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -430,7 +434,11 @@ class Filesystem {
     );
     if (flatResult.isError()) {
       return Err(
-        new FsReadError(resolvedPath.ok, flatResult.error.message, flatResult.error)
+        new FsReadError(
+          resolvedPath.ok,
+          flatResult.error.message,
+          flatResult.error
+        )
       );
     }
 

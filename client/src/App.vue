@@ -10,9 +10,9 @@ const treeStore = useEntryTreeStore();
 
 watch(
   () => treeStore.error,
-  (msg) => {
-    if (msg) {
-      toast.error(msg);
+  (err) => {
+    if (err) {
+      toast.error(err.message);
       treeStore.error = null;
     }
   },
