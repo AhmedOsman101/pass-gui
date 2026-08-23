@@ -11,6 +11,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { useTreeState } from "@/composables/use-tree-state";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import {
@@ -78,6 +79,13 @@ function nodeName(path: string): string {
 function dirPath(path: string): string {
   const i = path.lastIndexOf("/");
   return i === -1 ? "" : path.slice(0, i);
+}
+
+async function paste(destDir: string): Promise<void> {
+  const result = await treeStore.pasteEntry(destDir);
+  if (result) {
+    useNotifyResult(result, { ok: a => `Pasted to ${a.path}` });
+  }
 }
 
 function isSelectedNode(path: string): boolean {
@@ -182,7 +190,7 @@ useHotkey("Enter", () => {
 
         <!-- Directory context menu -->
         <ContextMenuContent v-if="node.isDirectory" class="min-w-64 p-2">
-          <ContextMenuItem v-if="treeStore.buffer" @click="treeStore.pasteEntry(node.path)">
+          <ContextMenuItem v-if="treeStore.buffer" @click="paste(node.path)">
             <Copy class="size-4 mr-2" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
@@ -211,7 +219,7 @@ useHotkey("Enter", () => {
         <ContextMenuContent v-else class="min-w-64 p-2">
           <ContextMenuItem
             v-if="treeStore.buffer"
-            @click="treeStore.pasteEntry(dirPath(node.path))"
+            @click="paste(dirPath(node.path))"
           >
             <Copy class="size-4 mr-2" />
             Paste

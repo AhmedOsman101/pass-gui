@@ -25,6 +25,7 @@ import {
   SidebarHeader,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { Pass } from "@/services/pass";
 import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
@@ -109,14 +110,21 @@ useHotkey(
           node?.type === "DIRECTORY"
             ? selected
             : selected.split("/").slice(0, -1).join("/");
-        void treeStore.pasteEntry(destDir);
+        void pasteInto(destDir);
       } else {
-        void treeStore.pasteEntry("");
+        void pasteInto("");
       }
     }
   },
   { enabled: computed(() => !!treeStore.buffer) },
 );
+
+async function pasteInto(destDir: string): Promise<void> {
+  const result = await treeStore.pasteEntry(destDir);
+  if (result) {
+    useNotifyResult(result, { ok: a => `Pasted to ${a.path}` });
+  }
+}
 
 function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   for (const node of nodes) {

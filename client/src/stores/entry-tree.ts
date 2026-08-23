@@ -230,14 +230,18 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
       ? await Fs.join(destinationDir, fileName)
       : fileName;
 
-    // Clear buffer before the async operation so the UI doesn't
-    // show the buffer state while the paste is in flight
-    buffer.value = null;
+    const result =
+      mode === "copy"
+        ? await duplicateEntry(sourcePath, destPath)
+        : await moveEntry(sourcePath, destPath, nodeType);
 
-    if (mode === "copy") {
-      return duplicateEntry(sourcePath, destPath);
+    // Clear only on success — a failed paste keeps the buffer so the
+    // user can retry instead of losing their cut/copy state.
+    if (result.isOk()) {
+      buffer.value = null;
     }
-    return moveEntry(sourcePath, destPath, nodeType);
+
+    return result;
   }
 
   function setSortMode(mode: SortMode): void {
