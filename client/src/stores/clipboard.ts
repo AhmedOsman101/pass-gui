@@ -22,7 +22,7 @@ import type { ClipboardAction } from "@/types/entries";
  * Actions return `Result` — state mutations happen via `.inspect()` /
  * `.inspectErr()` side effects. No try/catch, no toasts.
  */
-const CLEAR_RETRY_MS = 5_000;
+const CLEAR_RETRY_MS = 5000;
 
 const useClipboardStore = defineStore("clipboard", () => {
   const lastAction = ref<ClipboardAction | null>(null);
