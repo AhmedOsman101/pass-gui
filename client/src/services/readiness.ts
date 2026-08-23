@@ -275,7 +275,21 @@ class Readiness {
     storePath: string
   ): Promise<CheckResult> {
     const hasEntries = await StoreValidation.hasEntries(storePath);
-    if (hasEntries.isOk() && !hasEntries.ok) {
+    if (hasEntries.isError()) {
+      // A failed scan is unknown state, not "no entries" — never report READY.
+      return {
+        ...OK,
+        state: "STORE_SCAN_FAILED",
+        issues: [
+          issue("STORE_SCAN_FAILED", {
+            path: storePath,
+            reason: hasEntries.error.message,
+          }),
+        ],
+        stop: true,
+      };
+    }
+    if (!hasEntries.ok) {
       return {
         ...OK,
         state: "STORE_EMPTY",

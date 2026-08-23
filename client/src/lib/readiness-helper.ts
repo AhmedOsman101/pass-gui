@@ -36,6 +36,7 @@ const SEVERITY: Record<ReadinessIssueCode, "blocking" | "info"> = {
   STORE_GPG_ID_PARSE_ERROR: "blocking",
   STORE_RECIPIENT_UNKNOWN: "blocking",
   STORE_BEHAVIORAL_CHECK_FAILED: "blocking",
+  STORE_SCAN_FAILED: "blocking",
   STORE_NO_ENTRIES: "info",
 };
 

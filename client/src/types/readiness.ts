@@ -14,6 +14,7 @@ type ReadinessState =
   | "STORE_NO_GPG_ID"
   | "STORE_GPG_ID_EMPTY"
   | "STORE_GPG_ID_KEY_MISSING"
+  | "STORE_SCAN_FAILED"
   | "STORE_EMPTY"
   | "READY";
 
@@ -63,6 +64,12 @@ type ReadinessIssue =
       parseError: Error;
     }
   | { code: "STORE_NO_ENTRIES"; severity: "info"; path: string }
+  | {
+      code: "STORE_SCAN_FAILED";
+      severity: "blocking";
+      path: string;
+      reason: string;
+    }
   | {
       code: "STORE_RECIPIENT_UNKNOWN";
       severity: "blocking";

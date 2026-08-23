@@ -89,6 +89,12 @@ const issueDisplay: Record<
     description: "The store exists but has no password entries yet.",
     action: "Create your first entry.",
   },
+  STORE_SCAN_FAILED: {
+    title: "Store could not be scanned",
+    description:
+      "The store directory could not be read to check for entries.",
+    action: "Check file permissions, then retry.",
+  },
 };
 
 const display = computed(() => {
