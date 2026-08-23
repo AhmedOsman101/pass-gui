@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import DirectoryTree from "@/components/DirectoryTree.vue";
+import Path from "@/lib/path";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
@@ -32,10 +33,7 @@ const newFolderName = ref("");
 const isCreatingFolder = ref(false);
 const folderError = ref<string | null>(null);
 
-const currentName = computed(() => {
-  const parts = props.currentPath.split("/");
-  return parts[parts.length - 1] ?? "";
-});
+const currentName = computed(() => Path.baseName(props.currentPath));
 
 const dialogTitle = computed(() => {
   return props.mode === "move" ? "Move Entry" : "Duplicate Entry";
@@ -66,9 +64,8 @@ function buildFullDestination(): string {
 
 watch(isOpen, (open) => {
   if (open) {
-    const parts = props.currentPath.split("/");
-    const name = parts.pop() ?? "";
-    selectedFolder.value = parts.join("/");
+    const name = Path.baseName(props.currentPath);
+    selectedFolder.value = Path.parentPath(props.currentPath);
     newPath.value = name;
     formError.value = null;
     newFolderName.value = "";

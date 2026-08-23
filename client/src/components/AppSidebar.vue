@@ -26,6 +26,7 @@ import {
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { useNotifyResult } from "@/composables/use-notify-result";
+import Path from "@/lib/path";
 import { Pass } from "@/services/pass";
 import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
@@ -107,9 +108,7 @@ useHotkey(
       if (selected) {
         const node = findNode(treeStore.tree, selected);
         const destDir =
-          node?.type === "DIRECTORY"
-            ? selected
-            : selected.split("/").slice(0, -1).join("/");
+          node?.type === "DIRECTORY" ? selected : Path.parentPath(selected);
         void pasteInto(destDir);
       } else {
         void pasteInto("");

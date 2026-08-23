@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
 import { computed, readonly, ref } from "vue";
+import Path from "@/lib/path";
 import type { EntriesReadError, EntriesWriteError } from "@/services/entries";
 import { Entries } from "@/services/entries";
 import type { FsMkdirError } from "@/services/filesystem";
@@ -225,7 +226,7 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
     if (!buffer.value) return;
 
     const { path: sourcePath, mode, nodeType } = buffer.value;
-    const fileName = sourcePath.split("/").pop() as string;
+    const fileName = Path.baseName(sourcePath);
     const destPath = destinationDir
       ? await Fs.join(destinationDir, fileName)
       : fileName;

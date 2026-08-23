@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Path from "@/lib/path";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
@@ -28,16 +29,9 @@ const newName = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
 
-const currentName = computed(() => {
-  const parts = props.currentPath.split("/");
-  return parts[parts.length - 1] ?? "";
-});
+const currentName = computed(() => Path.baseName(props.currentPath));
 
-const parentDir = computed(() => {
-  const parts = props.currentPath.split("/");
-  parts.pop();
-  return parts.join("/");
-});
+const parentDir = computed(() => Path.parentPath(props.currentPath));
 
 const isDirectory = computed(() => props.nodeType === "DIRECTORY");
 const dialogTitle = computed(() =>

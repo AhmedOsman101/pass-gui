@@ -13,6 +13,7 @@ import {
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { useTreeState } from "@/composables/use-tree-state";
+import Path from "@/lib/path";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import {
   ChevronRight,
@@ -69,16 +70,6 @@ function openDelete(path: string): void {
 function openCreateFolder(path: string): void {
   createFolderParent.value = path;
   isCreateFolderOpen.value = true;
-}
-
-function nodeName(path: string): string {
-  const parts = path.split("/");
-  return parts[parts.length - 1] ?? path;
-}
-
-function dirPath(path: string): string {
-  const i = path.lastIndexOf("/");
-  return i === -1 ? "" : path.slice(0, i);
 }
 
 async function paste(destDir: string): Promise<void> {
@@ -173,7 +164,7 @@ useHotkey("Enter", () => {
               'search-highlight': isSearchMatch(node.path),
             }"
             :style="{ paddingLeft: `${12 + node.depth * 16}px` }"
-            :title="nodeName(node.path)"
+            :title="Path.baseName(node.path)"
             @click="toggleSelect(node.path)"
           >
             <ChevronRight
@@ -184,7 +175,7 @@ useHotkey("Enter", () => {
             />
             <Folder v-if="node.isDirectory" class="shrink-0 size-4" />
             <File v-else class="shrink-0 size-4" />
-            <span class="truncate">{{ nodeName(node.path) }}</span>
+            <span class="truncate">{{ Path.baseName(node.path) }}</span>
           </SidebarMenuButton>
         </ContextMenuTrigger>
 
@@ -219,7 +210,7 @@ useHotkey("Enter", () => {
         <ContextMenuContent v-else class="min-w-64 p-2">
           <ContextMenuItem
             v-if="treeStore.buffer"
-            @click="paste(dirPath(node.path))"
+            @click="paste(Path.parentPath(node.path))"
           >
             <Copy class="size-4 mr-2" />
             Paste
