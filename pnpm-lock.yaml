@@ -16,7 +16,7 @@ importers:
         version: 1.26.0(vue@3.5.40(typescript@6.0.3))
       '@neutralinojs/lib':
         specifier: github:AhmedOsman101/neutralino.js#pnpm
-        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/afecd225a56e1c49e0d4bdf1abfc6d6197b8f0c1
+        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0
       '@tanstack/vue-hotkeys':
         specifier: ^0.10.0
         version: 0.10.0(vue@3.5.40(typescript@6.0.3))
@@ -539,8 +539,8 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/afecd225a56e1c49e0d4bdf1abfc6d6197b8f0c1':
-    resolution: {gitHosted: true, integrity: sha512-6Jbj6ULYyACEZxrGw+q57aT5wsD/X+do3X4Sv7vo7lzeyLwboeF2LaOTH512uPvKak7hO9w4n2DRQ3YWzfe3LQ==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/afecd225a56e1c49e0d4bdf1abfc6d6197b8f0c1}
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0':
+    resolution: {gitHosted: true, integrity: sha512-0D5hqgLGm8QCpqCxUeRcB9vkFImfr/UImEpWBehYUNp32yQ3X4Mb+0l5v9OIwMNzUIzPnoYpsBJTg+F0dO6/qA==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0}
     version: 6.9.0
 
   '@neutralinojs/neu@11.7.2':
@@ -675,13 +675,13 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rollup/rollup-darwin-x64@4.62.4':
-    resolution: {integrity: sha512-wsTxtgApb4PrOsNJIm0FZ1h3WvCC+k9uxLJ4ad75hgoS4NiRes2SoJFlDAyMwiUY8IssDqGcHbXuN0sx1tfF1A==}
+  '@rollup/rollup-darwin-x64@4.62.5':
+    resolution: {integrity: sha512-YSwBS86QeHOGlrxJ1PSOIZSkzRL/JmKeunhc+lV6M1a6En8QuVCD/T/qIA0J4Gd2Y86RIOBYrLcOUtqGh9+/1w==}
     cpu: [x64]
     os: [darwin]
 
-  '@rollup/rollup-linux-x64-gnu@4.62.4':
-    resolution: {integrity: sha512-W69hukhZ3KKNRCaMIEzKvcFye42hh0FE1+YoYaf5+Ikacuftoco6yO/xouz0hc5d5W/s3yBro5jRiuEE/Q5vUw==}
+  '@rollup/rollup-linux-x64-gnu@4.62.5':
+    resolution: {integrity: sha512-6RHPJR1g/uvdYU8uXBnfq3nlqyZCP82Fr6NHgfGoaIeSh0YEqnX/x6uA9MmJJbnSH7swqX4F+CkGdUF+6doiQA==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
@@ -2340,11 +2340,6 @@ packages:
   muggle-string@0.4.1:
     resolution: {integrity: sha512-VNTrAak/KhO2i8dqqnqnAHOa3cYBwXEZe9h+D5h/1ZqFSTEFHdM65lR7RoIqq3tBBYavsOXV84NoHXZ0AkPyqQ==}
 
-  nanoid@3.3.16:
-    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
-    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
   nanoid@3.3.18:
     resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -2565,10 +2560,6 @@ packages:
   postcss-styl@0.12.3:
     resolution: {integrity: sha512-8I7Cd8sxiEITIp32xBK4K/Aj1ukX6vuWnx8oY/oAH35NfQI4OZaY5nd68Yx8HeN5S49uhQ6DL0rNk0ZBu/TaLg==}
     engines: {node: ^8.10.0 || ^10.13.0 || ^11.10.1 || >=12.13.0}
-
-  postcss@8.5.22:
-    resolution: {integrity: sha512-KBDEIpLrvpv16pp3K0Fw+UCoZfopFjjgeB+0tA/aaThfEE74kKDLrgg603YvOWJyg3+WYtyq3xYsQWsIyZlPqQ==}
-    engines: {node: ^10 || ^12 || >=14}
 
   postcss@8.5.26:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
@@ -3852,10 +3843,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/afecd225a56e1c49e0d4bdf1abfc6d6197b8f0c1':
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0':
     optionalDependencies:
-      '@rollup/rollup-darwin-x64': 4.62.4
-      '@rollup/rollup-linux-x64-gnu': 4.62.4
+      '@rollup/rollup-darwin-x64': 4.62.5
+      '@rollup/rollup-linux-x64-gnu': 4.62.5
 
   '@neutralinojs/neu@11.7.2(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)':
     dependencies:
@@ -3958,10 +3949,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rollup/rollup-darwin-x64@4.62.4':
+  '@rollup/rollup-darwin-x64@4.62.5':
     optional: true
 
-  '@rollup/rollup-linux-x64-gnu@4.62.4':
+  '@rollup/rollup-linux-x64-gnu@4.62.5':
     optional: true
 
   '@standard-schema/spec@1.1.0': {}
@@ -4252,7 +4243,7 @@ snapshots:
       '@vue/shared': 3.5.40
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.22
+      postcss: 8.5.26
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.40':
@@ -5545,8 +5536,6 @@ snapshots:
 
   muggle-string@0.4.1: {}
 
-  nanoid@3.3.16: {}
-
   nanoid@3.3.18: {}
 
   natural-compare@1.4.0: {}
@@ -5755,12 +5744,6 @@ snapshots:
       stylus: 0.57.0(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
-
-  postcss@8.5.22:
-    dependencies:
-      nanoid: 3.3.16
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
 
   postcss@8.5.26:
     dependencies:
