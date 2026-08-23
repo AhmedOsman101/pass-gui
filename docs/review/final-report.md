@@ -23,24 +23,24 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 ## Systemic patterns (flagged in ≥3 batches)
 
 ### S1 — Silent Err drops at the last hop
-Results are produced correctly by services and stored canonically, then discarded by consumers: clipboard-clear consumers (B01), paste call sites (B04), `Watcher.watch` results in `config.load` and `AppSidebar` (B06/B04), `Fs.rmdir` rollback result (B08), `main.ts` init Results (B10), `use-generation-config` fallbacks (B05). The Result chain breaking at its final consumer is the single most repeated defect class.
-**Fix-once direction:** lint rule or convention review for unhandled Results; route through `useNotifyResult`/`.match`/Logger.
+~~Results are produced correctly by services and stored canonically, then discarded by consumers: clipboard-clear consumers (B01), paste call sites (B04), `Watcher.watch` results in `config.load` and `AppSidebar` (B06/B04), `Fs.rmdir` rollback result (B08), `main.ts` init Results (B10), `use-generation-config` fallbacks (B05).~~ ✅ Fixed: clipboard-clear + paste sites in B01/C5; `Fs.rmdir` rollback, generation-config fallbacks, and `Pass.init` swallow now log via Logger. Not changed: `Watcher.watch` drops already log inside the service (double-handling adds nothing); `main.ts` init Results are known boot debt per owner (#6).
+ **Fix-once direction:** lint rule or convention review for unhandled Results; route through `useNotifyResult`/`.match`/Logger.
 
 ### S2 — Dead code accumulation
-`InsertDialog`, `EditEntryDialog` (B04), `GenerateDialog` (B05), `PreferencesTab` (B09), `makeIgnoreFilter` (B03), `validateBehavior` (B08), `brand()`, `SYSTEM_PASS_PATHS`, unused types (B10), ~~dead `Scissors` import (B01)~~ ✅ removed from EntryDetail (Tree.vue's is used — reviewer false positive). Several dead components duplicate live ones and have already drifted (weaker validators, latent open-prop bug in GenerateDialog).
+~~`InsertDialog`, `EditEntryDialog` (B04), `GenerateDialog` (B05), `PreferencesTab` (B09)~~ ✅ deleted (428 lines). ~~dead `Scissors` import (B01)~~ ✅ removed from EntryDetail (Tree.vue's is used — reviewer false positive). Owner decision: keep the remaining unused utility symbols (`makeIgnoreFilter`, `validateBehavior`, `brand()`, `SYSTEM_PASS_PATHS`, unused types, per-section validators) — components only for this sweep.
 **Fix-once direction:** delete all; git history preserves them.
 
 ### S3 — Treating any Err as "absent", then proceeding destructively
-`pass.init` swallows check errors as `Ok(false)` (B02); `exists()` semantics (C7/B03); `Config.ensure()` treats an exists-*error* as missing and writes defaults over a possibly-real config (B06); readiness swallows `hasEntries` errors → reports READY (B07); `Store.create/add` guard treats config-read errors as not-found → silent clobber path (B08); AddStoreWizard defaults failed store detection to *create* mode → risks `pass init` rewriting an existing `.gpg-id` (B08).
-**Fix-once direction:** fail closed at trust boundaries; distinguish not-found from failure everywhere an action follows the check.
+~~`pass.init` swallows check errors as `Ok(false)` (B02)~~ ✅ now logs the swallowed error (behavior unchanged — inert today, no consumer reads `isInitialized`); ~~`exists()` semantics (C7/B03); `Config.ensure()` treats an exists-*error* as missing and writes defaults over a possibly-real config (B06)~~ ✅ fixed via C7; ~~readiness swallows `hasEntries` errors → reports READY (B07)~~ ✅ new `STORE_SCAN_FAILED` blocking state + issue; ~~`Store.create/add` guard treats config-read errors as not-found → silent clobber path (B08)~~ ✅ existence probed via `Config.getValue` — config-read errors return `config-read-failed`, only confirmed-absent names proceed; ~~AddStoreWizard defaults failed store detection to *create* mode → risks `pass init` rewriting an existing `.gpg-id` (B08)~~ ✅ detection failure blocks advancing with an inline error (+ `console.warn` → Logger).
+ **Fix-once direction:** fail closed at trust boundaries; distinguish not-found from failure everywhere an action follows the check.
 
 ### S4 — Duplicate parallel implementations
-Two divergent pass-format parsers (`parse-pass-show.ts` vs `entry-content.ts`, disagreeing on comment stripping) (B02); byte-identical `EntriesReadError`/`EntriesWriteError` classes (B02); dead dialog twins of EntryForm (S2/B04); path-segment splitting re-implemented ×5 (B04); OS-type vocabulary triplicated (B10).
-**Fix-once direction:** one canonical parser + shared helpers.
+~~Two divergent pass-format parsers (`parse-pass-show.ts` vs `entry-content.ts`, disagreeing on comment stripping) (B02)~~ ✅ unified on PRESERVE (owner decision, open q8): `parse-pass-show` no longer strips inline comments from metadata values — entry content is user data and the edit round-trip must not drop it; `stripInlineComment` remains for `.gpg-id` parsing only (pass spec); ~~byte-identical `EntriesReadError`/`EntriesWriteError` classes (B02)~~ ✅ shared `EntriesOpError` base; ~~dead dialog twins of EntryForm (S2/B04)~~ ✅ deleted; ~~path-segment splitting re-implemented ×5 (B04)~~ ✅ `Path.baseName`/`Path.parentPath` in lib/path.ts, six sites deduped; OS-type vocabulary triplicated (B10) — **reviewer false positive**: no duplicated union exists, all sites compare against the canonical `Neu.OS`; path.ts reads `window.NL_OS` directly to avoid the lib→services import inversion. Skipped.
+ **Fix-once direction:** one canonical parser + shared helpers.
 
 ### S5 — Manual `cause` fields shadow ES2022 `Error.cause`
-Every per-op error class redeclares `public cause: Error | null` after passing it via `super(message, { cause })`: clipboard trio (B01), `PassExecError` (B02), `FsReadError`/`FsStatError` (B03), `GpgKeyListError` (B07), `CreateStoreError`/`AddStoreError` (B08).
-**Fix-once direction:** drop the field declarations; rely on the standard property.
+~~Every per-op error class redeclares `public cause: Error | null` after passing it via `super(message, { cause })`: clipboard trio (B01), `PassExecError` (B02), `FsReadError`/`FsStatError` (B03), `GpgKeyListError` (B07), `CreateStoreError`/`AddStoreError` (B08).~~ ✅ Fixed: all 12 declarations dropped across 7 files; the standard `cause` set via `super(message, { cause })` remains (no consumer reads `.cause`, so the null→undefined shift is inert).
+ **Fix-once direction:** drop the field declarations; rely on the standard property.
 
 ## Design issues worth escalating (one line each)
 
@@ -78,7 +78,7 @@ Every per-op error class redeclares `public cause: Error | null` after passing i
 5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts.
 6. Is mounting before `Neutralino.init()` known-safe, or should boot order invert?
 7. First-run semantics: does `DEFAULT_CONFIG.core.active_store` guarantee validity, and should `ensure()` fail closed on exists-errors?
-8. Inline comments in entry files: stripped (parse-pass-show) or preserved (entry-content) as canonical read behavior?
+8. ~~Inline comments in entry files: stripped (parse-pass-show) or preserved (entry-content) as canonical read behavior?~~ **Answered (owner): preserve.** Entry content is user data; inline comments are only stripped in `.gpg-id` parsing per pass spec.
 
 ## Coverage
 
