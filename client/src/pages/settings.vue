@@ -6,6 +6,7 @@ import GpgTab from "@/components/settings/GpgTab.vue";
 import InfoTab from "@/components/settings/InfoTab.vue";
 import StoresTab from "@/components/settings/StoresTab.vue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
@@ -21,6 +22,7 @@ import { RouterLink } from "vue-router";
 const config = ref<ParsedToml<AppConfig> | null>(null);
 const configPath = ref("");
 const isLoading = ref(true);
+const loadError = ref<Error | null>(null);
 const isSaving = ref(false);
 
 // GPG & Pass info
@@ -54,13 +56,18 @@ const clipboardForm = ref({
 const gpgForm = ref({ opts: [] as string[], signingKey: "", recipientKey: "" });
 const extensionsForm = ref({ enabled: false });
 
-onMounted(async () => {
+async function loadConfig(): Promise<void> {
+  isLoading.value = true;
+  loadError.value = null;
+
   const pathResult = await Config.getPath();
   if (pathResult.isOk()) configPath.value = pathResult.ok;
 
   const result = await Config.load();
-  useNotifyResult(result, { ok: false });
   if (result.isError()) {
+    // Persistent error branch replaces the page — a transient toast
+    // would leave the user on an unusable white screen.
+    loadError.value = result.error;
     isLoading.value = false;
     return;
   }
@@ -113,15 +120,16 @@ onMounted(async () => {
   };
 
   isLoading.value = false;
-});
+}
 
-async function saveField<S extends keyof AppConfig>(
+onMounted(() => void loadConfig());
+
+async function saveSection<S extends keyof AppConfig>(
   section: S,
-  key: keyof AppConfig[S],
-  value: AppConfig[S][keyof AppConfig[S]],
+  values: Partial<AppConfig[S]>
 ): Promise<void> {
   isSaving.value = true;
-  const result = await Config.setValue(section, key, value);
+  const result = await Config.setValues(section, values);
   isSaving.value = false;
   useNotifyResult(result, {
     ok: `${String(section)} settings saved`,
@@ -150,38 +158,37 @@ async function deleteStore(name: string): Promise<void> {
 }
 
 function handleSaveGeneral(): void {
-  saveField("core", "active_store", generalForm.value.activeStore);
+  void saveSection("core", { active_store: generalForm.value.activeStore });
 }
 
 function handleSaveGeneration(): void {
-  saveField("generation", "memorable", generationForm.value.memorable);
-  saveField("generation", "default_length", generationForm.value.defaultLength);
-  saveField("generation", "symbols", generationForm.value.symbols);
-  saveField("generation", "character_set", generationForm.value.characterSet);
-  saveField(
-    "generation",
-    "character_set_no_symbols",
-    generationForm.value.characterSetNoSymbols,
-  );
+  void saveSection("generation", {
+    memorable: generationForm.value.memorable,
+    default_length: generationForm.value.defaultLength,
+    symbols: generationForm.value.symbols,
+    character_set: generationForm.value.characterSet,
+    character_set_no_symbols: generationForm.value.characterSetNoSymbols,
+  });
 }
 
 function handleSaveClipboard(): void {
-  saveField(
-    "clipboard",
-    "clear_after_seconds",
-    clipboardForm.value.clearAfterSeconds,
-  );
-  saveField("clipboard", "selection", clipboardForm.value.selection);
+  void saveSection("clipboard", {
+    clear_after_seconds: clipboardForm.value.clearAfterSeconds,
+    selection: clipboardForm.value.selection,
+  });
 }
 
 function handleSaveGpg(): void {
-  saveField("gpg", "opts", gpgForm.value.opts);
-  saveField("gpg", "signing_key", gpgForm.value.signingKey || undefined);
-  saveField("gpg", "key", gpgForm.value.recipientKey || undefined);
+  // Empty string clears the optional key (setValues deletes undefined).
+  void saveSection("gpg", {
+    opts: gpgForm.value.opts,
+    signing_key: gpgForm.value.signingKey || undefined,
+    key: gpgForm.value.recipientKey || undefined,
+  });
 }
 
 function handleSaveExtensions(): void {
-  saveField("extensions", "enabled", extensionsForm.value.enabled);
+  void saveSection("extensions", { enabled: extensionsForm.value.enabled });
 }
 </script>
 
@@ -200,6 +207,21 @@ function handleSaveExtensions(): void {
 
       <div v-if="isLoading" class="flex items-center justify-center py-16">
         <span class="text-sm text-muted-foreground">Loading settings...</span>
+      </div>
+
+      <div
+        v-else-if="loadError"
+        class="flex flex-col items-center justify-center gap-3 py-16"
+      >
+        <p class="text-sm font-medium text-destructive">
+          Failed to load settings
+        </p>
+        <p class="max-w-md text-center font-mono text-xs text-muted-foreground">
+          {{ loadError.message }}
+        </p>
+        <Button variant="outline" size="sm" @click="() => void loadConfig()">
+          Retry
+        </Button>
       </div>
 
       <Tabs v-else default-value="stores" class="w-full">

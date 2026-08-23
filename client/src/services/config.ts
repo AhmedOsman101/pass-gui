@@ -345,6 +345,37 @@ class Config {
   }
 
   /**
+   * Batch setter for one config section: applies multiple values in a
+   * single load → mutate → save cycle. Firing several setValue calls
+   * concurrently races read-modify-write cycles over the whole file
+   * (last writer silently reverts siblings). A value of `undefined`
+   * removes the key — this is how optional keys get cleared.
+   */
+  static async setValues<S extends ConfigSection>(
+    section: S,
+    values: Partial<AppConfig[S]>
+  ): Promise<Result<void>> {
+    const configResult = await Config.load();
+    if (configResult.isError()) return Err(configResult.error);
+
+    const parsed = configResult.ok;
+
+    // Modify _raw directly via cast - preserves comments when saved
+    const raw = parsed._raw as AppConfig;
+    const sectionRaw = raw[section] as Record<string, unknown>;
+
+    for (const [key, value] of Object.entries(values)) {
+      if (value === undefined) {
+        delete sectionRaw[key];
+      } else {
+        sectionRaw[key] = value;
+      }
+    }
+
+    return await Config.save(parsed);
+  }
+
+  /**
    * Generic typed remover for configuration values.
    * Removes a key from a config section (e.g. deleting a store).
    *
