@@ -46,7 +46,7 @@ watch(
 
 // Password
 const secret = ref("");
-const isSecretVisible = ref(true);
+const isSecretVisible = ref(false);
 const showGeneratorOptions = ref(false);
 const genOptions = usePasswordGenerator();
 
@@ -70,7 +70,7 @@ watch(
       otpUri.value = "";
       metadata.value = [];
       notes.value = "";
-      isSecretVisible.value = true;
+      isSecretVisible.value = false;
     } else if (formStore.formMode === "edit" && treeStore.currentEntry) {
       const draft = parseEntryContent(treeStore.currentEntry.raw);
       secret.value = draft.secret;

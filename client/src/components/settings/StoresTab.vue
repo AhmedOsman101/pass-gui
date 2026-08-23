@@ -49,6 +49,7 @@ const deleteTarget = ref<{ name: string; path: string } | null>(null);
 const wizardOpen = ref(false);
 const editingStore = ref<string | null>(null);
 const editStoreForm = ref({ path: "", gnupgHome: "" });
+const editError = ref<string | null>(null);
 
 const storeEntries = computed(() => {
   const entries = Object.entries(props.stores).map(([name, data]) => ({
@@ -69,6 +70,7 @@ function startEditStore(name: string): void {
     path: props.stores[name]?.path ?? "",
     gnupgHome: props.stores[name]?.gnupg_home ?? "",
   };
+  editError.value = null;
 }
 
 function findStoreByPath(path: string): string | undefined {
@@ -85,10 +87,15 @@ function isPathUnique(path: string, excludeName?: string): boolean {
 function saveEditStore(): void {
   if (!editingStore.value) return;
   const path = editStoreForm.value.path.trim();
-  if (!path) return;
-  if (!isPathUnique(path, editingStore.value)) {
+  if (!path) {
+    editError.value = "Path is required";
     return;
   }
+  if (!isPathUnique(path, editingStore.value)) {
+    editError.value = "A store with this path already exists";
+    return;
+  }
+  editError.value = null;
   const storeData: StoreConfig = {
     path,
     gnupg_home: editStoreForm.value.gnupgHome || undefined,
@@ -259,6 +266,9 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
               </Button>
             </div>
           </div>
+          <p v-if="editError" class="text-xs text-destructive">
+            {{ editError }}
+          </p>
           <div class="flex justify-end gap-2">
             <Button variant="outline" size="sm" @click="editingStore = null">
               Cancel

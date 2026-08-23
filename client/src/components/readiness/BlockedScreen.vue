@@ -9,6 +9,13 @@ const activeStore = useActiveStoreStore();
 
 const primaryIssue = computed(() => readiness.blockingIssues[0] ?? null);
 const storeError = computed(() => activeStore.error?.message ?? null);
+
+async function retry(): Promise<void> {
+  await activeStore.load();
+  if (activeStore.storePath) {
+    await readiness.evaluate(activeStore.storePath);
+  }
+}
 </script>
 
 <template>
@@ -41,7 +48,7 @@ const storeError = computed(() => activeStore.error?.message ?? null);
       <div class="text-center">
         <button
           class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
-          @click="activeStore.storePath && readiness.evaluate(activeStore.storePath)"
+          @click="retry"
         >
           Retry
         </button>

@@ -58,6 +58,7 @@ const storePath = ref("");
 const selectedKeyId = ref("");
 const secretKeys = ref<SecretKey[]>([]);
 const isLoadingKeys = ref(true);
+const keysLoadError = ref<string | null>(null);
 const isExistingStore = ref(false);
 // Set when store detection failed — blocks advancing (fail closed:
 // an undetectable path must never default to create mode).
@@ -124,6 +125,9 @@ async function loadKeys(): Promise<void> {
   const result = await Gpg.listSecretKeys();
   if (result.isOk()) {
     secretKeys.value = result.ok;
+    keysLoadError.value = null;
+  } else {
+    keysLoadError.value = result.error.message;
   }
   useNotifyResult(result, { ok: false });
   isLoadingKeys.value = false;
@@ -315,6 +319,12 @@ function resetWizard(): void {
         <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
           <Loader2 class="size-4 animate-spin" />
           <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
+        </div>
+        <div
+          v-else-if="keysLoadError"
+          class="py-4 text-sm text-destructive"
+        >
+          Failed to load GPG keys: {{ keysLoadError }}
         </div>
         <div
           v-else-if="secretKeys.length === 0"
