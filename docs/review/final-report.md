@@ -27,7 +27,7 @@ Results are produced correctly by services and stored canonically, then discarde
 **Fix-once direction:** lint rule or convention review for unhandled Results; route through `useNotifyResult`/`.match`/Logger.
 
 ### S2 — Dead code accumulation
-`InsertDialog`, `EditEntryDialog` (B04), `GenerateDialog` (B05), `PreferencesTab` (B09), `makeIgnoreFilter` (B03), `validateBehavior` (B08), `brand()`, `SYSTEM_PASS_PATHS`, unused types (B10), dead `Scissors` import (B01). Several dead components duplicate live ones and have already drifted (weaker validators, latent open-prop bug in GenerateDialog).
+`InsertDialog`, `EditEntryDialog` (B04), `GenerateDialog` (B05), `PreferencesTab` (B09), `makeIgnoreFilter` (B03), `validateBehavior` (B08), `brand()`, `SYSTEM_PASS_PATHS`, unused types (B10), ~~dead `Scissors` import (B01)~~ ✅ removed from EntryDetail (Tree.vue's is used — reviewer false positive). Several dead components duplicate live ones and have already drifted (weaker validators, latent open-prop bug in GenerateDialog).
 **Fix-once direction:** delete all; git history preserves them.
 
 ### S3 — Treating any Err as "absent", then proceeding destructively
@@ -64,8 +64,8 @@ Every per-op error class redeclares `public cause: Error | null` after passing i
 
 - **Stale/duplicated docs:** doc comments saying errors are "thrown" (filesystem), stale `EntryDetail.path` doc, misleading watcher comment in AppSidebar, JSDoc length bounds that nothing enforces.
 - **Unvalidated numeric inputs:** Generation/Clipboard/Preferences tabs rely on `:min`/`:max` which don't clamp typed values (B09); three disagreeing password-length ceilings (64 slider / 128 docs / 128 schema) (B05).
-- **Timer/ref hygiene:** uncleared `setTimeout`s on unmount (EntryDetail skeleton, InfoTab copied flags); `timerId` in a ref needlessly reactive (clipboard store).
-- **Duplication nits:** copySecret/copyValue toast blocks; memorable/symbols switch blocks; folder-picker button markup ×3; `SortMode` type duplicated; `Table` alias duplicated.
+- **Timer/ref hygiene:** uncleared `setTimeout`s on unmount (~~EntryDetail skeleton~~ ✅ cleaned up, InfoTab copied flags); ~~`timerId` in a ref needlessly reactive (clipboard store)~~ ✅ plain closure var; timer helpers unexported from the store.
+- **Duplication nits:** copySecret/copyValue toast blocks ✅ deduped (copySecret delegates); memorable/symbols switch blocks; folder-picker button markup ×3; `SortMode` type duplicated; `Table` alias duplicated.
 - **Dead flexibility:** dialog trigger branches never rendered (RenameEntryDialog, StoreDeleteDialog); seven unused per-section config validators; redundant `isFile` re-check in `parseGpgId`.
 - **UX polish:** five success toasts per Save click; silent no-op on duplicate-path edit save (StoresTab); retry button dead when no store configured; password visible-by-default in create mode; misleading "No GPG keys found" copy on load failure.
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ArrowRightLeft, Copy, Eye, EyeOff, Files, Pencil, Plus, Scissors, Sparkles, SquarePen, Trash2, X } from "@lucide/vue";
-import { computed, ref, shallowRef, watch } from "vue";
+import { ArrowRightLeft, Copy, Eye, EyeOff, Files, Pencil, Plus, Sparkles, SquarePen, Trash2, X } from "@lucide/vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
 const clipboard = useClipboardStore();
 
-const isSecretVisible = shallowRef<boolean>(false);
+const isSecretVisible = ref<boolean>(false);
 const isDeleteOpen = ref(false);
 const isRenameOpen = ref(false);
 
@@ -64,6 +64,13 @@ watch(
   },
 );
 
+onUnmounted(() => {
+  if (skeletonTimer) {
+    clearTimeout(skeletonTimer);
+    skeletonTimer = null;
+  }
+});
+
 const editPath = computed(() => treeStore.currentPath ?? "");
 
 const metadataEntries = computed(() => {
@@ -95,15 +102,12 @@ async function clearCopied(): Promise<void> {
   useNotifyResult(await clipboard.clear(), { ok: false });
 }
 
-async function copySecret(): Promise<void> {
-  if (!entry.value || !treeStore.currentPath) return;
-  const result = await clipboard.copy(
-    entry.value.secret,
-    treeStore.currentPath
-  );
+async function copyValue(value: string, label: string): Promise<void> {
+  if (!treeStore.currentPath) return;
+  const result = await clipboard.copy(value, treeStore.currentPath);
   result.match({
     okFn: (action) => {
-      toast.success("Password copied", {
+      toast.success(`${label} copied`, {
         description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
         action: {
           label: "Clear",
@@ -116,21 +120,9 @@ async function copySecret(): Promise<void> {
   });
 }
 
-async function copyValue(value: string, label: string): Promise<void> {
-  const result = await clipboard.copy(value, treeStore.currentPath ?? "");
-  result.match({
-    okFn: (action) => {
-      toast.success(`${label} copied`, {
-        description: `Clears in ${action.timerSeconds}s`,
-        action: {
-          label: "Clear",
-          onClick: () => void clearCopied(),
-        },
-        duration: action.timerSeconds * 1000,
-      });
-    },
-    errFn: (e) => toast.error(`Copy failed: ${e.message}`),
-  });
+function copySecret(): void {
+  if (!entry.value) return;
+  void copyValue(entry.value.secret, "Password");
 }
 </script>
 

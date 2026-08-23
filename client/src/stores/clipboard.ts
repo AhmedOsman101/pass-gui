@@ -27,7 +27,8 @@ const CLEAR_RETRY_MS = 5000;
 const useClipboardStore = defineStore("clipboard", () => {
   const lastAction = ref<ClipboardAction | null>(null);
   const remainingMs = ref(0);
-  const timerId = ref<ReturnType<typeof setTimeout> | null>(null);
+  // Plain closure variable — nothing renders the raw timer id reactively.
+  let timerId: ReturnType<typeof setTimeout> | null = null;
   const isCopied = ref(false);
   const error = ref<Error | null>(null);
 
@@ -55,17 +56,17 @@ const useClipboardStore = defineStore("clipboard", () => {
 
       remainingMs.value = remaining;
       // Drift correction: schedule next tick based on actual remaining
-      timerId.value = setTimeout(tick, Math.min(remaining, 1000));
+      timerId = setTimeout(tick, Math.min(remaining, 1000));
     }
 
     remainingMs.value = expiresAt - Date.now();
-    timerId.value = setTimeout(tick, Math.min(remainingMs.value, 1000));
+    timerId = setTimeout(tick, Math.min(remainingMs.value, 1000));
   }
 
   function stopTimer(): void {
-    if (timerId.value !== null) {
-      clearTimeout(timerId.value);
-      timerId.value = null;
+    if (timerId !== null) {
+      clearTimeout(timerId);
+      timerId = null;
     }
     remainingMs.value = 0;
   }
@@ -125,8 +126,6 @@ const useClipboardStore = defineStore("clipboard", () => {
     formattedRemaining,
     copy,
     clear,
-    startTimer,
-    stopTimer,
   };
 });
 
