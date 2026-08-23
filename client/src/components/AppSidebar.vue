@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/sidebar";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { Logger } from "@/lib/logger";
+import type { SortMode } from "@/lib/tree-state";
 import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
 import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntryFormStore } from "@/stores/entry-form";
-import type { SortMode } from "@/stores/entry-tree";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import type { EntryNode, EntryTree } from "@/types/entries";
 import {

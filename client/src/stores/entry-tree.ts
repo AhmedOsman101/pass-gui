@@ -289,5 +289,5 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
   };
 });
 
-export type { CopyBuffer, SortMode };
+export type { CopyBuffer };
 export { useEntryTreeStore };
