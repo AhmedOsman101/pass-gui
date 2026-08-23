@@ -1,5 +1,6 @@
 import { reactive } from "vue";
 import { DEFAULT_CONFIG } from "@/lib/constants";
+import { Logger } from "@/lib/logger";
 import { Config } from "@/services/config";
 
 export function useGenerationConfig() {
@@ -10,15 +11,18 @@ export function useGenerationConfig() {
   });
 
   void (async () => {
-    const [memorableResult, lengthResult, symbolsResult] = await Promise.all([
-      Config.getValue("generation", "memorable"),
-      Config.getValue("generation", "default_length"),
-      Config.getValue("generation", "symbols"),
-    ]);
-
-    if (!memorableResult.isError()) options.memorable = memorableResult.ok;
-    if (!lengthResult.isError()) options.length = lengthResult.ok;
-    if (!symbolsResult.isError()) options.symbols = symbolsResult.ok;
+    const result = await Config.load();
+    if (result.isError()) {
+      await Logger.warn(
+        `useGenerationConfig: config unavailable, using defaults: ${result.error.message}`
+      );
+      return;
+    }
+    // Schema validation guarantees every field exists on the section.
+    const generation = result.ok.data.generation;
+    options.memorable = generation.memorable;
+    options.length = generation.default_length;
+    options.symbols = generation.symbols;
   })();
 
   return { options };

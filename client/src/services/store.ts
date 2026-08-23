@@ -1,5 +1,6 @@
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { StoreConfig } from "@/types/config";
+import { Logger } from "@/lib/logger";
 import { Config } from "./config";
 import { Fs } from "./filesystem";
 import { Pass } from "./pass";
@@ -124,7 +125,12 @@ class Store {
       // Roll back the directory only if this recipe created it —
       // never touch a pre-existing user directory.
       if (!existedBefore) {
-        await Fs.rmdir(data.path);
+        const rollback = await Fs.rmdir(data.path);
+        if (rollback.isError()) {
+          await Logger.error(
+            `Store.create("${name}"): rollback rmdir of ${data.path} failed: ${rollback.error.message}`
+          );
+        }
       }
       return Err(
         new CreateStoreError(

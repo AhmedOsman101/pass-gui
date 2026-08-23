@@ -2,6 +2,7 @@ import type { ExecCommandOptions, ExecCommandResult } from "@neutralinojs/lib";
 import { Err, Ok, type Result } from "lib-result";
 import { PASS_MIN_VERSION } from "@/lib/constants";
 import { type CommandFailedError, VersionCheckError } from "@/lib/errors";
+import { Logger } from "@/lib/logger";
 import { validatePath } from "@/lib/shell";
 import { compareVersions } from "@/lib/utils";
 import type { Stringifiable, Version } from "@/types";
@@ -62,6 +63,9 @@ class PassService {
 
     const result = await this.checkInitialized(this.storePath);
     if (result.isError()) {
+      await Logger.error(
+        `Pass.init(): .gpg-id check failed for ${this.storePath}: ${result.error.message}`
+      );
       this.isInitialized = false;
       return Ok(false);
     }
