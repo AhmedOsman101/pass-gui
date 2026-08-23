@@ -16,3 +16,18 @@ shell source), GnuPG man pages, j-toml, vitest, playwright, tanstack-hotkey.
 - For Neutralino behavior, the **source code is the source of truth** —
   `neutralino-cpp/api/**` (C++ implementation) and `neutralino-js/**`.
   The Markdown docs under `neutralino/docs` may be outdated.
+
+## Formatting before committing
+
+Always run `mask format` before committing your changes. If you forgot to do so
+and notice that the post-commit script says "N file(s) were formatted", then
+use this to commit these changes:
+
+```sh
+git add -A
+# or stage the specific formatted files
+# then:
+git commit --amend --no-edit --no-verify
+```
+
+(Remember to stage them first.)
