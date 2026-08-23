@@ -104,8 +104,6 @@ class StoreValidation {
     storePath: string
   ): Promise<Result<ParsedRecipient[]>> {
     const path = await Fs.join(storePath, ".gpg-id");
-    const fileExists = await Fs.isFile(path);
-    if (fileExists.isError()) return Err(fileExists.error);
 
     const readResult = await Fs.readFile(path);
     if (readResult.isError()) return Err(readResult.error);

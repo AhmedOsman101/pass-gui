@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import { Logger } from "@/lib/logger";
@@ -97,9 +96,6 @@ async function handleSubmit(): Promise<void> {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogTrigger v-if="!open" as-child>
-      <slot />
-    </DialogTrigger>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ dialogTitle }}</DialogTitle>

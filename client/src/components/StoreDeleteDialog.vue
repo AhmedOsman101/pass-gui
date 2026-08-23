@@ -29,9 +29,6 @@ function handleDelete(): void {
 
 <template>
   <AlertDialog :open="open" @update:open="emit('update:open', $event)">
-    <AlertDialogTrigger v-if="!open" as-child>
-      <slot />
-    </AlertDialogTrigger>
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>Delete Store</AlertDialogTitle>

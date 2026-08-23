@@ -298,20 +298,20 @@ function copySecret(): void {
         <SquarePen class="size-4 mr-1" />
         Edit
       </Button>
+      <Button
+        v-if="treeStore.currentPath"
+        variant="outline"
+        size="sm"
+        @click="isRenameOpen = true"
+      >
+        <Pencil class="size-4 mr-1" />
+        Rename
+      </Button>
       <RenameEntryDialog
         v-if="treeStore.currentPath"
         :current-path="treeStore.currentPath"
         v-model:open="isRenameOpen"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          @click="isRenameOpen = true"
-        >
-          <Pencil class="size-4 mr-1" />
-          Rename
-        </Button>
-      </RenameEntryDialog>
+      />
       <MoveOrDuplicateDialog v-if="treeStore.currentPath" mode="move" :current-path="treeStore.currentPath">
         <Button variant="outline" size="sm">
           <ArrowRightLeft class="size-4 mr-1" />
