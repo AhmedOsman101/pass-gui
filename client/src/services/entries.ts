@@ -14,47 +14,38 @@ import { Pass } from "./pass";
 
 /** Why an entry operation failed, derived from `pass` stderr content. */
 type EntriesFailureKind = "not-found" | "exists" | "parse" | "failed";
+/**
+ * Shared base for entry operation errors. `kind` preserves the
+ * stderr-derived distinction (missing entry vs parse failure vs generic
+ * failure) so callers can tailor messages; `path` is the entry path.
+ */
+class EntriesOpError extends Error {
+  public path: string;
+  public kind: EntriesFailureKind;
+
+  constructor(
+    path: string,
+    kind: EntriesFailureKind,
+    message: string,
+    cause?: Error
+  ) {
+    super(message, cause ? { cause } : undefined);
+    this.path = path;
+    this.kind = kind;
+  }
+}
 
 /**
  * Error thrown by entry read operations (`list`, `show`).
- * `kind` preserves the stderr-derived distinction (missing entry vs
- * parse failure vs generic failure) so callers can tailor messages.
  */
-class EntriesReadError extends Error {
-  public path: string;
-  public kind: EntriesFailureKind;
-  constructor(
-    path: string,
-    kind: EntriesFailureKind,
-    message: string,
-    cause?: Error
-  ) {
-    super(message, cause ? { cause } : undefined);
-    this.path = path;
-    this.kind = kind;
-  }
-}
+class EntriesReadError extends EntriesOpError {}
 
 /**
  * Error thrown by entry mutation operations (`insert`, `generate`,
- * `remove`, `copy`, `move`, `edit`). Same shape as `EntriesReadError`
- * but a distinct type so call sites can match on the operation family.
+ * `remove`, `copy`, `move`, `edit`). Distinct type so call sites can
+ * match on the operation family.
  */
-class EntriesWriteError extends Error {
-  public path: string;
-  public kind: EntriesFailureKind;
-  constructor(
-    path: string,
-    kind: EntriesFailureKind,
-    message: string,
-    cause?: Error
-  ) {
-    super(message, cause ? { cause } : undefined);
-    this.path = path;
-    this.kind = kind;
-  }
-}
-
+class EntriesWriteError extends EntriesOpError {}
 /**
  * Maps a `pass.exec()` error to an `EntriesReadError` for read operations.
  * Pass exits with code 1 for "entry not found"; stderr content disambiguates.
