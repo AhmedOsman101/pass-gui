@@ -98,14 +98,23 @@ class PassService {
         )
       );
     }
-    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/) as
-      | string[]
-      | null;
-    if (versionMatch) {
-      this.version.major = Number.parseInt(versionMatch[1], 10);
-      this.version.minor = Number.parseInt(versionMatch[2], 10);
-      this.version.patch = Number.parseInt(versionMatch[3], 10);
+    const versionMatch = cmdResult.ok.stdOut.match(/v(\d+)\.(\d+)\.(\d+)/);
+    if (!versionMatch) {
+      // Unparseable output — never report stale singleton state as Ok.
+      this.version = { major: 0, minor: 0 };
+      return Err(
+        new PassVersionCheckError(
+          false,
+          this.version,
+          PASS_MIN_VERSION,
+          `Unparseable pass --version output: ${cmdResult.ok.stdOut.slice(0, 200)}`
+        )
+      );
     }
+
+    this.version.major = Number.parseInt(versionMatch[1], 10);
+    this.version.minor = Number.parseInt(versionMatch[2], 10);
+    this.version.patch = Number.parseInt(versionMatch[3], 10);
 
     return Ok({
       valid: compareVersions(this.version, PASS_MIN_VERSION) >= 0,

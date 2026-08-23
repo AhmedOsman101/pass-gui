@@ -135,14 +135,23 @@ class GpgService {
     }
 
     const output = cmdResult.ok.stdOut;
-    const versionMatch = output.match(/gpg \(GnuPG\) (\d+)\.(\d+)\.(\d+)/) as
-      | string[]
-      | null;
-    if (versionMatch) {
-      this.version.major = Number.parseInt(versionMatch[1], 10);
-      this.version.minor = Number.parseInt(versionMatch[2], 10);
-      this.version.patch = Number.parseInt(versionMatch[3], 10);
+    const versionMatch = output.match(/gpg \(GnuPG\) (\d+)\.(\d+)\.(\d+)/);
+    if (!versionMatch) {
+      // Unparseable output — never report stale singleton state as Ok.
+      this.version = { major: 0, minor: 0 };
+      return Err(
+        new VersionCheckError(
+          false,
+          this.version,
+          GPG_MIN_VERSION,
+          `Unparseable gpg --version output: ${output.slice(0, 200)}`
+        )
+      );
     }
+
+    this.version.major = Number.parseInt(versionMatch[1], 10);
+    this.version.minor = Number.parseInt(versionMatch[2], 10);
+    this.version.patch = Number.parseInt(versionMatch[3], 10);
 
     if (!this.homeDir) {
       const homeMatch = output.match(/Home:\s*(.+)/m);
