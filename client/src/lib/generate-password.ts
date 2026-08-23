@@ -35,7 +35,7 @@ export function generateMemorablePassword(): string {
  * Generates a random password using the specified character set.
  * Uses `crypto.getRandomValues` for CSPRNG security.
  *
- * @param length - Password length (8–128)
+ * @param length - Password length in characters (no bound enforced here)
  * @param charset - Character set to draw from (POSIX bracket notation)
  */
 export function generatePassword(length: number, charset: string): string {

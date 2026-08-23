@@ -29,7 +29,7 @@ type EntryTree = EntryNode[];
  * and arbitrary `other` lines.
  */
 type EntryDetail = {
-  /** Store-relative path (set by the caller after parsing). */
+  /** Store-relative path (supplied to the parser). */
   path: string;
   /** The secret value — first line of `pass show` output. */
   secret: string;

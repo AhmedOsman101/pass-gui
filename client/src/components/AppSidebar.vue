@@ -148,7 +148,8 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   return undefined;
 }
 
-// Filesystem watcher: auto-refresh entry tree when active store changes
+// Polls the active store's `.gpg-id`: when it changes on disk (recipients
+// edited externally), refreshes the entry tree every 2s. Re-runs on store switch.
 let watchTimer: ReturnType<typeof setInterval> | null = null;
 
 async function startStoreWatcher(): Promise<void> {

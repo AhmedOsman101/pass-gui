@@ -137,7 +137,7 @@ function makeIgnoreFilter(
 }
 
 /**
- * Error thrown by `Filesystem.mkdir()`. Extends `NeuError` to keep the
+ * Error returned in `Err` by `Filesystem.mkdir()`. Extends `NeuError` to keep the
  * NeutralinoJS error code (e.g. `NE_FS_DIRCRER`) and the target path.
  */
 class FsMkdirError extends NeuError {
@@ -156,7 +156,7 @@ class FsMkdirError extends NeuError {
 }
 
 /**
- * Error thrown by `Filesystem.writeFile()`. Extends `NeuError` to keep the
+ * Error returned in `Err` by `Filesystem.writeFile()`. Extends `NeuError` to keep the
  * NeutralinoJS error code (e.g. `NE_FS_FILWRER`) and the target path.
  */
 class FsWriteError extends NeuError {
@@ -175,7 +175,7 @@ class FsWriteError extends NeuError {
 }
 
 /**
- * Error thrown by file read operations (`readFile`, `readDirectory`).
+ * Error returned in `Err` by file read operations (`readFile`, `readDirectory`).
  * Carries the path that failed and the underlying cause for debugging.
  */
 class FsReadError extends Error {
@@ -187,7 +187,7 @@ class FsReadError extends Error {
 }
 
 /**
- * Error thrown by stat operations (`getStats`, `exists`, `isFile`,
+ * Error returned in `Err` by stat operations (`getStats`, `exists`, `isFile`,
  * `isDirectory`). Carries the path that failed and the underlying cause.
  */
 class FsStatError extends Error {
