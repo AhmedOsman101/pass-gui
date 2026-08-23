@@ -25,12 +25,9 @@ class PassVersionCheckError extends VersionCheckError {}
  */
 class PassExecError extends Error {
   public argument: string;
-  public cause: Error | null;
-
   constructor(argument: string, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.argument = argument;
-    this.cause = cause ?? null;
   }
 }
 

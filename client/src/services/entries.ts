@@ -23,8 +23,6 @@ type EntriesFailureKind = "not-found" | "exists" | "parse" | "failed";
 class EntriesReadError extends Error {
   public path: string;
   public kind: EntriesFailureKind;
-  public cause: Error | null;
-
   constructor(
     path: string,
     kind: EntriesFailureKind,
@@ -34,7 +32,6 @@ class EntriesReadError extends Error {
     super(message, cause ? { cause } : undefined);
     this.path = path;
     this.kind = kind;
-    this.cause = cause ?? null;
   }
 }
 
@@ -46,8 +43,6 @@ class EntriesReadError extends Error {
 class EntriesWriteError extends Error {
   public path: string;
   public kind: EntriesFailureKind;
-  public cause: Error | null;
-
   constructor(
     path: string,
     kind: EntriesFailureKind,
@@ -57,7 +52,6 @@ class EntriesWriteError extends Error {
     super(message, cause ? { cause } : undefined);
     this.path = path;
     this.kind = kind;
-    this.cause = cause ?? null;
   }
 }
 

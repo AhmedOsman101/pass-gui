@@ -19,8 +19,6 @@ class CreateStoreError extends Error {
     | "pass-init-failed"
     | "config-write-failed";
   public path: string;
-  public cause: Error | null;
-
   constructor(
     kind: CreateStoreError["kind"],
     path: string,
@@ -30,7 +28,6 @@ class CreateStoreError extends Error {
     super(message, cause ? { cause } : undefined);
     this.kind = kind;
     this.path = path;
-    this.cause = cause ?? null;
   }
 }
 
@@ -41,8 +38,6 @@ class CreateStoreError extends Error {
 class AddStoreError extends Error {
   public kind: "already-exists" | "validation-failed" | "config-write-failed";
   public path: string;
-  public cause: Error | null;
-
   constructor(
     kind: AddStoreError["kind"],
     path: string,
@@ -52,7 +47,6 @@ class AddStoreError extends Error {
     super(message, cause ? { cause } : undefined);
     this.kind = kind;
     this.path = path;
-    this.cause = cause ?? null;
   }
 }
 

@@ -10,11 +10,8 @@ import { Config } from "./config";
  * that prevented reading the clipboard.
  */
 class ClipboardReadError extends Error {
-  public cause: Error | null;
-
   constructor(message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
-    this.cause = cause ?? null;
   }
 }
 
@@ -26,12 +23,9 @@ class ClipboardReadError extends Error {
  */
 class ClipboardWriteError extends Error {
   public selection: string;
-  public cause: Error | null;
-
   constructor(selection: string, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.selection = selection;
-    this.cause = cause ?? null;
   }
 }
 
@@ -40,11 +34,8 @@ class ClipboardWriteError extends Error {
  * Captures the underlying cause for logging.
  */
 class ClipboardClearError extends Error {
-  public cause: Error | null;
-
   constructor(message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
-    this.cause = cause ?? null;
   }
 }
 

@@ -180,12 +180,9 @@ class FsWriteError extends NeuError {
  */
 class FsReadError extends Error {
   public path: string;
-  public cause: Error | null;
-
   constructor(path: string, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.path = path;
-    this.cause = cause ?? null;
   }
 }
 
@@ -195,12 +192,9 @@ class FsReadError extends Error {
  */
 class FsStatError extends Error {
   public path: string;
-  public cause: Error | null;
-
   constructor(path: string, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.path = path;
-    this.cause = cause ?? null;
   }
 }
 

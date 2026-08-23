@@ -24,12 +24,9 @@ import { Neu } from "./neutralino";
  */
 class GpgKeyListError extends Error {
   public gnupgHome: string | null;
-  public cause: Error | null;
-
   constructor(gnupgHome: string | null, message: string, cause?: Error) {
     super(message, cause ? { cause } : undefined);
     this.gnupgHome = gnupgHome;
-    this.cause = cause ?? null;
   }
 }
 
