@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RefreshCw } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface GeneratorState {
   options: { memorable: boolean; length: number; symbols: boolean };
@@ -32,20 +33,7 @@ const props = withDefaults(defineProps<{ showValue?: boolean }>(), {
       <label for="pg-memorable" class="text-sm font-medium">
         Memorable
       </label>
-      <button
-        id="pg-memorable"
-        type="button"
-        role="switch"
-        :aria-checked="genState.options.memorable"
-        class="peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        :class="genState.options.memorable ? 'bg-primary' : 'bg-input'"
-        @click="genState.options.memorable = !genState.options.memorable"
-      >
-        <span
-          class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform"
-          :class="genState.options.memorable ? 'translate-x-4' : 'translate-x-0'"
-        />
-      </button>
+      <Switch id="pg-memorable" v-model="genState.options.memorable" />
     </div>
 
     <div v-if="!genState.options.memorable" class="space-y-2">
@@ -75,20 +63,7 @@ const props = withDefaults(defineProps<{ showValue?: boolean }>(), {
       <label for="pg-symbols" class="text-sm font-medium">
         Symbols
       </label>
-      <button
-        id="pg-symbols"
-        type="button"
-        role="switch"
-        :aria-checked="genState.options.symbols"
-        class="peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        :class="genState.options.symbols ? 'bg-primary' : 'bg-input'"
-        @click="genState.options.symbols = !genState.options.symbols"
-      >
-        <span
-          class="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform"
-          :class="genState.options.symbols ? 'translate-x-4' : 'translate-x-0'"
-        />
-      </button>
+      <Switch id="pg-symbols" v-model="genState.options.symbols" />
     </div>
 
     <p v-if="genState.options.memorable" class="text-xs text-muted-foreground">

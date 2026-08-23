@@ -1,12 +1,15 @@
 import * as TOML from "@ltd/j-toml";
 import { type Result, wrapThrowable } from "lib-result";
 import type { AppConfig, StoreConfig } from "@/types/config";
-import type { ParsedToml, TomlObject, TomlStringified } from "@/types/toml";
+import type {
+  ParsedToml,
+  Table,
+  TomlObject,
+  TomlStringified,
+} from "@/types/toml";
 
 /** Internal type: ReadonlyTable accepted by j-toml's stringify */
 type ReadonlyTable = Parameters<typeof TOML.stringify>[0];
-/** Internal type: Table returned by j-toml's parse */
-type Table = ReturnType<typeof TOML.parse>;
 type MetadataTable = Table & Record<symbol, unknown>;
 
 type ConfigCommentMap<TConfig extends ReadonlyTable> = {

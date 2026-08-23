@@ -68,4 +68,4 @@ type ParsedToml<TData> = {
   _raw: Table;
 };
 
-export type { ParsedToml, TomlObject, TomlStringified };
+export type { ParsedToml, Table, TomlObject, TomlStringified };
