@@ -22,6 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAsyncAction } from "@/composables/use-async-action";
 import { useNotifyResult } from "@/composables/use-notify-result";
+import { Logger } from "@/lib/logger";
 import { Dialog as NeuDialog } from "@/services/dialog";
 import { Gpg } from "@/services/gpg";
 import {
@@ -58,6 +59,9 @@ const selectedKeyId = ref("");
 const secretKeys = ref<SecretKey[]>([]);
 const isLoadingKeys = ref(true);
 const isExistingStore = ref(false);
+// Set when store detection failed — blocks advancing (fail closed:
+// an undetectable path must never default to create mode).
+const detectionError = ref<string | null>(null);
 
 // Validation
 const nameError = computed(() => {
@@ -139,15 +143,24 @@ async function pickFolder(): Promise<void> {
   }
 }
 
-async function detectExistingStore(path: string): Promise<void> {
+/**
+ * Detects whether `path` is an already-initialized store. Returns false
+ * (and sets `detectionError`) when detection itself fails — the wizard
+ * must not guess create-mode on unknown state.
+ */
+async function detectExistingStore(path: string): Promise<boolean> {
   const result = await StoreValidation.validate(path);
   if (result.isOk()) {
     isExistingStore.value = result.ok.initialized;
-  } else {
-    console.warn("Store validation failed:", result.error.message);
-    // Default to not existing — treat as new store
-    isExistingStore.value = false;
+    detectionError.value = null;
+    return true;
   }
+  Logger.error(
+    `AddStoreWizard: store detection failed for "${path}": ${result.error.message}`
+  );
+  isExistingStore.value = false;
+  detectionError.value = `Could not inspect "${path}": ${result.error.message}`;
+  return false;
 }
 
 async function advanceStep(): Promise<void> {
@@ -157,8 +170,8 @@ async function advanceStep(): Promise<void> {
       break;
     case "path":
       if (canAdvancePath.value) {
-        await detectExistingStore(storePath.value.trim());
-        step.value = "gpg";
+        const detected = await detectExistingStore(storePath.value.trim());
+        if (detected) step.value = "gpg";
       }
       break;
   }
@@ -208,6 +221,7 @@ function resetWizard(): void {
   storePath.value = "";
   selectedKeyId.value = "";
   isExistingStore.value = false;
+  detectionError.value = null;
 }
 </script>
 
@@ -280,6 +294,9 @@ function resetWizard(): void {
           </Button>
         </div>
         <p v-if="pathError" class="text-xs text-destructive">{{ pathError }}</p>
+        <p v-else-if="detectionError" class="text-xs text-destructive">
+          {{ detectionError }}
+        </p>
         <p v-else-if="isExistingStore" class="text-xs text-amber-600">
           Existing store detected — will be added as-is without
           re-initialization.

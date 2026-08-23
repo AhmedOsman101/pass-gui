@@ -15,6 +15,7 @@ type StoreDetails = StoreConfig & { name: string };
 class CreateStoreError extends Error {
   public kind:
     | "already-exists"
+    | "config-read-failed"
     | "mkdir-failed"
     | "pass-init-failed"
     | "config-write-failed";
@@ -36,7 +37,11 @@ class CreateStoreError extends Error {
  * step (validation / config write); `path` is the store directory.
  */
 class AddStoreError extends Error {
-  public kind: "already-exists" | "validation-failed" | "config-write-failed";
+  public kind:
+    | "already-exists"
+    | "config-read-failed"
+    | "validation-failed"
+    | "config-write-failed";
   public path: string;
   constructor(
     kind: AddStoreError["kind"],
@@ -73,8 +78,20 @@ class Store {
     name: string,
     data: { path: string; gpgKeyId: string }
   ): Promise<Result<StoreConfig, CreateStoreError>> {
-    const existingResult = await Store.get(name);
-    if (existingResult.isOk()) {
+    // Existence probe: only a confirmed-absent name may proceed. A config
+    // read error must fail closed — never clobber on unknown state.
+    const existingResult = await Config.getValue("stores", name);
+    if (existingResult.isError()) {
+      return Err(
+        new CreateStoreError(
+          "config-read-failed",
+          data.path,
+          `Cannot verify store name "${name}": ${existingResult.error.message}`,
+          existingResult.error
+        )
+      );
+    }
+    if (existingResult.ok) {
       return Err(
         new CreateStoreError(
           "already-exists",
@@ -144,8 +161,20 @@ class Store {
     name: string,
     data: { path: string }
   ): Promise<Result<StoreConfig, AddStoreError>> {
-    const existingResult = await Store.get(name);
-    if (existingResult.isOk()) {
+    // Existence probe: only a confirmed-absent name may proceed. A config
+    // read error must fail closed — never clobber on unknown state.
+    const existingResult = await Config.getValue("stores", name);
+    if (existingResult.isError()) {
+      return Err(
+        new AddStoreError(
+          "config-read-failed",
+          data.path,
+          `Cannot verify store name "${name}": ${existingResult.error.message}`,
+          existingResult.error
+        )
+      );
+    }
+    if (existingResult.ok) {
       return Err(
         new AddStoreError(
           "already-exists",
