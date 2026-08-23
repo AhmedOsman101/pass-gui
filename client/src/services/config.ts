@@ -173,12 +173,21 @@ class Config {
       return Err(configPath.error);
     }
 
-    // Validate before saving
-    const validationResult = validateAppConfig(content.data);
+    // Validate exactly what will be serialized: writers mutate `_raw`
+    // (to preserve comments) and stringify serializes `_raw` — `data`
+    // is a stale snapshot that never sees those mutations.
+    const validationResult = validateAppConfig(
+      content._raw as unknown as AppConfig
+    );
     if (validationResult.isError()) {
       await Logger.error(
         `Config.save("${configPath.ok}"): ${formatZodError(validationResult.error)}`
       );
+      // The caller already mutated this parsed object's _raw — evict it
+      // from the cache so the next load() re-reads last-good state from
+      // disk instead of serving the rejected mutation.
+      Watcher.invalidate("config");
+      Config._cachedResult = null;
       return Err(
         new ConfigValidationError(
           formatZodError(validationResult.error),
@@ -195,16 +204,6 @@ class Config {
       );
       return Err(tomlContent.error);
     }
-
-    // DEBUG: who wrote the config + what it looks like. Remove once the
-    // flattening bug is root-caused.
-    // eslint-disable-next-line no-console
-    console.debug(
-      "[config-debug] caller:",
-      new Error().stack?.split("\n").slice(2).join(" <- ")
-    );
-    // eslint-disable-next-line no-console
-    console.debug(`[config-debug] wrote:\n${tomlContent.ok}`);
 
     // Write to file
     const writeResult = await Fs.writeFile(configPath.ok, tomlContent.ok);

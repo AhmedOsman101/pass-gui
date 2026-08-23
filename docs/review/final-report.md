@@ -13,7 +13,7 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 | # | File | Bug | Batch |
 |---|------|-----|-------|
 | C1 | `lib/shell.ts` | Windows quoting doubles backslashes before normal chars and fails to double them before embedded quotes → argument boundaries break for any Windows path with backslashes. All execs route through this. Fix = count pending backslash run, emit `run*2` before each `"`. | 02 |
-| C2 | `services/config.ts` | `setValue`/`removeValue` mutate `_raw` but `save()` validates the stale `data` snapshot → written values bypass Zod validation; an invalid write (empty `active_store`, removed active store) bricks config loading on next startup. | 06 |
+| C2 | `services/config.ts` | ~~`setValue`/`removeValue` mutate `_raw` but `save()` validates the stale `data` snapshot → written values bypass Zod validation; an invalid write (empty `active_store`, removed active store) bricks config loading on next startup.~~ ✅ Fixed: `save()` validates `_raw` (what stringify serializes) and evicts the poisoned cache entry on validation failure. | 06 |
 | C3 | `pages/settings.vue` | Failed `Config.load()` leaves `config` null yet renders tabs via `config!` → white-screen crash exactly when the config file is broken. Needs a `loadError` branch. | 09 |
 | C4 | `pages/settings.vue` | Multi-field tab saves fire unawaited concurrent read-modify-write cycles over the whole config file → last-writer-wins silently reverts sibling fields (Generation ×5, Clipboard ×2, GPG ×3) with false success toasts. Sequentialize now; proper fix is a batch setter in the service. | 09 |
 | C5 | `Tree.vue` + `AppSidebar.vue` | Context-menu and Mod+V paste discard the `pasteEntry` Result (`void …`) → failed pastes are silent AND the buffer was already cleared pre-flight, so the user loses their cut/copy state. | 04 |
@@ -71,8 +71,8 @@ Every per-op error class redeclares `public cause: Error | null` after passing i
 
 ## Open questions for owner
 
-1. Is Windows a supported target? Determines urgency of C1.
-2. Is the `[config-debug]` flattening-bug investigation still live? The debug stack-capture in `Config.save` is its only observability — coordinate before deleting (and note C2 lives in the same function).
+1. ~~Is Windows a supported target? Determines urgency of C1.~~ ✅ Answered: yes — C1 gets the full fix.
+2. ~~Is the `[config-debug]` flattening-bug investigation still live?~~ ✅ Answered: dead — scaffolding removed in the C2 fix.
 3. Are InsertDialog/EditEntryDialog/GenerateDialog/PreferencesTab retained for planned flows, or deletable?
 4. Should a failed clipboard clear keep the countdown UI alive ("still copied" state) or is best-effort clearing the accepted ceiling?
 5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts.
