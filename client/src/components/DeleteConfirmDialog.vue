@@ -3,7 +3,6 @@ import { ref } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -54,13 +53,16 @@ async function handleDelete(): Promise<void> {
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction
+        <!-- Plain Button, not AlertDialogAction: reka-ui's action closes the
+             dialog via its own click handler before the awaited Result
+             resolves, so a failed delete would look like success. -->
+        <Button
           :disabled="isDeleting"
-          class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          variant="destructive"
           @click="handleDelete"
         >
           {{ isDeleting ? "Deleting..." : "Delete" }}
-        </AlertDialogAction>
+        </Button>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
