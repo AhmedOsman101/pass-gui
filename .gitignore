@@ -35,7 +35,7 @@ lerna-debug.log*
 *.sw?
 
 # Private markdown files
-docs/external-resources
+docs/external-resources/*
 review.md
 test.sh
 
@@ -44,3 +44,4 @@ client/src/pages/test.vue
 
 # Misc.
 .fallow/
+!**/.gitkeep
