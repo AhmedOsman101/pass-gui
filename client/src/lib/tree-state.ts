@@ -1,6 +1,6 @@
 import type { TreeIndex, VisibleNode } from "@/types/entries";
 
-type SortMode = "alphabetical" | "reverse-alphabetical";
+export type SortMode = "alphabetical" | "reverse-alphabetical";
 
 export function sortPaths(
   index: TreeIndex,

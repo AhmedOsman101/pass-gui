@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
 import { computed, readonly, ref } from "vue";
+import type { SortMode } from "@/lib/tree-state";
 import {
   Entries,
   EntriesReadError,
@@ -10,8 +11,6 @@ import type { FsMkdirError } from "@/services/filesystem";
 import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
 import type { EntryDetail, EntryTree, MutationResult } from "@/types/entries";
-
-type SortMode = "alphabetical" | "reverse-alphabetical";
 
 /**
  * Tree-level copy/cut buffer entry. Distinct from the system-clipboard
