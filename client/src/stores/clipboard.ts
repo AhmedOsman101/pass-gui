@@ -22,6 +22,8 @@ import type { ClipboardAction } from "@/types/entries";
  * Actions return `Result` — state mutations happen via `.inspect()` /
  * `.inspectErr()` side effects. No try/catch, no toasts.
  */
+const CLEAR_RETRY_MS = 5_000;
+
 const useClipboardStore = defineStore("clipboard", () => {
   const lastAction = ref<ClipboardAction | null>(null);
   const remainingMs = ref(0);
@@ -90,15 +92,26 @@ const useClipboardStore = defineStore("clipboard", () => {
 
   async function clear(): Promise<Result<void, ClipboardClearError>> {
     error.value = null;
-    stopTimer();
 
     const result = await Clipboard.clear();
-    result.inspectErr(err => {
-      error.value = err;
-    });
 
-    isCopied.value = false;
-    lastAction.value = null;
+    result
+      .inspect(() => {
+        stopTimer();
+        isCopied.value = false;
+        lastAction.value = null;
+      })
+      .inspectErr(err => {
+        // Failed clear keeps "still copied" state truthful: lastAction and
+        // the countdown stay alive so the UI keeps showing the secret as
+        // live. If the timer already fired (auto-clear path), schedule a
+        // short retry instead of leaving the secret with no countdown.
+        // ponytail: fixed-interval retry; add backoff if retries get noisy.
+        error.value = err;
+        if (lastAction.value !== null && remainingMs.value <= 0) {
+          startTimer(Date.now() + CLEAR_RETRY_MS);
+        }
+      });
 
     return result;
   }

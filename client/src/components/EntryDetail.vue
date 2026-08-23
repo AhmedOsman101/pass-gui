@@ -14,6 +14,7 @@ import EntryForm from "@/components/EntryForm.vue";
 import MoveOrDuplicateDialog from "@/components/MoveOrDuplicateDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
+import { useNotifyResult } from "@/composables/use-notify-result";
 import { useClipboardStore } from "@/stores/clipboard";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useEntryFormStore } from "@/stores/entry-form";
@@ -89,6 +90,11 @@ function toggleSecret(): void {
   isSecretVisible.value = !isSecretVisible.value;
 }
 
+/** Manual clear from a toast — silent on success, error toast on failure. */
+async function clearCopied(): Promise<void> {
+  useNotifyResult(await clipboard.clear(), { ok: false });
+}
+
 async function copySecret(): Promise<void> {
   if (!entry.value || !treeStore.currentPath) return;
   const result = await clipboard.copy(
@@ -101,7 +107,7 @@ async function copySecret(): Promise<void> {
         description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
         action: {
           label: "Clear",
-          onClick: () => void clipboard.clear(),
+          onClick: () => void clearCopied(),
         },
         duration: action.timerSeconds * 1000,
       });
@@ -118,7 +124,7 @@ async function copyValue(value: string, label: string): Promise<void> {
         description: `Clears in ${action.timerSeconds}s`,
         action: {
           label: "Clear",
-          onClick: () => void clipboard.clear(),
+          onClick: () => void clearCopied(),
         },
         duration: action.timerSeconds * 1000,
       });

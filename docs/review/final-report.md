@@ -44,7 +44,7 @@ Every per-op error class redeclares `public cause: Error | null` after passing i
 
 ## Design issues worth escalating (one line each)
 
-- `stores/clipboard.ts` + `EntryDetail.vue`: failed clipboard clear resets UI state while the secret stays live in the OS clipboard — core safety path (B01).
+- ~~`stores/clipboard.ts` + `EntryDetail.vue`: failed clipboard clear resets UI state while the secret stays live in the OS clipboard — core safety path (B01).~~ ✅ Fixed: clear failure keeps countdown/"still copied" state alive (+ auto-clear retry), Clear buttons notify via `useNotifyResult`.
 - `DeleteConfirmDialog.vue`: native `AlertDialogAction` close fires before the awaited Result resolves → dialog closes even on failure (B01).
 - `stores/entry-tree.ts`: `moveEntry` selection rewrite uses naive substring replace (`"a"` matches inside `"a2"`) → corrupted selected paths; paste into own descendant unguarded (B03).
 - `filesystem.ts`: `join`/`relativePath` return bare promises (can reject) violating the Result contract used everywhere else (B03).
