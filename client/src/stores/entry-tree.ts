@@ -1,9 +1,11 @@
 import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
 import { computed, readonly, ref } from "vue";
-import Path from "@/lib/path";
-import { EntriesReadError, type EntriesWriteError } from "@/services/entries";
-import { Entries } from "@/services/entries";
+import {
+  Entries,
+  EntriesReadError,
+  type EntriesWriteError,
+} from "@/services/entries";
 import type { FsMkdirError } from "@/services/filesystem";
 import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
