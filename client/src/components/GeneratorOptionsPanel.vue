@@ -58,14 +58,14 @@ const props = withDefaults(defineProps<{ showValue?: boolean }>(), {
           v-model.number="genState.options.length"
           type="range"
           min="8"
-          max="64"
+          max="128"
           class="flex-1"
         />
         <input
           v-model.number="genState.options.length"
           type="number"
           min="8"
-          max="64"
+          max="128"
           class="w-16 rounded-md border border-input bg-background px-2 py-1 text-sm text-center font-mono ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         />
       </div>

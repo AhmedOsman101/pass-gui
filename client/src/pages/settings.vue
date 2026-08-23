@@ -162,9 +162,15 @@ function handleSaveGeneral(): void {
 }
 
 function handleSaveGeneration(): void {
+  // `:min`/`:max` don't clamp typed values — clamp at the save seam so the
+  // zod schema (int, 8–128) always accepts what we write.
+  const defaultLength = Math.min(
+    128,
+    Math.max(8, Math.trunc(generationForm.value.defaultLength))
+  );
   void saveSection("generation", {
     memorable: generationForm.value.memorable,
-    default_length: generationForm.value.defaultLength,
+    default_length: defaultLength,
     symbols: generationForm.value.symbols,
     character_set: generationForm.value.characterSet,
     character_set_no_symbols: generationForm.value.characterSetNoSymbols,
@@ -172,8 +178,10 @@ function handleSaveGeneration(): void {
 }
 
 function handleSaveClipboard(): void {
+  // Same seam clamp: non-negative int (zod requires nonnegative).
+  const clearAfterSeconds = Math.max(0, Math.trunc(clipboardForm.value.clearAfterSeconds));
   void saveSection("clipboard", {
-    clear_after_seconds: clipboardForm.value.clearAfterSeconds,
+    clear_after_seconds: clearAfterSeconds,
     selection: clipboardForm.value.selection,
   });
 }
