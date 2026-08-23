@@ -74,7 +74,7 @@ Every per-op error class redeclares `public cause: Error | null` after passing i
 1. ~~Is Windows a supported target? Determines urgency of C1.~~ ✅ Answered: yes — C1 gets the full fix.
 2. ~~Is the `[config-debug]` flattening-bug investigation still live?~~ ✅ Answered: dead — scaffolding removed in the C2 fix.
 3. Are InsertDialog/EditEntryDialog/GenerateDialog/PreferencesTab retained for planned flows, or deletable?
-4. Should a failed clipboard clear keep the countdown UI alive ("still copied" state) or is best-effort clearing the accepted ceiling?
+4. ~~Should a failed clipboard clear keep the countdown UI alive ("still copied" state) or is best-effort clearing the accepted ceiling?~~ ✅ Answered: keep countdown alive — implemented in the B01 clipboard-clear fix.
 5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts.
 6. Is mounting before `Neutralino.init()` known-safe, or should boot order invert?
 7. First-run semantics: does `DEFAULT_CONFIG.core.active_store` guarantee validity, and should `ensure()` fail closed on exists-errors?
