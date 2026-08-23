@@ -1,7 +1,6 @@
 import { Err, Ok, type Result } from "lib-result";
 import type { EntryDetail } from "@/types/entries";
 import { EntryParseError } from "./errors";
-import { stripInlineComment } from "./utils";
 
 /**
  * Parses the stdout of `pass show <path>` into a structured EntryDetail.
@@ -48,7 +47,10 @@ function parsePassShowOutput(
 
     if (colonIndex > 0) {
       const key = line.slice(0, colonIndex).trim();
-      const value = stripInlineComment(line.slice(colonIndex + 1).trim());
+      // Preserve inline comments — entry content is user data, and the
+      // edit round-trip must not silently drop it. (Inline comments are
+      // only stripped in `.gpg-id` parsing, per pass spec.)
+      const value = line.slice(colonIndex + 1).trim();
 
       if (key.length > 0 && value.length > 0) {
         metadata[key] = value;
