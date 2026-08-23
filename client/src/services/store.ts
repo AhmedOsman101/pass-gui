@@ -1,6 +1,6 @@
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import type { StoreConfig } from "@/types/config";
 import { Logger } from "@/lib/logger";
+import type { StoreConfig } from "@/types/config";
 import { Config } from "./config";
 import { Fs } from "./filesystem";
 import { Pass } from "./pass";
