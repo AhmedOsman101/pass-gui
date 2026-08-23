@@ -43,3 +43,4 @@ test.sh
 client/src/pages/test.vue
 
 # Misc.
+.fallow/
