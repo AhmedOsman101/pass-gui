@@ -274,6 +274,10 @@ class Filesystem {
 
   /**
    * Checks if a file or directory exists at the given path.
+   * Absence is an expected answer for an existence query: a
+   * PathNotFound stat error resolves to `Ok(false)`. Only genuine
+   * failures (permissions, I/O) return `Err` — callers must never
+   * treat "absent" and "failed" the same way.
    */
   static async exists(
     path: string
@@ -281,9 +285,19 @@ class Filesystem {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
-    const res = await Filesystem.getStats(resolvedPath.ok);
+    const res = await wrapAsync(
+      async () => await filesystem.getStats(resolvedPath.ok)
+    );
+
     if (res.isOk()) return Ok(res.ok.isFile || res.ok.isDirectory);
-    return Err(res.error);
+
+    const err = res.error as NeuError;
+    if (err?.code === NEU_ERROR_CODES_MAP.PathNotFound) {
+      return Ok(false);
+    }
+
+    await Logger.error(`Fs.exists("${resolvedPath.ok}"): ${err.message}`);
+    return Err(new FsStatError(resolvedPath.ok, err.message, err));
   }
 
   /**

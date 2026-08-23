@@ -233,8 +233,12 @@ class Config {
   static async ensure(): Promise<Result<void>> {
     const existsResult = await Config.exists();
 
+    // Fail closed: an exists-error must never be read as "missing" —
+    // that would write defaults over a possibly-real config file.
+    if (existsResult.isError()) return Err(existsResult.error);
+
     // Create default config if it doesn't exist
-    if (existsResult.isError() || !existsResult.ok) {
+    if (!existsResult.ok) {
       const configPath = await Config.getPath();
       if (configPath.isError()) return Err(configPath.error);
 
