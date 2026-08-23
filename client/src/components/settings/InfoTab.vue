@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Copy, Check } from "@lucide/vue";
-import { ref } from "vue";
+import { onUnmounted, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -35,6 +35,14 @@ const props = defineProps<{
 const copiedInfo = ref(false);
 const copiedConfig = ref(false);
 
+let infoTimer: ReturnType<typeof setTimeout> | null = null;
+let configTimer: ReturnType<typeof setTimeout> | null = null;
+
+onUnmounted(() => {
+  if (infoTimer) clearTimeout(infoTimer);
+  if (configTimer) clearTimeout(configTimer);
+});
+
 function buildInfoText(): string {
   const lines: string[] = [];
   if (props.passInfo) {
@@ -64,7 +72,8 @@ async function copyInfo(): Promise<void> {
   });
   if (result.isOk()) {
     copiedInfo.value = true;
-    setTimeout(() => {
+    if (infoTimer) clearTimeout(infoTimer);
+    infoTimer = setTimeout(() => {
       copiedInfo.value = false;
     }, 2000);
   }
@@ -84,7 +93,8 @@ async function copyConfig(): Promise<void> {
   });
   if (result.isOk()) {
     copiedConfig.value = true;
-    setTimeout(() => {
+    if (configTimer) clearTimeout(configTimer);
+    configTimer = setTimeout(() => {
       copiedConfig.value = false;
     }, 2000);
   }
