@@ -17,34 +17,40 @@ function quoteForPosix(arg: string): string {
 
 /**
  * Quotes a string for safe use in Windows CMD/PowerShell.
- * Handles backslashes, double quotes, and rejects newlines.
- * Returns empty string for arguments containing carriage returns or newlines.
+ * Implements the MS CommandLineToArgvW rules (as .NET's argument escaper
+ * and Python's list2cmdline do): a run of n backslashes before a quote
+ * becomes 2n+1 backslashes + `"` (so the quote is escaped, not a
+ * boundary); runs not followed by a quote are literal; newlines are
+ * rejected. Returns empty string for arguments containing CR/LF.
  */
 function quoteForWindows(arg: string): string {
+  if (/[\r\n]/.test(arg)) return "";
+
   let result = "";
-  let prevChar = "";
+  let backslashes = 0;
 
   for (const char of arg) {
-    switch (char) {
-      case '"':
-        result += '""';
-        prevChar = char;
-        break;
-      case "\\":
-        result += "\\";
-        prevChar = char;
-        break;
-      case "\r":
-      case "\n":
-        return "";
-      default:
-        if (prevChar === "\\") {
-          result += "\\";
-        }
-        result += char;
-        prevChar = char;
+    if (char === "\\") {
+      backslashes++;
+      continue;
     }
+
+    if (char === '"') {
+      result += "\\".repeat(2 * backslashes + 1);
+      result += '"';
+      backslashes = 0;
+      continue;
+    }
+
+    result += "\\".repeat(backslashes);
+    backslashes = 0;
+    result += char;
   }
+
+  // Trailing run sits before the closing quote — double it so the
+  // parser reads n literal backslashes and treats the quote as the
+  // argument boundary.
+  result += "\\".repeat(2 * backslashes);
 
   return `"${result}"`;
 }
