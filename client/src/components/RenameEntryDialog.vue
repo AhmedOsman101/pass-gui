@@ -10,8 +10,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Path from "@/lib/path";
 import { useEntryTreeStore } from "@/stores/entry-tree";
+import { Logger } from "@/lib/logger";
+import { Fs } from "@/services/filesystem";
 
 const props = defineProps<{
   currentPath: string;
@@ -26,32 +27,34 @@ const emit = defineEmits<{
 const treeStore = useEntryTreeStore();
 
 const newName = ref("");
+const currentName = ref("");
+const parentDir = ref("");
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
-
-const currentName = computed(() => Path.baseName(props.currentPath));
-
-const parentDir = computed(() => Path.parentPath(props.currentPath));
 
 const isDirectory = computed(() => props.nodeType === "DIRECTORY");
 const dialogTitle = computed(() =>
   isDirectory.value ? "Rename Folder" : "Rename Entry"
 );
 
-function buildNewPath(): string {
-  if (parentDir.value) {
-    return `${parentDir.value}/${newName.value}`;
-  }
-  return newName.value;
-}
-
 watch(
   () => props.open,
   (open) => {
-    if (open) {
-      newName.value = currentName.value;
-      formError.value = null;
-    }
+    if (!open) return;
+    formError.value = null;
+
+    void (async () => {
+      const parts = await Fs.getPathParts(props.currentPath);
+      if (parts.isError()) {
+        await Logger.error(
+          `RenameEntryDialog: cannot split "${props.currentPath}": ${parts.error.message}`
+        );
+        return;
+      }
+      currentName.value = parts.ok.filename;
+      parentDir.value = parts.ok.parentPath;
+      newName.value = parts.ok.filename;
+    })();
   },
   { immediate: true }
 );
@@ -68,7 +71,8 @@ async function handleSubmit(): Promise<void> {
     return;
   }
 
-  const fullPath = buildNewPath();
+  const fullPath = parentDir.value ? `${parentDir.value}/${name}` : name;
+
   isSubmitting.value = true;
   formError.value = null;
 

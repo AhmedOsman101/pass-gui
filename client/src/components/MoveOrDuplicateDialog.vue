@@ -12,7 +12,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import DirectoryTree from "@/components/DirectoryTree.vue";
-import Path from "@/lib/path";
+import { Logger } from "@/lib/logger";
+import { Fs } from "@/services/filesystem";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
@@ -33,7 +34,7 @@ const newFolderName = ref("");
 const isCreatingFolder = ref(false);
 const folderError = ref<string | null>(null);
 
-const currentName = computed(() => Path.baseName(props.currentPath));
+const currentName = ref("");
 
 const dialogTitle = computed(() => {
   return props.mode === "move" ? "Move Entry" : "Duplicate Entry";
@@ -63,14 +64,24 @@ function buildFullDestination(): string {
 }
 
 watch(isOpen, (open) => {
-  if (open) {
-    const name = Path.baseName(props.currentPath);
-    selectedFolder.value = Path.parentPath(props.currentPath);
-    newPath.value = name;
-    formError.value = null;
-    newFolderName.value = "";
-    folderError.value = null;
-  }
+  if (!open) return;
+  formError.value = null;
+  newFolderName.value = "";
+  folderError.value = null;
+
+  void (async () => {
+    const parts = await Fs.getPathParts(props.currentPath);
+    if (parts.isError()) {
+      // Leave fields empty — the user can type a destination manually.
+      await Logger.error(
+        `MoveOrDuplicateDialog: cannot split "${props.currentPath}": ${parts.error.message}`
+      );
+      return;
+    }
+    selectedFolder.value = parts.ok.parentPath;
+    newPath.value = parts.ok.filename;
+    currentName.value = parts.ok.filename;
+  })();
 });
 
 async function createNewFolder(): Promise<void> {

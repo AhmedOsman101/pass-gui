@@ -13,7 +13,8 @@ import {
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { useTreeState } from "@/composables/use-tree-state";
-import Path from "@/lib/path";
+import { Logger } from "@/lib/logger";
+import { Fs } from "@/services/filesystem";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import {
   ChevronRight,
@@ -77,6 +78,21 @@ async function paste(destDir: string): Promise<void> {
   if (result) {
     useNotifyResult(result, { ok: a => `Pasted to ${a.path}` });
   }
+}
+
+/**
+ * Pastes the buffer into the parent directory of `path`
+ * (file context-menu "Paste" = paste next to this entry).
+ */
+async function pasteIntoParent(path: string): Promise<void> {
+  const parts = await Fs.getPathParts(path);
+  if (parts.isError()) {
+    await Logger.error(
+      `Paste aborted: cannot resolve parent of "${path}": ${parts.error.message}`
+    );
+    return;
+  }
+  await paste(parts.ok.parentPath);
 }
 
 function isSelectedNode(path: string): boolean {
@@ -164,7 +180,7 @@ useHotkey("Enter", () => {
               'search-highlight': isSearchMatch(node.path),
             }"
             :style="{ paddingLeft: `${12 + node.depth * 16}px` }"
-            :title="Path.baseName(node.path)"
+            :title="node.name"
             @click="toggleSelect(node.path)"
           >
             <ChevronRight
@@ -175,7 +191,7 @@ useHotkey("Enter", () => {
             />
             <Folder v-if="node.isDirectory" class="shrink-0 size-4" />
             <File v-else class="shrink-0 size-4" />
-            <span class="truncate">{{ Path.baseName(node.path) }}</span>
+            <span class="truncate">{{ node.name }}</span>
           </SidebarMenuButton>
         </ContextMenuTrigger>
 
@@ -210,7 +226,7 @@ useHotkey("Enter", () => {
         <ContextMenuContent v-else class="min-w-64 p-2">
           <ContextMenuItem
             v-if="treeStore.buffer"
-            @click="paste(Path.parentPath(node.path))"
+            @click="pasteIntoParent(node.path)"
           >
             <Copy class="size-4 mr-2" />
             Paste

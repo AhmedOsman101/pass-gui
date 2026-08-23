@@ -26,7 +26,8 @@ import {
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { useNotifyResult } from "@/composables/use-notify-result";
-import Path from "@/lib/path";
+import { Logger } from "@/lib/logger";
+import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
 import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
@@ -105,14 +106,25 @@ useHotkey(
   () => {
     if (treeStore.buffer) {
       const selected = treeStore.selectedPath;
-      if (selected) {
-        const node = findNode(treeStore.tree, selected);
-        const destDir =
-          node?.type === "DIRECTORY" ? selected : Path.parentPath(selected);
-        void pasteInto(destDir);
-      } else {
+      if (!selected) {
         void pasteInto("");
+        return;
       }
+      const node = findNode(treeStore.tree, selected);
+      if (node?.type === "DIRECTORY") {
+        void pasteInto(selected);
+        return;
+      }
+      void (async () => {
+        const parts = await Fs.getPathParts(selected);
+        if (parts.isError()) {
+          await Logger.error(
+            `Paste aborted: cannot resolve parent of "${selected}": ${parts.error.message}`
+          );
+          return;
+        }
+        await pasteInto(parts.ok.parentPath);
+      })();
     }
   },
   { enabled: computed(() => !!treeStore.buffer) },

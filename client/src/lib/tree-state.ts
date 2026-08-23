@@ -42,7 +42,7 @@ export function buildVisible(
     const isDir = node.type === "DIRECTORY";
     const isExpanded = expandedDirs.has(path);
 
-    result.push({ path, depth, isExpanded, isDirectory: isDir });
+    result.push({ path, name: node.name, depth, isExpanded, isDirectory: isDir });
 
     if (isDir && isExpanded) {
       const childPaths = sortPaths(
@@ -102,6 +102,7 @@ export function buildSearchResults(
 
     result.push({
       path,
+      name: node.name,
       depth,
       isExpanded: isDir && hasMatchingChild,
       isDirectory: isDir,

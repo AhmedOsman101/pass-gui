@@ -117,6 +117,8 @@ type TreeIndex = {
  */
 type VisibleNode = {
   path: string;
+  /** Display name (extension stripped) — carried over from EntryNode. */
+  name: string;
   depth: number;
   isExpanded: boolean;
   isDirectory: boolean;

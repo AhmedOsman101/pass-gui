@@ -59,30 +59,10 @@ function getSystemRoot(): string {
   return window.NL_OS === "Windows" ? "C:\\" : "/";
 }
 
-/**
- * Returns the last segment of a `/`-separated entry path.
- * Entry paths are store-relative and always use `/` regardless of OS.
- */
-function baseName(path: string): string {
-  return path.split("/").pop() ?? path;
-}
-
-/**
- * Returns everything before the last `/` of an entry path
- * ("" for top-level entries).
- */
-function parentPath(path: string): string {
-  const parts = path.split("/");
-  parts.pop();
-  return parts.join("/");
-}
-
 export default {
   expandTilde,
   resolveUserPath,
   getHomeDir,
   getKnownPath,
   getSystemRoot,
-  baseName,
-  parentPath,
 };
