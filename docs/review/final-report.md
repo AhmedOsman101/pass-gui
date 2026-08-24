@@ -62,12 +62,14 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 
 ## Minor issues (collapsed lists)
 
-- **Stale/duplicated docs:** doc comments saying errors are "thrown" (filesystem), stale `EntryDetail.path` doc, misleading watcher comment in AppSidebar, JSDoc length bounds that nothing enforces.
-- **Unvalidated numeric inputs:** Generation/Clipboard/Preferences tabs rely on `:min`/`:max` which don't clamp typed values (B09); three disagreeing password-length ceilings (64 slider / 128 docs / 128 schema) (B05).
-- **Timer/ref hygiene:** uncleared `setTimeout`s on unmount (~~EntryDetail skeleton~~ ✅ cleaned up, InfoTab copied flags); ~~`timerId` in a ref needlessly reactive (clipboard store)~~ ✅ plain closure var; timer helpers unexported from the store.
-- **Duplication nits:** copySecret/copyValue toast blocks ✅ deduped (copySecret delegates); memorable/symbols switch blocks; folder-picker button markup ×3; `SortMode` type duplicated; `Table` alias duplicated.
-- **Dead flexibility:** dialog trigger branches never rendered (RenameEntryDialog, StoreDeleteDialog); seven unused per-section config validators; redundant `isFile` re-check in `parseGpgId`.
-- **UX polish:** five success toasts per Save click; silent no-op on duplicate-path edit save (StoresTab); retry button dead when no store configured; password visible-by-default in create mode; misleading "No GPG keys found" copy on load failure.
+Sweep results (verified against current code; several were already fixed by earlier commits or mooted by the S2 deletions):
+
+- **Stale/duplicated docs:** ~~doc comments saying errors are "thrown" (filesystem)~~ ✅ none found in filesystem.ts — the class doc now honestly notes `join`/`relativePath` still return bare promises (pending design-issue migration); the project-wide "Error thrown by X()" idiom on error classes is uniform and kept. ~~stale `EntryDetail.path` doc~~ reviewer false positive — doc is accurate. ~~misleading watcher comment in AppSidebar~~ rewritten during earlier fixes, accurate now. ~~JSDoc length bounds that nothing enforces~~ generate-password.ts already says "(no bound enforced here)".
+- **Unvalidated numeric inputs:** ✅ Fixed — `handleSaveGeneration`/`handleSaveClipboard` clamp at the save seam (8–128 / ≥0 int). ~~three disagreeing password-length ceilings~~ moot: the 64 slider lived in the deleted GenerateDialog; remaining input + schema + docs all say 128.
+- **Timer/ref hygiene:** ~~uncleared `setTimeout`s on unmount (EntryDetail skeleton ✅, InfoTab copied flags ✅ both have `onUnmounted` cleanup)~~; ~~`timerId` in a ref needlessly reactive (clipboard store)~~ ✅ plain closure var.
+- **Duplication nits:** ~~copySecret/copyValue toast blocks~~ ✅ deduped; ~~memorable/symbols switch blocks~~ moot (one site left after GenerateDialog deletion); ~~folder-picker button markup ×3~~ skipped — 2 sites remain across 2 files, a shared component would outgrow the markup it saves (`// ponytail:`); ~~`SortMode` type duplicated~~ single canonical def in `lib/tree-state.ts`; ~~`Table` alias duplicated~~ single def in `types/toml.ts`.
+- **Dead flexibility:** ~~dialog trigger branches never rendered (RenameEntryDialog, StoreDeleteDialog)~~ false positive — no dead trigger markup exists, parents own open state; seven unused per-section config validators **kept per owner decision**; ~~redundant `isFile` re-check in `parseGpgId`~~ false positive — no such re-check exists.
+- **UX polish:** ~~five success toasts per Save click~~ ✅ fixed via C4 batch setter; ~~silent no-op on duplicate-path edit save (StoresTab)~~ ✅ inline validation error present; ✅ Fixed: retry button shown only when a store is configured — otherwise an explicit "No store configured" link to Settings; ~~password visible-by-default in create mode~~ false positive — EntryForm masks by default (`isSecretVisible = false`; generator reveal is intentional); ~~misleading "No GPG keys found" copy on load failure~~ ✅ wizard already distinguishes load-error from empty keyring.
 
 ## Open questions for owner
 
@@ -75,11 +77,19 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 2. ~~Is the `[config-debug]` flattening-bug investigation still live?~~ ✅ Answered: dead — scaffolding removed in the C2 fix.
 3. Are InsertDialog/EditEntryDialog/GenerateDialog/PreferencesTab retained for planned flows, or deletable?
 4. ~~Should a failed clipboard clear keep the countdown UI alive ("still copied" state) or is best-effort clearing the accepted ceiling?~~ ✅ Answered: keep countdown alive — implemented in the B01 clipboard-clear fix.
-5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts.
-6. Is mounting before `Neutralino.init()` known-safe, or should boot order invert?
-7. First-run semantics: does `DEFAULT_CONFIG.core.active_store` guarantee validity, and should `ensure()` fail closed on exists-errors?
+5. Does j-toml `stringify` throw on undefined values (settings.vue passes `undefined` to "clear" keys)? Determines whether that path fails loudly or corrupts. → **Empirical probe wired onto the Test.vue page** (sidebar title links to `/test`); vendored docs (`docs/external-resources/j-toml/README.md`) say unsupported value types throw, and our `wrapThrowable` wrapper turns that into a loud `Err`. Pending owner's click-through for final confirmation.
+6. Is mounting before `Neutralino.init()` known-safe, or should boot order invert? ✅ Answered: known boot debt — leave alone.
+7. First-run semantics: does `DEFAULT_CONFIG.core.active_store` guarantee validity, and should `ensure()` fail closed on exists-errors? ✅ Answered: `"default"` is intentionally assumed to exist on every device (`~/.password-store` is the universal pass default); `ensure()` fail-closed landed with C7.
 8. ~~Inline comments in entry files: stripped (parse-pass-show) or preserved (entry-content) as canonical read behavior?~~ **Answered (owner): preserve.** Entry content is user data; inline comments are only stripped in `.gpg-id` parsing per pass spec.
 
 ## Coverage
 
 Reviewed in full: 74 app files across 10 batches (see batch files for per-file verdicts). Not deep-reviewed: vendored `components/ui/**`, icons scaffold, integration tests (`tests/integration/*`), build configs.
+
+## Future work (owner-directed, own session)
+
+**Readiness/onboarding redesign.** The current readiness layer is a stopgap. Requirements from the owner:
+- Circuit breakers at **each layer** (binary presence → version → store detection → keyring → entries), not one global gate.
+- Detailed per-layer errors and states — every failure mode gets its own state, issue payload, and recovery action.
+- The whole onboarding flow needs rework alongside it (first-run, no-store, broken-store paths).
+- Known input to carry over: keyring-listing failure is currently misreported as ".gpg-id parse error"; `GPG_VERSION_TOO_OLD` exists but no check ever produces it; AppSidebar onboarding errors don't reflect config changes (watcher needs testing on the Test.vue page).
