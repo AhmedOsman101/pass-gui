@@ -253,18 +253,15 @@ class CommandFailedError extends Error {
   }) {
     super(
       opts.message ??
-        `Command failed: ${opts.cmd}${opts.args?.join(" ")} (exit code ${opts.exitCode})`,
+        `Command failed: ${opts.cmd}${opts.args?.length ? ` ${opts.args.join(" ")}` : ""} (exit code ${opts.exitCode})`,
       opts.options
     );
     this.cmd = opts.cmd;
+    this.args = opts.args;
     this.exitCode = opts.exitCode;
     this.stdOut = opts.stdOut;
     this.stdErr = opts.stdErr;
     this.pid = opts.pid;
-
-    if (opts.args) {
-      this.args = opts.args.length === 0 ? [" "] : ["", ...opts.args];
-    }
   }
 }
 
