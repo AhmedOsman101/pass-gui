@@ -246,7 +246,11 @@ class Entries {
     }
     if (exists.ok) {
       return Err(
-        new EntriesWriteError(newPath, "exists", `Entry already exists: ${newPath}`)
+        new EntriesWriteError(
+          newPath,
+          "exists",
+          `Entry already exists: ${newPath}`
+        )
       );
     }
 
