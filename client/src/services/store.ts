@@ -74,6 +74,12 @@ class Store {
    * → config write. The scoped-call pattern (`Pass.exec(args, { cwd,
    * envs })`) keeps `Pass.storePath` untouched. If pass init fails
    * and we created the directory, it is removed again (rollback).
+   *
+   * ponytail: partial-failure ceiling — if the trailing config write
+   * fails after `pass init` succeeded, the store stays initialized-
+   * but-unregistered; recovery is retrying create (pass init is
+   * idempotent for the same key). Full rollback would risk deleting a
+   * pre-existing user directory, so we deliberately don't.
    */
   static async create(
     name: string,
