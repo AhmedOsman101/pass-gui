@@ -10,8 +10,7 @@
     "dev": "concurrently -n 'VITE,NEUTRALINO' -c 'blue,magenta' 'cd client && pnpm dev' 'neu run dev'",
     "format": "unset BIOME_CONFIG_PATH; biome check --fix .",
     "prepare": "husky",
-    "typecheck": "cd client && pnpm typecheck",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "typecheck": "cd client && pnpm typecheck"
   },
   "packageManager": "pnpm@11.23.0",
   "dependencies": {

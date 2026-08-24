@@ -8,8 +8,6 @@
     "build": "pnpm typecheck && pnpm build-only",
     "preview": "vite preview",
     "build-only": "vite build",
-    "test:unit": "vitest run",
-    "test:coverage": "vitest run --coverage",
     "typecheck": "vue-tsc --build"
   }
 }

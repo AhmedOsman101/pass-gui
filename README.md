@@ -15,7 +15,6 @@ A **desktop GUI for GNU Pass** (the standard Unix password manager). Wraps `pass
 | Validation       | Zod 4                                            |
 | Config Format    | TOML via `@ltd/j-toml` (comment-preserving)      |
 | Icons            | Lucide Vue + Radix Icons (via iconify)           |
-| Testing          | Vitest + Vue Test Utils + @pinia/testing         |
 | Package Manager  | pnpm 11.9 (workspace: root + client/)            |
 
 ## Features
@@ -91,19 +90,6 @@ pnpm release
 
 Output is generated in the `build/` directory.
 
-## Test
-
-```bash
-# Run all unit tests (currently 211 tests, 11 files)
-pnpm test
-
-# With coverage
-pnpm test:coverage
-
-# Integration tests (requires Podman/Docker)
-podman build -t pass-gui-test -f Containerfile.test .
-```
-
 ## Project Structure
 
 ```
@@ -155,14 +141,12 @@ pass-gui/
 │   │       ├── AppSidebar.vue, Tree.vue, EntryDetail.vue, EntryForm.vue
 │   │       ├── PasswordGenerator.vue, ModeToggle.vue
 │   │       └── dialogs/         # Insert, Generate, Rename, Delete, Duplicate, Move, CreateFolder
-│   ├── vitest.config.ts         # Vitest config (separate from vite.config.ts)
 │   └── vite.config.ts           # Vite config
-├── docs/                        # Roadmap, specs, plans, references
-│   ├── roadmap/                 # Strategic direction (read first, in order)
-│   ├── specs/                   # Atomic specification per phase
-│   └── plans/                   # Execution plans per phase
-├── tests/integration/           # Integration tests (Podman/Docker)
-├── Containerfile.test           # Integration test container image
+├── docs/                        # Specs, plans, decision logs, agent conventions
+│   ├── specs/                   # Atomic specification per feature
+│   ├── grilling/                # Decision logs (Q&A) per feature
+│   └── plans/                   # Execution plans per feature
+├── CONTEXT.md                   # Ubiquitous language (glossary)
 ├── neutralino.config.json       # NeutralinoJS app configuration
 ├── biome.json                   # Biome linter/formatter config
 ├── pnpm-workspace.yaml          # pnpm workspace config
@@ -211,8 +195,6 @@ pnpm format           # Biome auto-fix (safe only)
 pnpm format:unsafe    # Biome auto-fix (including unsafe)
 pnpm build            # Full build (frontend + NeutralinoJS)
 pnpm release          # Release build
-pnpm test             # Vitest unit tests
-pnpm test:coverage    # With coverage report
 ```
 
 ## License

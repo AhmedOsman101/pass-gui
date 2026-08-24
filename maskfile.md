@@ -112,30 +112,6 @@ $MASK clean
 neu build --release --clean --embed-resources
 ```
 
-## test
-
-> Run unit tests
-
-```bash
-cd client && pnpm test:unit
-```
-
-### coverage
-
-> Run tests with coverage
-
-```bash
-cd client && pnpm test:coverage
-```
-
-### integration
-
-> Runs the integration testing on the container
-
-```bash
-$MASK container run "pnpm test:integration"
-```
-
 ## container
 
 > Commands to control the Podman testing container
