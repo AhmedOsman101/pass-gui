@@ -54,7 +54,7 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 - ~~`config.ts`: watcher-setup failure swallowed; `getValue` can return `Ok(undefined)` typed as required (B06).~~ ✅ `getValue` fixed: honest `Result<ConfigValue | undefined>` signature, lying cast dropped, callers (`Store.get/create/add`, active-store load) now state their absence intent explicitly — unconfigured active store surfaces as an error instead of a phantom value (`12b07ef`). Watcher-setup swallow: the service already logs internally; revisit in the readiness redesign.
 - `readiness.ts`: keyring-listing failure misreported as ".gpg-id parse error"; `GPG_VERSION_TOO_OLD` issue exists but no check ever runs it (B07).
 - `store.ts` recipes: partial-failure states (init succeeded, config write failed) leave initialized-but-unregistered stores — acceptable, document the ceiling (B08).
-- `active-store.ts`: `switchStore` persists config before applying → broken name persisted if apply fails (B08).
+- ~~`active-store.ts`: `switchStore` persists config before applying → broken name persisted if apply fails (B08).~~ ✅ Fixed: apply first, persist second; persist failure now reports "applied but failed to save" instead of silently diverging.
 - `AddStoreWizard.vue`: GPG-key step mandatory even when adding an existing store where the selection is discarded (B08).
 - `main.ts` + `neutralino.ts`: `Neu.init()` throws (only non-Result service method) → unhandled top-level rejection path; app mounts before init completes (B10).
 - `AppSidebar.vue`: filesystem-watcher/polling infra (setInterval + service imports) embedded in a component; sidebar never renders `treeStore.error` so failed loads look like an empty store (B04).
