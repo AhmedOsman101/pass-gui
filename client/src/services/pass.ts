@@ -187,7 +187,7 @@ class PassService {
   ): Promise<
     Result<ExecCommandResult, PassExecError | CommandFailedError | Error>
   > {
-    const storeDirValidation = await validatePath(this.storePath);
+    const storeDirValidation = validatePath(this.storePath);
     if (storeDirValidation.isError()) {
       return Err(
         new PassExecError(
@@ -200,7 +200,7 @@ class PassService {
 
     const validatedArgs: Stringifiable[] = [];
     for (const arg of args) {
-      const argValidation = await validatePath(arg);
+      const argValidation = validatePath(arg);
       if (argValidation.isError()) {
         return Err(
           new PassExecError(

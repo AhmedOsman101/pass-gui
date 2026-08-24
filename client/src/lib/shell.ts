@@ -135,7 +135,7 @@ function checkSneakyPath(path: string): boolean {
  * Validates a path for security before use in commands.
  * Checks for invalid characters and directory traversal attacks.
  */
-async function validatePath(path: Stringifiable): Promise<Result<string>> {
+function validatePath(path: Stringifiable): Result<string> {
   const strPath = String(path);
 
   const invalidChars = validateArgument(strPath);
