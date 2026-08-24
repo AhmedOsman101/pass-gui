@@ -65,14 +65,18 @@ const useActiveStoreStore = defineStore("active-store", () => {
     error.value = null;
 
     const nameResult = await Config.getValue("core", "active_store");
-    if (nameResult.isOk()) {
-      storeName.value = nameResult.ok;
-      const result = await applyStore(nameResult.ok);
-      if (result.isError()) error.value = result.error;
-    } else {
+    if (nameResult.isError()) {
       error.value = new Error(
         `Failed to read active store: ${nameResult.error.message}`
       );
+    } else if (!nameResult.ok) {
+      // active_store missing from both the file and DEFAULT_CONFIG —
+      // nothing is configured, not an error to swallow.
+      error.value = new Error("No active store configured");
+    } else {
+      storeName.value = nameResult.ok;
+      const result = await applyStore(nameResult.ok);
+      if (result.isError()) error.value = result.error;
     }
 
     isValidating.value = false;

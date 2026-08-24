@@ -294,7 +294,7 @@ class Config {
   static async getValue<S extends ConfigSection, K extends ConfigKey<S>>(
     section: S,
     key: K
-  ): Promise<Result<ConfigValue<S, K>>> {
+  ): Promise<Result<ConfigValue<S, K> | undefined>> {
     const configResult = await Config.load();
     if (configResult.isError()) return Err(configResult.error);
 
@@ -318,7 +318,10 @@ class Config {
     const value = sectionConfig?.[key];
     const defaultValue = defaultSectionConfig?.[key];
 
-    return Ok((value ?? defaultValue) as ConfigValue<S, K>);
+    // Honest type: a key missing from BOTH the file and DEFAULT_CONFIG
+    // (e.g. dynamic "stores.<name>" keys) yields undefined — callers
+    // decide whether absence is acceptable for their use.
+    return Ok(value ?? defaultValue);
   }
 
   /**
