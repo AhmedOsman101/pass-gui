@@ -13,7 +13,7 @@
     "typecheck": "cd client && pnpm typecheck",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.23.0",
   "dependencies": {
     "@ltd/j-toml": "^1.38.0",
     "@lucide/vue": "^1.26.0",
