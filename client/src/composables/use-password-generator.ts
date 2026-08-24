@@ -12,13 +12,16 @@ export function usePasswordGenerator() {
     options: genOptions.options,
     generated: "",
     regenerate: (): void => {
-      const { memorable, length, symbols } = state.options;
+      const {
+        memorable,
+        length,
+        symbols,
+        charsetSymbols,
+        charsetNoSymbols,
+      } = state.options;
       state.generated = memorable
         ? generateMemorablePassword()
-        : generatePassword(
-            length,
-            symbols ? "[[:alnum:]][[:punct:]]" : "[[:alnum:]]"
-          );
+        : generatePassword(length, symbols ? charsetSymbols : charsetNoSymbols);
     },
   });
 

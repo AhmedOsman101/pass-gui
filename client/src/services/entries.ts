@@ -1,7 +1,5 @@
-import type { ExecCommandResult } from "@neutralinojs/lib";
 import { Err, Ok, type Result } from "lib-result";
 import { CommandFailedError } from "@/lib/errors";
-import { generateMemorablePassword } from "@/lib/generate-password";
 import { parsePassShowOutput } from "@/lib/parse-pass-show";
 import { walkStore } from "@/lib/store-walker";
 import type {
@@ -10,6 +8,7 @@ import type {
   MutationInput,
   MutationResult,
 } from "@/types/entries";
+import { Fs } from "./filesystem";
 import { Pass } from "./pass";
 
 /** Why an entry operation failed, derived from `pass` stderr content. */
@@ -178,36 +177,6 @@ class Entries {
   }
 
   /**
-   * Generates a new password and inserts it into the store.
-   *
-   * If `memorable` is true, generates locally using the EFF wordlist
-   * (format: `NNNN-word-word-word`) and inserts via `pass insert -f`.
-   * Otherwise, delegates to `pass generate` with the configured length.
-   */
-  static async generate(
-    path: string,
-    options?: {
-      length?: number;
-      symbols?: boolean;
-      memorable?: boolean;
-    }
-  ): Promise<Result<MutationResult, EntriesWriteError>> {
-    let result: Result<ExecCommandResult, CommandFailedError | Error>;
-    if (options?.memorable) {
-      result = await Pass.exec(["insert", "-f", path], {
-        stdIn: generateMemorablePassword(),
-      });
-    } else {
-      result = await Pass.exec(["generate", "-f", path]);
-    }
-    if (result.isError()) {
-      return Err(mapWriteError(result.error, path));
-    }
-
-    return Ok({ success: true, path });
-  }
-
-  /**
    * Removes a password entry from the store.
    * Uses `pass rm -rf` to handle both files and directories.
    */
@@ -225,11 +194,17 @@ class Entries {
   /**
    * Copies a password entry from one path to another.
    * Both oldPath and newPath are store-relative.
+   *
+   * Delegates to `pass cp` so the secret never round-trips through app
+   * memory and directory copies work. Because pass runs without a tty,
+   * its own `-i` guard degrades to `-f` (see cmd_copy_move in pass.sh),
+   * so clobber protection is enforced here via an explicit existence
+   * pre-check — same no-clobber contract as `insert`.
    */
   static async copy(
     oldPath: string,
     newPath: string
-  ): Promise<Result<MutationResult, EntriesReadError | EntriesWriteError>> {
+  ): Promise<Result<MutationResult, EntriesWriteError>> {
     if (newPath === oldPath || isInside(newPath, oldPath)) {
       return Err(
         new EntriesWriteError(
@@ -240,15 +215,45 @@ class Entries {
       );
     }
 
-    const showResult = await Entries.show(oldPath);
-    if (showResult.isError()) return Err(showResult.error);
+    const storePath = Pass.storePath;
+    if (!storePath) {
+      return Err(
+        new EntriesWriteError(newPath, "failed", "No active store configured")
+      );
+    }
 
-    const insertResult = await Entries.insert({
-      path: newPath,
-      content: showResult.ok.raw,
-      force: false,
-    });
-    if (insertResult.isError()) return Err(insertResult.error);
+    const destFile = await Fs.join(storePath, `${newPath}.gpg`);
+    if (destFile.isError()) {
+      return Err(
+        new EntriesWriteError(
+          newPath,
+          "failed",
+          `Failed to resolve destination: ${destFile.error.message}`,
+          destFile.error
+        )
+      );
+    }
+    const exists = await Fs.exists(destFile.ok);
+    if (exists.isError()) {
+      return Err(
+        new EntriesWriteError(
+          newPath,
+          "failed",
+          `Failed to check destination: ${exists.error.message}`,
+          exists.error
+        )
+      );
+    }
+    if (exists.ok) {
+      return Err(
+        new EntriesWriteError(newPath, "exists", `Entry already exists: ${newPath}`)
+      );
+    }
+
+    const result = await Pass.exec(["cp", oldPath, newPath]);
+    if (result.isError()) {
+      return Err(mapWriteError(result.error, newPath));
+    }
 
     return Ok({ success: true, path: newPath, oldPath });
   }

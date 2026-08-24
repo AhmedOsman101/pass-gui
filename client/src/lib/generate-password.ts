@@ -49,8 +49,11 @@ export function generatePassword(length: number, charset: string): string {
 
 /**
  * Expands POSIX bracket expressions into a flat character string.
- * Supports `[[:punct:]]`, `[[:alnum:]]`, `[[:alpha:]]`, `[[:digit:]]`, `[[:space:]]`.
- * Falls back to literal characters for unrecognized brackets.
+ * Accepts both `[[:punct:]]` (legacy) and `[:punct:]` (the pass
+ * `PASSWORD_STORE_CHARACTER_SET` format used by generation config).
+ * Supported classes: `[[:punct:]]`, `[[:alnum:]]`, `[[:alpha:]]`,
+ * `[[:digit:]]`, `[[:space:]]`. Falls back to literal characters for
+ * unrecognized brackets.
  */
 function expandCharSet(set: string): string {
   const posixClasses: Record<string, string> = {
@@ -65,17 +68,12 @@ function expandCharSet(set: string): string {
   let result = "";
   let i = 0;
   while (i < set.length) {
-    if (set[i] === "[" && set[i + 1] === "[") {
-      const end = set.indexOf("]]", i);
-      if (end !== -1) {
-        const className = set.slice(i, end + 2);
-        const expanded = posixClasses[className];
-        if (expanded) {
-          result += expanded;
-          i = end + 2;
-          continue;
-        }
-      }
+    const match = /^\[\[?:(\w+):\]?\]/.exec(set.slice(i));
+    const expanded = match ? posixClasses[`[[:${match[1]}:]]`] : undefined;
+    if (match && expanded) {
+      result += expanded;
+      i += match[0].length;
+      continue;
     }
     result += set[i] as string;
     i++;
