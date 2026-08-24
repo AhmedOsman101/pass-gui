@@ -55,7 +55,7 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 - `readiness.ts`: keyring-listing failure misreported as ".gpg-id parse error"; `GPG_VERSION_TOO_OLD` issue exists but no check ever runs it (B07).
 - `store.ts` recipes: partial-failure states (init succeeded, config write failed) leave initialized-but-unregistered stores — acceptable, document the ceiling (B08).
 - ~~`active-store.ts`: `switchStore` persists config before applying → broken name persisted if apply fails (B08).~~ ✅ Fixed: apply first, persist second; persist failure now reports "applied but failed to save" instead of silently diverging.
-- `AddStoreWizard.vue`: GPG-key step mandatory even when adding an existing store where the selection is discarded (B08).
+- ~~`AddStoreWizard.vue`: GPG-key step mandatory even when adding an existing store where the selection is discarded (B08).~~ ✅ Fixed: `canCreate` no longer requires a key when `isExistingStore`; the third step becomes a confirmation ("added as-is, no key selection needed") with matching badge/button/spinner copy.
 - `main.ts` + `neutralino.ts`: `Neu.init()` throws (only non-Result service method) → unhandled top-level rejection path; app mounts before init completes (B10).
 - `AppSidebar.vue`: filesystem-watcher/polling infra (setInterval + service imports) embedded in a component; sidebar never renders `treeStore.error` so failed loads look like an empty store (B04).
 - `generate-password.ts`: modulo bias in `secureRandomInt` (negligible magnitude, wrong place to be approximate in a password manager) (B05).
