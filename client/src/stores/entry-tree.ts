@@ -143,10 +143,16 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
     await refresh();
     if (nodeType !== "DIRECTORY") {
       await selectEntry(newPath, true);
-    } else if (selectedPath.value?.startsWith(`${oldPath}/`)) {
-      selectedPath.value = selectedPath.value.replace(oldPath, newPath);
-    } else if (selectedPath.value === oldPath) {
-      selectedPath.value = newPath;
+    } else {
+      // Segment-boundary aware rewrite: exact match, or selection strictly
+      // inside the moved directory. Slice (not replace) so `$` in newPath
+      // is never interpreted as a replacement pattern.
+      const sel = selectedPath.value;
+      if (sel === oldPath) {
+        selectedPath.value = newPath;
+      } else if (sel?.startsWith(`${oldPath}/`)) {
+        selectedPath.value = `${newPath}${sel.slice(oldPath.length)}`;
+      }
     }
     return result;
   }

@@ -13,7 +13,12 @@ import type {
 import { Pass } from "./pass";
 
 /** Why an entry operation failed, derived from `pass` stderr content. */
-type EntriesFailureKind = "not-found" | "exists" | "parse" | "failed";
+type EntriesFailureKind =
+  | "not-found"
+  | "exists"
+  | "parse"
+  | "failed"
+  | "invalid-destination";
 /**
  * Shared base for entry operation errors. `kind` preserves the
  * stderr-derived distinction (missing entry vs parse failure vs generic
@@ -96,6 +101,14 @@ function mapWriteError(
     }
   }
   return new EntriesWriteError(path, "failed", err.message, err);
+}
+
+/**
+ * True when `path` is strictly inside `dir` (segment-boundary aware:
+ * `"a2"` is NOT inside `"a"`, but `"a/b"` is).
+ */
+function isInside(path: string, dir: string): boolean {
+  return path.startsWith(`${dir}/`);
 }
 
 /**
@@ -217,6 +230,16 @@ class Entries {
     oldPath: string,
     newPath: string
   ): Promise<Result<MutationResult, EntriesReadError | EntriesWriteError>> {
+    if (newPath === oldPath || isInside(newPath, oldPath)) {
+      return Err(
+        new EntriesWriteError(
+          oldPath,
+          "invalid-destination",
+          `Destination "${newPath}" is inside or equal to source "${oldPath}"`
+        )
+      );
+    }
+
     const showResult = await Entries.show(oldPath);
     if (showResult.isError()) return Err(showResult.error);
 
@@ -238,6 +261,16 @@ class Entries {
     oldPath: string,
     newPath: string
   ): Promise<Result<MutationResult, EntriesWriteError>> {
+    if (newPath === oldPath || isInside(newPath, oldPath)) {
+      return Err(
+        new EntriesWriteError(
+          oldPath,
+          "invalid-destination",
+          `Destination "${newPath}" is inside or equal to source "${oldPath}"`
+        )
+      );
+    }
+
     const result = await Pass.exec(["mv", oldPath, newPath]);
     if (result.isError()) {
       return Err(mapWriteError(result.error, newPath));
