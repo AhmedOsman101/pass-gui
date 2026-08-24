@@ -88,19 +88,24 @@ const useActiveStoreStore = defineStore("active-store", () => {
     isValidating.value = true;
     error.value = null;
 
-    let result: Result<void, Error>;
-    const setResult = await Config.setValue(
-      "core",
-      "active_store",
-      newStoreName
-    );
-    if (setResult.isError()) {
-      result = Err(
-        new Error(`Failed to switch store: ${setResult.error.message}`)
+    // Apply first, persist second: a failed apply must never leave a
+    // broken store name persisted for the next launch.
+    let result: Result<void, Error> = await applyStore(newStoreName);
+    if (result.isOk()) {
+      const setResult = await Config.setValue(
+        "core",
+        "active_store",
+        newStoreName
       );
-    } else {
-      result = await applyStore(newStoreName);
-      if (result.isOk()) storeName.value = newStoreName;
+      if (setResult.isError()) {
+        result = Err(
+          new Error(
+            `Applied "${newStoreName}" but failed to save config: ${setResult.error.message}`
+          )
+        );
+      } else {
+        storeName.value = newStoreName;
+      }
     }
 
     if (result.isError()) error.value = result.error;
