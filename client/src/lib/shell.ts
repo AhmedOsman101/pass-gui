@@ -1,5 +1,4 @@
 import { ErrFromText, Ok, type Result } from "lib-result";
-import { Fs } from "@/services/filesystem";
 import type { Stringifiable } from "@/types";
 
 type OsType = "posix" | "windows";
@@ -116,23 +115,19 @@ function validateArgument(arg: string): Result<string> {
 }
 
 /**
- * Checks if a path contains directory traversal patterns (../).
- * These could be used to escape the password store directory.
- * Handles both POSIX (/) and Windows (\) path separators.
+ * Checks if a path contains directory traversal patterns — verbatim port
+ * of pass's own `check_sneaky_paths` (docs/external-resources/pass/pass.sh):
+ * purely lexical on the raw string. OS normalization is deliberately NOT
+ * used: it can silently resolve a traversal away (hiding it from this
+ * check), and a normalization failure must never fail open on a security
+ * boundary.
  */
-async function checkSneakyPath(path: string): Promise<boolean> {
-  const normalizedResult = await Fs.getNormalizedPath(path);
-  if (normalizedResult.isError()) return false;
-
-  const normalized = normalizedResult.ok
-    .replace(/[/\\]+/g, "/")
-    .replace(/\/+$/, "");
-
+function checkSneakyPath(path: string): boolean {
   return (
-    normalized.includes("/..") ||
-    normalized.endsWith("/..") ||
-    normalized === ".." ||
-    normalized.startsWith("..")
+    path.endsWith("/..") ||
+    path.startsWith("../") ||
+    path.includes("/../") ||
+    path === ".."
   );
 }
 
@@ -146,8 +141,7 @@ async function validatePath(path: Stringifiable): Promise<Result<string>> {
   const invalidChars = validateArgument(strPath);
   if (invalidChars.isError()) return invalidChars;
 
-  const isSneaky = await checkSneakyPath(strPath);
-  if (isSneaky) {
+  if (checkSneakyPath(strPath)) {
     return ErrFromText(
       "You've attempted to pass a sneaky path to pass. Go home."
     );
