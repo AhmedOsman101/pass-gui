@@ -200,7 +200,9 @@ class FsStatError extends Error {
 
 /**
  * Filesystem abstraction layer wrapping NeutralinoJS filesystem operations.
- * All methods return Result types for safe error handling.
+ * Almost all methods return Result types for safe error handling —
+ * `join`/`relativePath` still return bare promises (pending migration,
+ * see review design issue on filesystem.ts).
  */
 class Filesystem {
   private static async resolvePath(path: string): Promise<Result<string>> {

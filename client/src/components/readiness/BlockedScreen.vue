@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { RouterLink } from "vue-router";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useReadinessStore } from "@/stores/readiness";
 import IssueCard from "./IssueCard.vue";
@@ -45,7 +46,9 @@ async function retry(): Promise<void> {
         <p class="text-sm text-destructive">{{ readiness.error?.message }}</p>
       </div>
 
-      <div class="text-center">
+      <!-- Retry can only help when a store is configured; otherwise point
+           at Settings — re-polling an unconfigured store is a dead button. -->
+      <div v-if="activeStore.storePath" class="text-center">
         <button
           class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
           @click="retry"
@@ -53,6 +56,15 @@ async function retry(): Promise<void> {
           Retry
         </button>
       </div>
+      <p v-else class="text-center text-sm text-muted-foreground">
+        No store configured — add one in
+        <RouterLink
+          to="/settings"
+          class="underline underline-offset-4 hover:text-foreground"
+        >
+          Settings
+        </RouterLink>
+      </p>
     </div>
   </div>
 </template>
