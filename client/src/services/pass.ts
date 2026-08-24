@@ -58,8 +58,18 @@ class PassService {
    */
   async init(): Promise<Result<boolean>> {
     const envStoreDir = await Neu.getEnv("PASSWORD_STORE_DIR");
-    this.storePath =
-      envStoreDir || (await Fs.join(Neu.HOME_DIR, ".password-store"));
+    if (envStoreDir) {
+      this.storePath = envStoreDir;
+    } else {
+      const joined = await Fs.join(Neu.HOME_DIR, ".password-store");
+      if (joined.isError()) {
+        await Logger.error(
+          `Pass.init(): failed to resolve default store path: ${joined.error.message}`
+        );
+        return Err(joined.error);
+      }
+      this.storePath = joined.ok;
+    }
 
     const result = await this.checkInitialized(this.storePath);
     if (result.isError()) {
@@ -79,8 +89,9 @@ class PassService {
    * Checks if a password store is properly initialized by looking for .gpg-id.
    */
   private async checkInitialized(storePath: string): Promise<Result<boolean>> {
-    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
-    return await Fs.exists(gpgIdPath);
+    const joined = await Fs.join(storePath, ".gpg-id");
+    if (joined.isError()) return Err(joined.error);
+    return await Fs.exists(joined.ok);
   }
 
   /**

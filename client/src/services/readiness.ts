@@ -192,13 +192,26 @@ class Readiness {
       };
     }
 
-    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
-    const gpgIdExists = await Fs.exists(gpgIdPath);
+    const gpgIdJoin = await Fs.join(storePath, ".gpg-id");
+    if (gpgIdJoin.isError()) {
+      return {
+        ...OK,
+        state: "STORE_SCAN_FAILED",
+        issues: [
+          issue("STORE_SCAN_FAILED", {
+            path: storePath,
+            reason: gpgIdJoin.error.message,
+          }),
+        ],
+        stop: true,
+      };
+    }
+    const gpgIdExists = await Fs.exists(gpgIdJoin.ok);
     if (gpgIdExists.isError() || !gpgIdExists.ok) {
       return {
         ...OK,
         state: "STORE_NO_GPG_ID",
-        issues: [issue("STORE_GPG_ID_MISSING", { path: gpgIdPath })],
+        issues: [issue("STORE_GPG_ID_MISSING", { path: gpgIdJoin.ok })],
         stop: true,
       };
     }
@@ -208,7 +221,7 @@ class Readiness {
       return {
         ...OK,
         state: "STORE_GPG_ID_EMPTY",
-        issues: [issue("STORE_GPG_ID_EMPTY", { path: gpgIdPath })],
+        issues: [issue("STORE_GPG_ID_EMPTY", { path: gpgIdJoin.ok })],
         stop: true,
       };
     }
@@ -225,7 +238,7 @@ class Readiness {
         state: "STORE_GPG_ID_KEY_MISSING",
         issues: [
           issue("STORE_GPG_ID_PARSE_ERROR", {
-            path: gpgIdPath,
+            path: gpgIdJoin.ok,
             parseError: verification.error,
           }),
         ],

@@ -64,8 +64,9 @@ class StoreValidation {
     }
 
     // 2. Check if .gpg-id exists (initialized store)
-    const gpgIdPath = await Fs.join(storePath, ".gpg-id");
-    const gpgIdExists = await Fs.isFile(gpgIdPath);
+    const gpgIdJoin = await Fs.join(storePath, ".gpg-id");
+    if (gpgIdJoin.isError()) return Err(gpgIdJoin.error);
+    const gpgIdExists = await Fs.isFile(gpgIdJoin.ok);
     if (gpgIdExists.isError()) return Err(gpgIdExists.error);
 
     if (!gpgIdExists.ok) {
@@ -103,9 +104,10 @@ class StoreValidation {
   static async parseGpgId(
     storePath: string
   ): Promise<Result<ParsedRecipient[]>> {
-    const path = await Fs.join(storePath, ".gpg-id");
+    const joinResult = await Fs.join(storePath, ".gpg-id");
+    if (joinResult.isError()) return Err(joinResult.error);
 
-    const readResult = await Fs.readFile(path);
+    const readResult = await Fs.readFile(joinResult.ok);
     if (readResult.isError()) return Err(readResult.error);
 
     const lines = readResult.ok

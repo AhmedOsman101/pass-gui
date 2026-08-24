@@ -128,7 +128,13 @@ function makeIgnoreFilter(
   return async (absolutePath: string): Promise<boolean> => {
     let rel = cache.get(absolutePath);
     if (rel === undefined) {
-      rel = await Filesystem.relativePath(absolutePath, baseDir);
+      const relResult = await Filesystem.relativePath(absolutePath, baseDir);
+      if (relResult.isError()) {
+        // ponytail: fail open (keep) — an unresolvable path can't be
+        // proven to match an ignore pattern; revisit if filtering lies.
+        return true;
+      }
+      rel = relResult.ok;
       cache.set(absolutePath, rel);
     }
     const normalized = rel.startsWith("/") ? rel.slice(1) : rel;
@@ -200,9 +206,7 @@ class FsStatError extends Error {
 
 /**
  * Filesystem abstraction layer wrapping NeutralinoJS filesystem operations.
- * Almost all methods return Result types for safe error handling —
- * `join`/`relativePath` still return bare promises (pending migration,
- * see review design issue on filesystem.ts).
+ * All methods return Result types for safe error handling.
  */
 class Filesystem {
   private static async resolvePath(path: string): Promise<Result<string>> {
@@ -386,9 +390,15 @@ class Filesystem {
   /**
    * Joins multiple path segments into a single normalized path.
    * Uses the OS-specific path separator.
+   *
+   * Can fail: the C++ handler validates args and runs
+   * `std::filesystem::weakly_canonical`, which throws on underlying
+   * OS errors — the JS binding surfaces any of that as a rejection.
    */
-  static async join(...paths: string[]): Promise<string> {
-    return await filesystem.getJoinedPath(...paths);
+  static async join(...paths: string[]): Promise<Result<string>> {
+    return await wrapAsync(
+      async () => await filesystem.getJoinedPath(...paths)
+    );
   }
 
   /**
@@ -407,12 +417,18 @@ class Filesystem {
   /**
    * Returns a relative path from `base` to `absolutePath`.
    * Delegates to NeutralinoJS `filesystem.getRelativePath`.
+   *
+   * Can fail: the C++ handler validates args and runs
+   * `std::filesystem::relative`, which throws on underlying OS
+   * errors — the JS binding surfaces any of that as a rejection.
    */
   static async relativePath(
     absolutePath: string,
     base: string
-  ): Promise<string> {
-    return await filesystem.getRelativePath(absolutePath, base);
+  ): Promise<Result<string>> {
+    return await wrapAsync(
+      async () => await filesystem.getRelativePath(absolutePath, base)
+    );
   }
 
   /**

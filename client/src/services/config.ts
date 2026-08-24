@@ -43,7 +43,7 @@ class Config {
     const configDir = await Path.getKnownPath("config");
     if (configDir.isError()) return Err(configDir.error);
 
-    return Ok(await Fs.join(configDir.ok, "pass-gui", "config.toml"));
+    return await Fs.join(configDir.ok, "pass-gui", "config.toml");
   }
 
   /**

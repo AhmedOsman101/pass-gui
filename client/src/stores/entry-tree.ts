@@ -190,9 +190,17 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
       return Err(new Error("No active store"));
     }
 
-    const fullPath = folderPath
-      ? await Fs.join(storeDir, folderPath)
-      : storeDir;
+    let fullPath: string;
+    if (folderPath) {
+      const joined = await Fs.join(storeDir, folderPath);
+      if (joined.isError()) {
+        error.value = joined.error;
+        return Err(joined.error);
+      }
+      fullPath = joined.ok;
+    } else {
+      fullPath = storeDir;
+    }
 
     const result = await Fs.mkdir(fullPath);
     if (result.isError()) {
@@ -239,9 +247,23 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
       );
     }
     const fileName = parts.ok.filename;
-    const destPath = destinationDir
-      ? await Fs.join(destinationDir, fileName)
-      : fileName;
+    let destPath: string;
+    if (destinationDir) {
+      const joined = await Fs.join(destinationDir, fileName);
+      if (joined.isError()) {
+        return Err(
+          new EntriesReadError(
+            sourcePath,
+            "failed",
+            `Failed to resolve destination path: ${joined.error.message}`,
+            joined.error
+          )
+        );
+      }
+      destPath = joined.ok;
+    } else {
+      destPath = fileName;
+    }
 
     const result =
       mode === "copy"
