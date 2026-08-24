@@ -29,8 +29,6 @@ import { useNotifyResult } from "@/composables/use-notify-result";
 import { Logger } from "@/lib/logger";
 import type { SortMode } from "@/lib/tree-state";
 import { Fs } from "@/services/filesystem";
-import { Pass } from "@/services/pass";
-import { Watcher } from "@/services/watcher";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntryFormStore } from "@/stores/entry-form";
 import { useEntryTreeStore } from "@/stores/entry-tree";
@@ -46,7 +44,7 @@ import {
 } from "@lucide/vue";
 import { useHotkey } from "@tanstack/vue-hotkeys";
 import { refDebounced } from "@vueuse/core";
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 const props = defineProps<SidebarProps>();
@@ -148,28 +146,6 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   return undefined;
 }
 
-// Polls the active store's `.gpg-id`: when it changes on disk (recipients
-// edited externally), refreshes the entry tree every 2s. Re-runs on store switch.
-let watchTimer: ReturnType<typeof setInterval> | null = null;
-
-async function startStoreWatcher(): Promise<void> {
-  if (Pass.storePath) {
-    await Watcher.watch("store", Pass.storePath, ".gpg-id");
-  }
-  if (watchTimer) clearInterval(watchTimer);
-  watchTimer = setInterval(() => {
-    if (Watcher.hasChanged("store")) {
-      treeStore.refresh();
-    }
-  }, 2000);
-}
-
-watch(() => Pass.storePath, startStoreWatcher, { immediate: true });
-
-onUnmounted(() => {
-  if (watchTimer) clearInterval(watchTimer);
-  Watcher.unwatch("store");
-});
 </script>
 
 <template>

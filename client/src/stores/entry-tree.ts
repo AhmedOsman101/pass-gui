@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "lib-result";
 import { defineStore } from "pinia";
-import { computed, readonly, ref } from "vue";
+import { computed, readonly, ref, watch } from "vue";
+import { Logger } from "@/lib/logger";
 import type { SortMode } from "@/lib/tree-state";
 import {
   Entries,
@@ -10,6 +11,8 @@ import {
 import type { FsMkdirError } from "@/services/filesystem";
 import { Fs } from "@/services/filesystem";
 import { Pass } from "@/services/pass";
+import { Watcher } from "@/services/watcher";
+import { useActiveStoreStore } from "@/stores/active-store";
 import type { EntryDetail, EntryTree, MutationResult } from "@/types/entries";
 
 /**
@@ -288,6 +291,43 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
   function setSortMode(mode: SortMode): void {
     sortMode.value = mode;
   }
+
+  // --- External-change polling ---
+
+  // Polls the active store's `.gpg-id`: when it changes on disk (recipients
+  // edited externally), refreshes the tree every 2s. Lives in the store so
+  // it is an app-scoped singleton — re-arming clears the previous timer,
+  // so repeated triggers (store switches, remounts) never double-poll.
+  let watchTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function startStoreWatcher(): Promise<void> {
+    const storeDir = Pass.storePath;
+    if (storeDir) {
+      const armed = await Watcher.watch("store", storeDir, ".gpg-id");
+      if (armed.isError()) {
+        await Logger.error(
+          `entry-tree.startStoreWatcher: arming failed: ${armed.error.message}`
+        );
+      }
+    }
+    if (watchTimer) clearInterval(watchTimer);
+    watchTimer = setInterval(() => {
+      if (Watcher.hasChanged("store")) {
+        void refresh();
+      }
+    }, 2000);
+  }
+
+  // Re-arm on active-store switches. Keyed off the reactive ref —
+  // Pass.storePath is a plain class property and would never re-fire.
+  const activeStore = useActiveStoreStore();
+  watch(
+    () => activeStore.storePath,
+    () => {
+      void startStoreWatcher();
+    },
+    { immediate: true }
+  );
 
   return {
     tree,
