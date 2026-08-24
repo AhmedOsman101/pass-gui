@@ -1,13 +1,19 @@
 import { WORD_LIST } from "./wordlist";
 
 /**
- * Cryptographically secure random integer in [0, max).
+ * Cryptographically secure random integer in [0, max), unbiased.
  * Uses `crypto.getRandomValues` which is available in both
  * browser and NeutralinoJS contexts.
+ *
+ * Rejection-samples above the largest multiple of `max` in u32 range,
+ * eliminating modulo bias entirely.
  */
 function secureRandomInt(max: number): number {
+  const limit = Math.floor(0x1_00_00_00_00 / max) * max;
   const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
+  do {
+    crypto.getRandomValues(array);
+  } while ((array[0] as number) >= limit);
   return (array[0] as number) % max;
 }
 

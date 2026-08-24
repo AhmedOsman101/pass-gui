@@ -58,7 +58,7 @@ Verdict distribution: 24 Clean · 20 Minor issues · 12 Needs fixes · 0 data-lo
 - ~~`AddStoreWizard.vue`: GPG-key step mandatory even when adding an existing store where the selection is discarded (B08).~~ ✅ Fixed: `canCreate` no longer requires a key when `isExistingStore`; the third step becomes a confirmation ("added as-is, no key selection needed") with matching badge/button/spinner copy.
 - `main.ts` + `neutralino.ts`: `Neu.init()` throws (only non-Result service method) → unhandled top-level rejection path; app mounts before init completes (B10).
 - `AppSidebar.vue`: filesystem-watcher/polling infra (setInterval + service imports) embedded in a component; sidebar never renders `treeStore.error` so failed loads look like an empty store (B04).
-- `generate-password.ts`: modulo bias in `secureRandomInt` (negligible magnitude, wrong place to be approximate in a password manager) (B05).
+- ~~`generate-password.ts`: modulo bias in `secureRandomInt` (negligible magnitude, wrong place to be approximate in a password manager) (B05).~~ ✅ Fixed: rejection sampling above the largest multiple of `max` in u32 range — unbiased for every alphabet in use, 3 extra lines.
 
 ## Minor issues (collapsed lists)
 
