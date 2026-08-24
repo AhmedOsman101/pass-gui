@@ -89,7 +89,9 @@ const canAdvancePath = computed(
   () => storePath.value.trim() !== "" && !pathError.value,
 );
 const canCreate = computed(
-  () => selectedKeyId.value !== "" && !isCreating.value,
+  () =>
+    // Existing stores are added as-is — no key selection to gate on.
+    (isExistingStore.value || selectedKeyId.value !== "") && !isCreating.value,
 );
 
 /**
@@ -253,7 +255,7 @@ function resetWizard(): void {
           :variant="
             step === 'gpg' || step === 'creating' ? 'default' : 'outline'
           "
-          >3. GPG Key</Badge
+          >{{ isExistingStore ? "3. Confirm" : "3. GPG Key" }}</Badge
         >
       </div>
 
@@ -310,48 +312,58 @@ function resetWizard(): void {
         </p>
       </div>
 
-      <!-- Step: GPG Key -->
+      <!-- Step: GPG Key (create) / Confirm (existing store) -->
       <div v-else-if="step === 'gpg'" class="flex flex-col gap-3">
         <p v-if="creationError" class="text-xs text-destructive">
           {{ creationError?.message }}
         </p>
-        <Label>Encryption Key</Label>
-        <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
-          <Loader2 class="size-4 animate-spin" />
-          <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
-        </div>
-        <div
-          v-else-if="keysLoadError"
-          class="py-4 text-sm text-destructive"
-        >
-          Failed to load GPG keys: {{ keysLoadError }}
-        </div>
-        <div
-          v-else-if="secretKeys.length === 0"
-          class="py-4 text-sm text-muted-foreground"
-        >
-          No GPG secret keys found. Create one with
-          <code class="font-mono">gpg --gen-key</code> first.
-        </div>
-        <Select v-else v-model="selectedKeyId">
-          <SelectTrigger class="w-full">
-            <SelectValue placeholder="Select a GPG key" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem
-                v-for="key in secretKeys"
-                :key="key.keyId"
-                :value="key.keyId"
-              >
-                {{ keyLabel(key) }}
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <p class="text-xs text-muted-foreground">
-          This key will encrypt all passwords in the new store.
-        </p>
+        <template v-if="isExistingStore">
+          <Label>Confirm</Label>
+          <p class="text-sm text-muted-foreground">
+            Existing store detected at
+            <code class="font-mono">{{ storePath }}</code> — it will be added
+            as-is without re-initialization. No key selection needed.
+          </p>
+        </template>
+        <template v-else>
+          <Label>Encryption Key</Label>
+          <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
+            <Loader2 class="size-4 animate-spin" />
+            <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
+          </div>
+          <div
+            v-else-if="keysLoadError"
+            class="py-4 text-sm text-destructive"
+          >
+            Failed to load GPG keys: {{ keysLoadError }}
+          </div>
+          <div
+            v-else-if="secretKeys.length === 0"
+            class="py-4 text-sm text-muted-foreground"
+          >
+            No GPG secret keys found. Create one with
+            <code class="font-mono">gpg --gen-key</code> first.
+          </div>
+          <Select v-else v-model="selectedKeyId">
+            <SelectTrigger class="w-full">
+              <SelectValue placeholder="Select a GPG key" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem
+                  v-for="key in secretKeys"
+                  :key="key.keyId"
+                  :value="key.keyId"
+                >
+                  {{ keyLabel(key) }}
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <p class="text-xs text-muted-foreground">
+            This key will encrypt all passwords in the new store.
+          </p>
+        </template>
       </div>
 
       <!-- Step: Creating -->
@@ -360,7 +372,9 @@ function resetWizard(): void {
         class="flex flex-col items-center gap-3 py-6"
       >
         <Loader2 class="size-8 animate-spin text-muted-foreground" />
-        <span class="text-sm text-muted-foreground">Creating store...</span>
+        <span class="text-sm text-muted-foreground">{{
+          isExistingStore ? "Adding store..." : "Creating store..."
+        }}</span>
         <p v-if="creationError" class="text-xs text-destructive">
           {{ creationError?.message }}
         </p>
@@ -386,7 +400,7 @@ function resetWizard(): void {
           :disabled="!canCreate"
           @click="createStore"
         >
-          Create Store
+          {{ isExistingStore ? "Add Store" : "Create Store" }}
         </Button>
       </DialogFooter>
     </DialogContent>
