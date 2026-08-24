@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p typecheck \"build-only {@}\" --",
+    "build": "pnpm typecheck && pnpm build-only",
     "preview": "vite preview",
     "build-only": "vite build",
     "test:unit": "vitest run",
