@@ -1,30 +1,61 @@
 <script setup lang="ts">
-import { useAsyncState } from "@vueuse/core";
-import { type Result } from "lib-result";
+import { ref } from "vue";
+import toml from "@/lib/toml";
 
-// Run all async operations in parallel
-const {
-  state: tests,
-  isLoading,
-  error,
-} = useAsyncState(
-  () =>
-    Promise.all([ ]),
-  [] as Result<unknown>[], // initial empty array
-);
+/**
+ * Empirical probe for open question #5: what does j-toml `stringify`
+ * do with `undefined` values (and `null`)? Loud throw (surfaced as
+ * Result Err by our wrapper) vs silent corruption.
+ */
+type Case = {
+  name: string;
+  input: string;
+  outcome: string;
+};
+
+const cases = ref<Case[]>([]);
+
+function record(name: string, input: object): void {
+  const result = toml.stringify(input);
+  const outcome = result.isOk()
+    ? `OK →\n${result.ok}`
+    : `ERR → ${result.error.message}`;
+  cases.value.push({ name, input: JSON.stringify(input), outcome });
+}
+
+function run(): void {
+  cases.value = [];
+  // Control: plain serializable object must succeed.
+  record("control: plain values", { core: { active_store: "default" } });
+  // The real-world shape: optional key cleared via `?? undefined`
+  // (e.g. Store.set passing gnupg_home: undefined).
+  record(
+    "section with undefined optional key",
+    { gpg: { opts: [], signing_key: undefined } }
+  );
+  // Top-level undefined value.
+  record("top-level undefined value", { a: "x", b: undefined });
+  // null for comparison (j-toml docs: throws unless xOption.null enabled).
+  record("null value", { a: null });
+}
+
+run();
 </script>
 
 <template>
-  <main>
-    <h1>Test Page</h1>
-    <div v-if="isLoading">Running tests...</div>
-    <div v-else-if="error">Error: {{ error }}</div>
+  <main class="p-6 space-y-6">
+    <h1 class="text-2xl font-semibold">Test Page</h1>
+    <p class="text-sm text-muted-foreground">
+      j-toml stringify vs undefined/null — open question #5
+    </p>
 
-    <template v-else>
-      <div v-for="(test, index) in tests" :key="index" class="mb-10">
-        <p class="text-3xl">Test {{ index + 1 }}:</p>
-        <pre>{{ test?.ok ?? test?.error }}</pre>
-      </div>
-    </template>
+    <div v-for="(testCase, index) in cases" :key="index" class="space-y-1">
+      <p class="font-medium">{{ index + 1 }}. {{ testCase.name }}</p>
+      <p class="text-xs text-muted-foreground font-mono">
+        input: {{ testCase.input }}
+      </p>
+      <pre
+        class="text-xs bg-muted rounded p-2 whitespace-pre-wrap">{{ testCase.outcome }}</pre>
+    </div>
   </main>
 </template>
