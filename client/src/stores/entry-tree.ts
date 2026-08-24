@@ -294,16 +294,19 @@ const useEntryTreeStore = defineStore("entry-tree", () => {
 
   // --- External-change polling ---
 
-  // Polls the active store's `.gpg-id`: when it changes on disk (recipients
-  // edited externally), refreshes the tree every 2s. Lives in the store so
-  // it is an app-scoped singleton — re-arming clears the previous timer,
-  // so repeated triggers (store switches, remounts) never double-poll.
+  // Watches the active store directory recursively: any file change (add,
+  // edit, delete — .git internals excluded, that's pass-git noise) flags a
+  // refresh, applied by the 2s poll below. Lives in the store so it is an
+  // app-scoped singleton — re-arming clears the previous timer, so repeated
+  // triggers (store switches, remounts) never double-poll.
   let watchTimer: ReturnType<typeof setInterval> | null = null;
 
   async function startStoreWatcher(): Promise<void> {
     const storeDir = Pass.storePath;
     if (storeDir) {
-      const armed = await Watcher.watch("store", storeDir, ".gpg-id");
+      const armed = await Watcher.watch("store", storeDir, null, ev =>
+        /(?:^|\/)\.git(?:\/|$)/.test(ev.dir)
+      );
       if (armed.isError()) {
         await Logger.error(
           `entry-tree.startStoreWatcher: arming failed: ${armed.error.message}`

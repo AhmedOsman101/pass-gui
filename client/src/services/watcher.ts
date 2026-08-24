@@ -4,7 +4,7 @@ import { Logger } from "@/lib/logger";
 
 type WatcherEntry = {
   watcherId: number;
-  filename: string;
+  filename: string | null;
   changed: boolean;
   handler: (ev: CustomEvent) => void;
 };
@@ -22,17 +22,21 @@ class Watcher {
   private static watchers = new Map<string, WatcherEntry>();
 
   /**
-   * Starts watching a directory for changes to a specific file.
+   * Starts watching a directory (recursively) for changes.
    * If a watcher with the same ID already exists, it is a no-op.
    *
-   * @param id - Unique identifier for this watcher (e.g. "config", "store:default")
+   * @param id - Unique identifier for this watcher (e.g. "config", "store")
    * @param dirPath - Absolute directory path to watch
-   * @param filename - Only events matching this filename trigger the changed flag
+   * @param filename - Only events matching this filename trigger the changed
+   *   flag; `null` matches every file in the tree
+   * @param ignore - Optional predicate; when it returns true for an event
+   *   (checked against the event's parent `dir`), the flag is not set
    */
   static async watch(
     id: string,
     dirPath: string,
-    filename: string
+    filename: string | null,
+    ignore?: (ev: { dir: string; filename: string }) => boolean
   ): Promise<Result<void>> {
     if (Watcher.watchers.has(id)) return Ok(undefined);
 
@@ -54,11 +58,19 @@ class Watcher {
       handler: (ev: CustomEvent) => {
         const detail = ev.detail as {
           id: number;
+          dir?: string;
           filename?: string;
         };
-        if (detail.id === watcherId && detail.filename === filename) {
-          entry.changed = true;
+        if (detail.id !== watcherId) return;
+        if (filename !== null && detail.filename !== filename) return;
+        if (
+          ignore &&
+          detail.dir !== undefined &&
+          ignore({ dir: detail.dir, filename: detail.filename ?? "" })
+        ) {
+          return;
         }
+        entry.changed = true;
       },
     };
 
