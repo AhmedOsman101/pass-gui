@@ -6,7 +6,7 @@ Use `mask` task runner for running tasks. Never use `pnpm` or `podman` directly 
 
 `docs/external-resources/` contains vendored documentation and source for every
 third-party dependency: Neutralino (C++ **and** JS source), pass (man page +
-shell source), GnuPG man pages, j-toml, vitest, playwright, tanstack-hotkey.
+shell source), GnuPG man pages, j-toml, tanstack-hotkey.
 
 - **Consult it BEFORE implementing anything that touches a third-party API.**
   Check whether the facility you're about to write already exists
@@ -31,3 +31,18 @@ git commit --amend --no-edit --no-verify
 ```
 
 (Remember to stage them first.)
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via `gh`; bodies staged locally under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical triage roles + wayfinder ticket types, used as-is. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` glossary + `docs/adr/`. See `docs/agents/domain.md`.
+

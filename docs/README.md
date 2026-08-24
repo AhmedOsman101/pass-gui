@@ -5,44 +5,34 @@
 ```
 docs/
 ├── README.md            <- this file
-├── archive/             <- completed or historical documents
-├── roadmap/             <- strategic direction (read first, in order)
-├── specs/               <- atomic specifications per phase
-├── plans/               <- execution plans per phase
-└── refs/                <- external reference material
+├── agents/              # Skill conventions: issue tracker, triage labels, domain docs
+├── adr/                 # Architecture decision records (created lazily)
+├── context.md           # Project/architecture overview (verify claims against code)
+├── external-resources/  # Vendored third-party docs+source (GITIGNORED)
+├── grilling/            # Decision logs (Q&A) per feature, dated
+├── plans/               # Execution plans per feature, dated
+└── specs/               # Stable scoping specs per feature, dated
 ```
 
-## How To Use These Docs
+Related files outside `docs/`:
 
-### 1. Start with the roadmap
+- `CONTEXT.md` (repo root) — ubiquitous language. Glossary only.
+- `TODO.md` (repo root) — thin mirror of epics + open gaps.
+- `.scratch/<feature>/` — staged issue bodies and working files (gitignored).
+- GitHub Issues — authoritative tracker (`docs/agents/issue-tracker.md`).
 
-Read the roadmap files in order under `docs/roadmap/`. Each one defines
-what outputs must exist before moving to the next phase.
+## How work flows
 
-### 2. Read the spec for your phase
-
-Each roadmap phase has a matching spec under `docs/specs/` that defines
-scope, required outcomes, and acceptance criteria. The spec is the
-"what" — it does not change during implementation.
-
-### 3. Follow the plan for your phase
-
-Each phase has an execution plan under `docs/plans/` that specifies
-the "how" — file changes, implementation order, and verification steps.
-
-### Phase <-> Spec <-> Plan Mapping
-
-| Roadmap Phase                 | Spec                         | Plan                               | Status                |
-| ----------------------------- | ---------------------------- | ---------------------------------- | --------------------- |
-| 01. Current State & Direction | — (strategic only)           | —                                  | ✅ Agreed             |
-| 02. Backend Readiness         | `specs/backend-readiness.md` | `plans/backend-readiness-phase.md` | 📋 Ready to implement |
-| 03. Entry Operations          | `specs/entry-operations.md`  | `plans/entry-operations-phase.md`  | 📋 Planned            |
-| 04. Frontend UI               | `specs/frontend-ui.md`       | `plans/frontend-ui-phase.md`       | 📋 Planned            |
-| 05. Release                   | `specs/release.md`           | `plans/release-phase.md`           | 📋 Planned            |
+1. **Grill** — interview decisions into `docs/grilling/YYYY-MM-DD-<feature>-decisions.md`.
+2. **Spec** — synthesize into `docs/specs/YYYY-MM-DD-<feature>-design.md`, publish to
+   GitHub Issues with `ready-for-agent`.
+3. **Plan + tickets** — break the spec into `docs/plans/YYYY-MM-DD-<feature>-plan.md`
+   with phased ticket tables and blocking edges; bodies staged under `.scratch/<feature>/`.
 
 ## Convention Rules
 
-- **Roadmap**: Strategic "what" and "why". Changes rarely.
-- **Specs**: Atomic, stable, implementation-free. Defines scope and acceptance.
-- **Plans**: Concrete, file-level, ordered steps. Gets updated during execution.
-- **Archive**: Completed or superseded docs go here. Never deleted.
+- **Glossary** (`CONTEXT.md`): terms only, no implementation. Update inline as terms resolve.
+- **Specs**: stable "what and why". Implementation-free.
+- **Plans**: concrete "how and in what order". Updated during execution.
+- **Decision logs**: append-only Q&A records. Never edited after the fact.
+- Completed/superseded documents are deleted, not archived — git history keeps them.
