@@ -3,6 +3,9 @@ import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useReadinessStore } from "@/stores/readiness";
+import { Gpg } from "@/services/gpg";
+import { Neu } from "@/services/neutralino";
+import { Pass } from "@/services/pass";
 import IssueCard from "./IssueCard.vue";
 
 const readiness = useReadinessStore();
@@ -12,6 +15,8 @@ const primaryIssue = computed(() => readiness.blockingIssues[0] ?? null);
 const storeError = computed(() => activeStore.error?.message ?? null);
 
 async function retry(): Promise<void> {
+  await Neu.ensureInitialized();
+  await Promise.allSettled([Gpg.ensureInitialized(), Pass.ensureInitialized()]);
   await activeStore.load();
   if (activeStore.storePath) {
     await readiness.evaluate(activeStore.storePath);

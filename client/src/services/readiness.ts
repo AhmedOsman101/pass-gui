@@ -36,9 +36,19 @@ const OK: CheckResult = { state: "READY", issues: [], stop: false };
 class Readiness {
   /**
    * Runs all readiness checks in strict order and returns a snapshot.
+   * Lazily ensures service init first (failable) so a hard init failure
+   * never throws — it falls through to a blocking issue.
    * @param storePath - Absolute path to the password store directory.
    */
   static async check(storePath: string): Promise<ReadinessSnapshot> {
+    // Gate-driven lazy init: best-effort, swallowed — check* methods
+    // will surface the actual blocking issue (e.g. NEED_PASS).
+    await Neu.ensureInitialized();
+    await Promise.allSettled([
+      Gpg.ensureInitialized(),
+      Pass.ensureInitialized(),
+    ]);
+
     const checks = [
       Readiness.checkPass(),
       Readiness.checkTree(),

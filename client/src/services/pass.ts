@@ -51,24 +51,38 @@ class PassService {
     this.storePath = path;
   }
 
+  private initPromise: Promise<Result<boolean>> | null = null;
+
   /**
    * Initializes the pass service by reading `PASSWORD_STORE_DIR` as a
    * fallback and checking if the store has a `.gpg-id` file. Config
    * should override this via `setStorePath()` when available.
    */
   async init(): Promise<Result<boolean>> {
-    const envStoreDir = await Neu.getEnv("PASSWORD_STORE_DIR");
-    if (envStoreDir) {
-      this.storePath = envStoreDir;
-    } else {
-      const joined = await Fs.join(Neu.HOME_DIR, ".password-store");
-      if (joined.isError()) {
-        await Logger.error(
-          `Pass.init(): failed to resolve default store path: ${joined.error.message}`
-        );
-        return Err(joined.error);
+    // Respect an already-configured store path (e.g. from active-store).
+    // Only resolve from env/default when no path has been set yet.
+    if (!this.storePath) {
+      const envStoreDir = await Neu.getEnv("PASSWORD_STORE_DIR");
+      if (envStoreDir) {
+        this.storePath = envStoreDir;
+      } else {
+        // HOME_DIR may still be empty if Neu init failed — surface as
+        // Ok(false) rather than throwing so the gate can render.
+        const base = Neu.HOME_DIR || "";
+        if (!base) {
+          await Logger.error("Pass.init(): HOME_DIR unavailable, skip default");
+          this.isInitialized = false;
+          return Ok(false);
+        }
+        const joined = await Fs.join(base, ".password-store");
+        if (joined.isError()) {
+          await Logger.error(
+            `Pass.init(): failed to resolve default store path: ${joined.error.message}`
+          );
+          return Err(joined.error);
+        }
+        this.storePath = joined.ok;
       }
-      this.storePath = joined.ok;
     }
 
     const result = await this.checkInitialized(this.storePath);
@@ -83,6 +97,19 @@ class PassService {
     this.isInitialized = result.ok;
 
     return Ok(true);
+  }
+
+  /**
+   * Lazy, deduped init driven by the gate. Concurrent callers share the
+   * same in-flight promise; retries after failure.
+   */
+  async ensureInitialized(): Promise<Result<boolean>> {
+    if (this.isInitialized) return Ok(true);
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.init();
+    const result = await this.initPromise;
+    this.initPromise = null;
+    return result;
   }
 
   /**
@@ -239,7 +266,9 @@ class PassService {
 }
 
 const Pass = new PassService();
-const passInitialized = Pass.init();
+// Eager but now deduped via ensureInitialized — mount no longer blocks on it.
+// Prefer `Pass.ensureInitialized()` for gate-driven lazy init.
+const passInitialized: Promise<Result<boolean>> = Pass.ensureInitialized();
 
 export {
   Pass,

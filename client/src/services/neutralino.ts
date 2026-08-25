@@ -42,23 +42,49 @@ type SafeExecCommandArgs = {
 class NeutralinoService {
   public OS: OperatingSystem = window.NL_OS;
   public HOME_DIR = "";
+  /** Last init failure — distinct from readiness issues; app is paralyzed without HOME_DIR. */
+  public initError: Error | null = null;
 
   private initialized = false;
 
+  private initPromise: Promise<Result<void, Error>> | null = null;
+
   /**
    * Initializes the service by resolving the home directory.
+   * Failable — returns Err instead of throwing. On HOME_DIR failure the
+   * app cannot function (all checks require it) so callers must surface
+   * a distinct critical error, not a generic readiness issue.
    * Safe to call multiple times.
    */
-  async init(): Promise<void> {
-    if (this.initialized) return;
+  async init(): Promise<Result<void, Error>> {
+    if (this.initialized) return Ok(undefined);
 
     const homeDir = await Path.getHomeDir();
     if (homeDir.isError()) {
-      throw homeDir.error;
+      await Logger.error(`Neu.init(): ${homeDir.error.message}`);
+      this.initError = homeDir.error;
+      return Err(homeDir.error);
     }
 
     this.HOME_DIR = homeDir.ok;
     this.initialized = true;
+    this.initError = null;
+    return Ok(undefined);
+  }
+
+  /**
+   * Eager, deduped, failable init. Required before the gate — if it fails
+   * the gate shows a distinct critical screen (not a swallowed NEED_PASS).
+   * Concurrent callers share the same in-flight promise; after failure
+   * the next call retries.
+   */
+  async ensureInitialized(): Promise<Result<void, Error>> {
+    if (this.initialized) return Ok(undefined);
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.init();
+    const result = await this.initPromise;
+    this.initPromise = null;
+    return result;
   }
 
   /**
@@ -240,6 +266,8 @@ class NeutralinoService {
 }
 
 const Neu = new NeutralinoService();
-const neuInitialized = Neu.init();
+// Eager but now failable and deduped via ensureInitialized — mount no longer
+// blocks on it. Prefer `Neu.ensureInitialized()` for gate-driven lazy init.
+const neuInitialized: Promise<Result<void, Error>> = Neu.ensureInitialized();
 
 export { Neu, NeutralinoService, neuInitialized };

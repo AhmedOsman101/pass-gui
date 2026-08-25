@@ -57,6 +57,8 @@ class GpgService {
     this.homeDir = home;
   }
 
+  private initPromise: Promise<Result<boolean>> | null = null;
+
   /**
    * Initializes the GPG service by detecting the GPG binary and reading
    * the GNUPGHOME environment variable as a fallback. Does not parse
@@ -72,6 +74,20 @@ class GpgService {
     if (homeDir) this.homeDir = homeDir;
 
     return Ok(true);
+  }
+
+  /**
+   * Lazy, deduped init driven by the gate. Concurrent callers share the
+   * same in-flight promise; retries after failure.
+   */
+  async ensureInitialized(): Promise<Result<boolean>> {
+    // Cheap fast-path: binary already resolved.
+    if (this.command) return Ok(true);
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.init();
+    const result = await this.initPromise;
+    this.initPromise = null;
+    return result;
   }
 
   /**
@@ -340,6 +356,8 @@ class GpgService {
 }
 
 const Gpg = new GpgService();
-const gpgInitialized = Gpg.init();
+// Eager but now deduped via ensureInitialized — mount no longer blocks on it.
+// Prefer `Gpg.ensureInitialized()` for gate-driven lazy init.
+const gpgInitialized: Promise<Result<boolean>> = Gpg.ensureInitialized();
 
 export { Gpg, GpgKeyListError, GpgService, gpgInitialized };
