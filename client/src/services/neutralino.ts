@@ -2,6 +2,7 @@ import {
   debug,
   type ExecCommandOptions,
   type ExecCommandResult,
+  events,
   type OperatingSystem,
   os,
 } from "@neutralinojs/lib";
@@ -22,6 +23,8 @@ import {
   type Stringifiable,
 } from "@/types";
 
+const SECRET_MASK = "[passphrase hidden]";
+
 type ExecCommandArgs = {
   cmd: string;
   args?: Stringifiable[];
@@ -32,6 +35,16 @@ type SafeExecCommandArgs = {
   cmd: AllowedCommand;
   args?: Stringifiable[];
   options?: ExecCommandOptions;
+};
+
+type SpawnArgs = {
+  cmd: string;
+  args?: Stringifiable[];
+  /** Secret stdin — never appears in display command or logs. */
+  stdin?: string;
+  options?: ExecCommandOptions;
+  onStdOut?: (data: string) => void;
+  onStdErr?: (data: string) => void;
 };
 
 /**
@@ -160,6 +173,159 @@ class NeutralinoService {
   }
 
   /**
+   * Builds a display command for the stream box. Secrets are masked:
+   * - args at `maskIndices` are replaced with `[passphrase hidden]`
+   * - stdin secret is never included; caller can append the mask manually
+   * Shell-quoting mirrors `buildShellCommand`.
+   */
+  buildDisplayCommand(
+    cmd: string,
+    args: Stringifiable[] = [],
+    opts?: { maskIndices?: number[]; hideStdin?: boolean }
+  ): string {
+    const shellType = this.getShellOsType();
+    const masked = args.map((a, i) =>
+      opts?.maskIndices?.includes(i) ? SECRET_MASK : String(a)
+    );
+    // ponytail: reuse existing shell quoting — no new dep
+    return buildShellCommand(cmd, masked, shellType);
+  }
+
+  /**
+   * Streaming execution via `os.spawnProcess` with live stdOut/stdErr.
+   * Use for long-running operations (e.g. gpg --gen-key). Quick commands
+   * should use `exec` to avoid streaming overhead.
+   *
+   * Secrets via `stdin` never appear in the display command — caller must
+   * build the display string with `buildDisplayCommand` and not include
+   * the secret.
+   */
+  async spawn({
+    cmd,
+    args,
+    stdin,
+    options,
+    onStdOut,
+    onStdErr,
+  }: SpawnArgs): Promise<
+    Result<ExecCommandResult, CommandFailedError | Error>
+  > {
+    const cmdValidation = validateCommand(cmd);
+    if (cmdValidation.isError()) return Err(cmdValidation.error);
+    for (const arg of args ?? []) {
+      const argValidation = validateArgument(String(arg));
+      if (argValidation.isError()) return Err(argValidation.error);
+    }
+
+    const shellType = this.getShellOsType();
+    const fullCmd = buildShellCommand(cmd, args ?? [], shellType);
+
+    const spawnResult = await wrapAsync(
+      async () =>
+        await os.spawnProcess(fullCmd, {
+          cwd: options?.cwd,
+          envs: options?.envs,
+        })
+    );
+    if (spawnResult.isError()) {
+      await Logger.error(
+        `spawn("${cmd}") failed to spawn: ${spawnResult.error.message}`
+      );
+      return Err(spawnResult.error);
+    }
+    const proc = spawnResult.ok;
+
+    let stdOut = "";
+    let stdErr = "";
+    let exitCode: number | null = null;
+
+    let resolveExit: (code: number) => void;
+    const exitPromise = new Promise<number>(resolve => {
+      resolveExit = resolve;
+    });
+
+    const handler = (ev: Event): void => {
+      const detail = (ev as CustomEvent).detail as {
+        id: number;
+        action: string;
+        data: unknown;
+      };
+      if (detail.id !== proc.id) return;
+      if (detail.action === "stdOut") {
+        const chunk = String(detail.data);
+        stdOut += chunk;
+        onStdOut?.(chunk);
+      } else if (detail.action === "stdErr") {
+        const chunk = String(detail.data);
+        stdErr += chunk;
+        onStdErr?.(chunk);
+      } else if (detail.action === "exit") {
+        exitCode = Number(detail.data);
+        resolveExit(exitCode);
+      }
+    };
+
+    const onResult = await wrapAsync(
+      async () =>
+        await events.on("spawnedProcess", handler as (ev: CustomEvent) => void)
+    );
+    if (onResult.isError()) {
+      await Logger.error(
+        `spawn("${cmd}") failed to attach listener: ${onResult.error.message}`
+      );
+      return Err(onResult.error);
+    }
+
+    // Send stdin if provided, then always close it so the child does not hang
+    if (stdin !== undefined) {
+      const stdinResult = await wrapAsync(
+        async () => await os.updateSpawnedProcess(proc.id, "stdIn", stdin)
+      );
+      if (stdinResult.isError()) {
+        await events.off(
+          "spawnedProcess",
+          handler as (ev: CustomEvent) => void
+        );
+        await Logger.error(
+          `spawn("${cmd}") stdIn failed: ${stdinResult.error.message}`
+        );
+        return Err(stdinResult.error);
+      }
+    }
+    // Close stdin — required for spawnProcess (always open) to let the process proceed
+    await wrapAsync(
+      async () => await os.updateSpawnedProcess(proc.id, "stdInEnd")
+    );
+
+    exitCode = await exitPromise;
+
+    await wrapAsync(
+      async () =>
+        await events.off("spawnedProcess", handler as (ev: CustomEvent) => void)
+    );
+
+    stdOut = stripAnsi(stdOut);
+    stdErr = stripAnsi(stdErr);
+
+    const result: ExecCommandResult = {
+      pid: proc.pid,
+      stdOut,
+      stdErr,
+      exitCode: exitCode ?? -1,
+    };
+
+    if (result.exitCode !== 0) {
+      const err = new CommandFailedError({ cmd, args, ...result });
+      await Logger.error(
+        `spawn("${cmd}") failed: exit code ${err.exitCode}, stderr: ${err.stdErr}`
+      );
+      return Err(err);
+    }
+
+    return Ok(result);
+  }
+
+  /**
    * Gets an environment variable value, returning a default if not set or empty.
    */
   async getEnv(key: string, defaultValue: Stringifiable = ""): Promise<string> {
@@ -270,4 +436,4 @@ const Neu = new NeutralinoService();
 // blocks on it. Prefer `Neu.ensureInitialized()` for gate-driven lazy init.
 const neuInitialized: Promise<Result<void, Error>> = Neu.ensureInitialized();
 
-export { Neu, NeutralinoService, neuInitialized };
+export { Neu, NeutralinoService, neuInitialized, SECRET_MASK };
