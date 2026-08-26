@@ -1,6 +1,7 @@
 # Pass GUI
 
 Use `mask` task runner for running tasks. Never use `pnpm` or `podman` directly unless you absolutely need to, even then ask first.
+Consolidate all named exports (`export { ... }`) and type exports (`export type { ... }`) at the very end of the file; strictly avoid using inline `export` keywords during variable, function, or type declaration. This is more clear, one look at the top and bottom tells you what this code imports and exports.
 
 ## External resources (MANDATORY before writing code)
 
@@ -45,4 +46,3 @@ Canonical triage roles + wayfinder ticket types, used as-is. See `docs/agents/tr
 ### Domain docs
 
 Single-context: root `CONTEXT.md` glossary + `docs/adr/`. See `docs/agents/domain.md`.
-
