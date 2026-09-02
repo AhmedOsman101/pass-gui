@@ -16,7 +16,7 @@ importers:
         version: 1.26.0(vue@3.5.40(typescript@6.0.3))
       '@neutralinojs/lib':
         specifier: github:AhmedOsman101/neutralino.js#pnpm
-        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0
+        version: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e6401f52c8ed829896c683e47b8429250f7f287b
       '@tanstack/vue-hotkeys':
         specifier: ^0.10.0
         version: 0.10.0(vue@3.5.40(typescript@6.0.3))
@@ -513,8 +513,8 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0':
-    resolution: {gitHosted: true, integrity: sha512-0D5hqgLGm8QCpqCxUeRcB9vkFImfr/UImEpWBehYUNp32yQ3X4Mb+0l5v9OIwMNzUIzPnoYpsBJTg+F0dO6/qA==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0}
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e6401f52c8ed829896c683e47b8429250f7f287b':
+    resolution: {gitHosted: true, integrity: sha512-taLH19NUWBctlia37pNzYKJK/9uMwjMdRVuPB8RUWINa1yTjyal+K98dJkesjuSooEKOnlesOPnuC24cbhY+xA==, tarball: https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e6401f52c8ed829896c683e47b8429250f7f287b}
     version: 6.9.0
 
   '@neutralinojs/neu@11.7.2':
@@ -637,13 +637,13 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@rollup/rollup-darwin-x64@4.62.5':
-    resolution: {integrity: sha512-YSwBS86QeHOGlrxJ1PSOIZSkzRL/JmKeunhc+lV6M1a6En8QuVCD/T/qIA0J4Gd2Y86RIOBYrLcOUtqGh9+/1w==}
+  '@rollup/rollup-darwin-x64@4.63.1':
+    resolution: {integrity: sha512-pvD16V939D3CloK0+qikpGaxiPrDUXTe7Y5cWOMkMSy7m1cawa8EGy/kXYi/G/cKAC4HDAbSnzCIk1WmsoOKXg==}
     cpu: [x64]
     os: [darwin]
 
-  '@rollup/rollup-linux-x64-gnu@4.62.5':
-    resolution: {integrity: sha512-6RHPJR1g/uvdYU8uXBnfq3nlqyZCP82Fr6NHgfGoaIeSh0YEqnX/x6uA9MmJJbnSH7swqX4F+CkGdUF+6doiQA==}
+  '@rollup/rollup-linux-x64-gnu@4.63.1':
+    resolution: {integrity: sha512-gfI5T24WLLuFfSKw7Go/zDXjAAV0fny0swTaDv+WjK7vqcw4cRhFfdsyKL1n+ukI+ooBxn3bVQnyrn06WpI50w==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
@@ -822,6 +822,11 @@ packages:
 
   '@volar/typescript@2.4.28':
     resolution: {integrity: sha512-Ja6yvWrbis2QtN4ClAKreeUZPVYMARDYZl9LMEv1iQ1QdepB6wn0jTRxA9MftYmYa4DQ4k/DaSZpFPUfxl8giw==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@vue-macros/common@3.1.4':
     resolution: {integrity: sha512-/5Fv+6DgIcM9ajY05ZmKBv+LMX1M9A0X+IUwDRVdt67ciw8OV9bvG2r34p3RiEadlsQybjhKPRKNXDC8Bp23cw==}
@@ -2816,6 +2821,7 @@ packages:
     engines: {node: '>=v14.21.3'}
     peerDependencies:
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
+      vue: '*'
 
   vite-plugin-vue-inspector@6.0.0:
     resolution: {integrity: sha512-OpyITJLgZNibxlrik1EmRtvXHDjLRxNPsWkGFTERZs2LgMEdG4W0WoFt5GIgp3a3jRou+eJR8U1zOBk/XQgEbw==}
@@ -3485,10 +3491,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/7e95dda8a49109fdc10bc19c3fc7605f0618c9d0':
+  '@neutralinojs/lib@https://codeload.github.com/AhmedOsman101/neutralino.js/tar.gz/e6401f52c8ed829896c683e47b8429250f7f287b':
     optionalDependencies:
-      '@rollup/rollup-darwin-x64': 4.62.5
-      '@rollup/rollup-linux-x64-gnu': 4.62.5
+      '@rollup/rollup-darwin-x64': 4.63.1
+      '@rollup/rollup-linux-x64-gnu': 4.63.1
 
   '@neutralinojs/neu@11.7.2(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)':
     dependencies:
@@ -3581,10 +3587,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@rollup/rollup-darwin-x64@4.62.5':
+  '@rollup/rollup-darwin-x64@4.63.1':
     optional: true
 
-  '@rollup/rollup-linux-x64-gnu@4.62.5':
+  '@rollup/rollup-linux-x64-gnu@4.63.1':
     optional: true
 
   '@swc/helpers@0.5.23':
@@ -3738,11 +3744,13 @@ snapshots:
 
   '@volar/source-map@2.4.28': {}
 
-  '@volar/typescript@2.4.28':
+  '@volar/typescript@2.4.28(typescript@6.0.3)':
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
       vscode-uri: 3.1.0
+    optionalDependencies:
+      typescript: 6.0.3
 
   '@vue-macros/common@3.1.4(vue@3.5.40(typescript@6.0.3))':
     dependencies:
@@ -5690,10 +5698,10 @@ snapshots:
       vite: 8.1.5(@types/node@26.1.1)(jiti@2.7.0)(stylus@0.57.0(supports-color@10.2.2))(yaml@2.9.0)
       vite-plugin-inspect: 11.4.1(vite@8.1.5(@types/node@26.1.1)(jiti@2.7.0)(stylus@0.57.0(supports-color@10.2.2))(yaml@2.9.0))
       vite-plugin-vue-inspector: 6.0.0(supports-color@10.2.2)(vite@8.1.5(@types/node@26.1.1)(jiti@2.7.0)(stylus@0.57.0(supports-color@10.2.2))(yaml@2.9.0))
+      vue: 3.5.40(typescript@6.0.3)
     transitivePeerDependencies:
       - '@nuxt/kit'
       - supports-color
-      - vue
 
   vite-plugin-vue-inspector@6.0.0(supports-color@10.2.2)(vite@8.1.5(@types/node@26.1.1)(jiti@2.7.0)(stylus@0.57.0(supports-color@10.2.2))(yaml@2.9.0)):
     dependencies:
@@ -5807,7 +5815,7 @@ snapshots:
 
   vue-tsc@3.3.8(typescript@6.0.3):
     dependencies:
-      '@volar/typescript': 2.4.28
+      '@volar/typescript': 2.4.28(typescript@6.0.3)
       '@vue/language-core': 3.3.8
       typescript: 6.0.3
 
