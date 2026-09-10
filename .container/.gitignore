@@ -1,4 +1,0 @@
-node_modules/*
-pnpm-store/*
-!node_modules/.gitkeep
-!pnpm-store/.gitkeep
