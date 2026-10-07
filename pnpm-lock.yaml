@@ -502,8 +502,8 @@ packages:
     peerDependencies:
       vue: '>=3.0.1'
 
-  '@modelcontextprotocol/sdk@1.29.0':
-    resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
+  '@modelcontextprotocol/sdk@1.32.1':
+    resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -3467,7 +3467,7 @@ snapshots:
     dependencies:
       vue: 3.5.40(typescript@6.0.3)
 
-  '@modelcontextprotocol/sdk@1.29.0(supports-color@10.2.2)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.15(hono@4.13.13)
       ajv: 8.20.0
@@ -5369,7 +5369,7 @@ snapshots:
   shadcn-vue@2.8.0(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))(magicast@0.5.3)(supports-color@10.2.2)(vue@3.5.40(typescript@6.0.3)):
     dependencies:
       '@dotenvx/dotenvx': 2.18.0
-      '@modelcontextprotocol/sdk': 1.29.0(supports-color@10.2.2)(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.32.1(supports-color@10.2.2)(zod@3.25.76)
       '@unovue/detypes': 0.8.5(supports-color@10.2.2)
       '@vue/compiler-sfc': 3.5.40
       c12: 3.3.4(magicast@0.5.3)
