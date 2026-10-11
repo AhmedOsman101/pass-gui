@@ -49,7 +49,7 @@ pass-gui/
         ├── Tree.vue             # Recursive entry tree with context menus
         ├── EntryDetail.vue      # Secret show/hide/copy, metadata, actions
         ├── EntryForm.vue        # Create/edit with inline generator
-        ├── readiness/           # ReadinessGate, BlockedScreen, IssueCard, LoadingScreen
+        ├── readiness/           # ReadinessGate, LoadingScreen
         ├── settings/            # StoresTab, AddStoreWizard, GpgTab, GenerationTab,
         │                        # ClipboardTab, ExtensionsTab, InfoTab
         └── ui/                  # shadcn-vue suite
@@ -100,7 +100,7 @@ await gpgInitialized; // Detects GPG binary, reads GNUPGHOME
 await passInitialized; // Reads PASSWORD_STORE_DIR, checks .gpg-id
 ```
 
-**App flow**: `ReadinessGate` mounts -> `activeStore.load()` -> `readiness.evaluate(storePath)` -> LoadingScreen / BlockedScreen / ready slot.
+**App flow**: `ReadinessGate` mounts -> `activeStore.load()` -> `readiness.evaluate(storePath)` -> LoadingScreen / redirect to `/onboarding` when blocked / ready slot.
 
 **Known issue**: module-level init promises block before `ReadinessGate` renders. If any service init fails hard, the app never renders past the initial shell. The onboarding overhaul (see TODO) fixes this with lazy/failable init.
 
@@ -131,7 +131,7 @@ Check order: pass (+version) -> tree (skipped on Windows) -> gpg -> secret keys 
 
 ### Frontend
 
-- Readiness-driven entry (gate -> loading/blocked/ready)
+- Readiness-driven entry (gate -> loading / redirect to onboarding / ready); onboarding stepper at `/onboarding` (fixed rail + step machine)
 - Main layout: resizable sidebar + entry detail; recursive tree with context menus, search, sort, hotkeys
 - Entry form with inline generator (memorable EFF-wordlist + charset modes)
 - All CRUD dialogs; clipboard toast with countdown; dark/light/system theme
@@ -175,7 +175,7 @@ mask build            # Full build
 
 ## Known Issues
 
-1. **Module-level init promises** block app mount (fix planned in onboarding overhaul, Phase 0).
+1. ~~**Module-level init promises** block app mount~~ — fixed in onboarding overhaul Phase 0 (#22): gate lazily inits services via `ensureInitialized()`.
 2. **TOML comment preservation** — full-line comments may be lost on modify; inline comments preserved.
 3. **Biome LSP may panic** on sudden file changes — restart LSP if false positives appear.
 4. **NeutralinoJS clipboard limitation** — `writeText` reports success even when the clipboard is locked.
