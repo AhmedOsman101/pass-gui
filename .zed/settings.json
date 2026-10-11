@@ -1,0 +1,93 @@
+{
+  // Exclude vendored external-resource dirs from file tree and search,
+  // mirroring VSCode's files.exclude + search.exclude.
+  "file_scan_exclusions": ["**/neutralino-cpp", "**/neutralino-js"],
+  "languages": {
+    // JS/TS/JSON: Biome formats + fixes + organizes imports (no Prettier).
+    // Biome resolves biome.json from the project root automatically.
+    "JavaScript": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["check", "--fix", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      },
+      "prettier": { "allowed": false }
+    },
+    "TypeScript": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["check", "--fix", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      },
+      "prettier": { "allowed": false }
+    },
+    "TSX": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["check", "--fix", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      },
+      "prettier": { "allowed": false }
+    },
+    "JSON": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["check", "--fix", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true
+      },
+      "prettier": { "allowed": false }
+    },
+    "JSONC": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "biome",
+          "arguments": ["check", "--fix", "--stdin-file-path", "{buffer_path}"]
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true
+      },
+      "prettier": { "allowed": false }
+    },
+    // Vue uses Prettier, matching VSCode config. No Biome actions.
+    "Vue.js": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": [
+            "--ignore-path=/dev/null",
+            "--ignore-unknown=false",
+            "--stdin-filepath",
+            "{buffer_path}"
+          ]
+        }
+      },
+      "prettier": { "allowed": false }
+    }
+  }
+}

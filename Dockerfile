@@ -26,7 +26,7 @@ RUN xbps-install -Sy gnupg pass git nodejs bash
 RUN xbps-install -Sy pinentry pinentry-tty libwebkitgtk60
 
 # Install pnpm at the project's pinned version
-RUN npm install -g pnpm@11.17.0
+RUN npm install -g pnpm@12.9.1
 
 # Integration test guard — prevents accidental runs outside the container
 ENV PASS_GUI_CONTAINER=1
