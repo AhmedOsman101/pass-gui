@@ -67,7 +67,7 @@ cd client && pnpm dev
 > Run Neutralino in dev mode
 
 ```bash
-neu run dev
+pnpm exec -- neu run dev
 ```
 
 ## build
@@ -75,7 +75,7 @@ neu run dev
 > Build the project (frontend + Neutralino)
 
 ```bash
-neu build
+pnpm exec -- neu build
 ```
 
 ### frontend
@@ -109,7 +109,7 @@ rm -rf client/dist/ build/
 
 ```bash
 $MASK clean
-neu build --release --clean --embed-resources
+pnpm exec -- neu build --release --clean --embed-resources
 ```
 
 ## container

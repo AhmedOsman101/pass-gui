@@ -16,7 +16,7 @@ export default defineConfig({
     tailwindcss(),
     neutralino({
       // Point to the project root
-      rootPath: path.resolve(__dirname, ".."),
+      rootPath: path.resolve(import.meta.dirname, ".."),
     }),
   ],
   server: {
@@ -26,7 +26,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });
