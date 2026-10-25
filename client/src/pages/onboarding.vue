@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { Check, ChevronLeft, ChevronRight } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
+import BinariesStep from "@/components/onboarding/BinariesStep.vue";
 import { computeSteps } from "@/lib/step-machine";
+import Path from "@/lib/path";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useReadinessStore } from "@/stores/readiness";
 import type { ConfigStatus, OnboardingStepId } from "@/types/onboarding";
@@ -72,6 +74,56 @@ const statusStyles: Record<string, string> = {
   pending: "border-border text-muted-foreground",
   skipped: "border-border border-dashed text-muted-foreground",
 };
+
+/**
+ * The binaries step needs a resolved store path for Re-check (and the
+ * auto re-check after a successful install readies the same target).
+ * The gate only evaluates when an active store resolved — on a failed
+ * config read (`activeStore.error`) it never does, and the step would
+ * silently render with no snapshot. Fall back to the default store
+ * path so blockers still surface here.
+ */
+const fallbackStorePath = ref<string | null>(null);
+
+watch(
+  () => ({
+    storePath: activeStore.storePath,
+    validating: activeStore.isValidating,
+    evaluating: readiness.isEvaluating,
+    snapshot: readiness.snapshot,
+    readinessError: readiness.error,
+    storeError: activeStore.error,
+  }),
+  async (state) => {
+    // Belt: never stack evaluations or retry a failed one forever —
+    // the step's Re-check button is the retry affordance.
+    if (
+      state.validating ||
+      state.evaluating ||
+      state.snapshot !== null ||
+      state.readinessError !== null
+    ) {
+      return;
+    }
+
+    if (state.storePath !== null) {
+      await readiness.evaluate(state.storePath);
+      return;
+    }
+    // Gate has not settled yet — wait for it to decide.
+    if (state.storeError === null) return;
+
+    const resolved = await Path.resolveUserPath("~/.password-store");
+    if (resolved.isError()) return;
+    fallbackStorePath.value = resolved.ok;
+    await readiness.evaluate(resolved.ok);
+  },
+  { immediate: true }
+);
+
+const evaluationStorePath = computed(
+  () => activeStore.storePath ?? fallbackStorePath.value
+);
 </script>
 
 <template>
@@ -115,8 +167,12 @@ const statusStyles: Record<string, string> = {
         </li>
       </ol>
 
-      <!-- Step body: per-step remediation content lands with #25+ -->
-      <div class="rounded-lg border p-4">
+      <!-- Step body: dispatched per selected step -->
+      <BinariesStep
+        v-if="selectedStepId === 'binaries'"
+        :store-path="evaluationStorePath"
+      />
+      <div v-else class="rounded-lg border p-4">
         <p class="text-sm font-medium">{{ selectedStep.label }}</p>
         <p class="mt-1 text-sm text-muted-foreground">
           {{ selectedStep.description }}

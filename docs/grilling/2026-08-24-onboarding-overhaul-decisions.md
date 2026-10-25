@@ -89,6 +89,29 @@ Beyond the user's listed steps, detection also covers:
 
 **Outcome:** Spec published as GitHub issue [#21](https://github.com/AhmedOsman101/pass-gui/issues/21), label `ready-for-agent`. Plan + tickets follow.
 
+## Round 4 decisions (T4 session — binaries step, issue #25)
+
+| #   | Question                  | Decision                                                                                                                                                            |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q20 | Distro parsing source     | Port `~/scripts/get-package-manager` **1:1** into `lib/distro.ts`: exact `ID` list, legacy `VERSION_ID` branches (centos 7*/amzn 2 → yum), `opensuse*` glob, then `ID_LIKE` tokens in the script's order. `~/scripts/get-distro`'s `PRETTY_NAME` shows in the step header. Pure text-in/family-out. |
+| Q21 | Install command shapes    | Commands keep the script's execution-ready shapes: `sudo -A`, `--noconfirm` on pacman, yum without sudo on legacy rpm; nala/paru/yay surface as alternatives (install variant only). Package atoms per distro (openSUSE `password-store`, Fedora/rpm `gnupg2`, gentoo atoms). Homebrew is valid on Linux too (user correction): unknown-Linux guides fall back to the brew command instead of docs-only, and known Linux families list `brew install/upgrade` as an extra alternative; Windows stays docs-only. |
+| Q22 | Running commands in-app   | Offer **Run for me**: spawn through the stream box (Q4 machinery). In-app sudo has no TTY, hence `sudo -A`: resolve `SUDO_ASKPASS` per `~/scripts/get-askpass` semantics — pre-set env honored, else a wrapper (zenity → kdialog → yad, absolute paths) written + chmod'd into the data dir; terminal helpers dropped (no TTY in the app window). Exit 0 auto-triggers Re-check. Note: Neutralino's `envs` option replaces the child environment (no PATH), so the export must ride inside the `sh -c` payload. |
+| Q23 | Command picker (pnpm-io inspiration) | Auto-detection stays the **default** selection (we're a local wizard, not a docs site — no OS-tab matrix). The three override cases are all handled: detection failed (unknown → chip row of brew + every family), detection wrong, preference mismatch (nala/paru/yay/brew). "Alternatives" are promoted from dead text to **selectable command chips** inside `BinaryGuide.vue`: selection, copy target, note and the emitted run command travel together; DIY (copy via terminal / docs link) stays a choice, never a forced fallback. Re-check never resets a mid-step choice. |
+
+## Round 5 (Q24) — service restructure
+
+`lib/binary-guides.ts` started as a pure table but grew feature behavior (candidate composition, readiness-issue mapping, display copy). User rule: **when a feature outgrows a lib, it becomes a service.** Moved to `services/guides.ts` (class `Guides`, static methods: `forBinary`, `issueEntries`, `familyLabel`, `chipLabel`, `versionLabel`; `BinaryIssueEntry` type lives in `types/guide.ts`). `lib/distro.ts` stays a lib — still pure text-in/family-out. `services/askpass.ts` was already a service.
+
+## Round 6 (Q25–Q29) — human review corrections on the #25 diff
+
+| # | Topic | Decision |
+| --- | --- | --- |
+| Q25 | Pre-set `SUDO_ASKPASS` | Blindly honoring the env var was half a solution: a helper that needs a TTY hangs inside the app window. Validate against `~/scripts/get-askpass`'s helper zoo — TTY-only helpers (whiptail, dialog, stty content sniff) and stale paths are skipped, the app's GUI chain takes over; unrecognized helpers get a **runtime dialog** (use yours / use pass-gui's), remembered per session. zip GUI-known helpers (zenity/kdialog/yad/ssh-askpass/x11-ssh-askpass) are honored without asking. |
+| Q26 | chmod in the wrapper | Claim "Neutralino has no chmod API" was wrong — the filesystem API gained chmod/chown in v6.9.0. `Fs.chmod` replaces the shell-out. |
+| Q27 | Clipboard naming | Persistent write is the **default**: `Clipboard.writeText` (no config, no timer) and store `copy`; the timed secret write is explicit — `Clipboard.writeWithTimeout` / store `copyWithTimeout`. |
+| Q28 | `DistroOs` type | Duplicate of `OperatingSystem` from `@neutralinojs/lib` — reuse the enum, drop the alias. String literals at call sites must use the enum members. |
+| Q29 | String style | No hand-broken string literals: one line per string; the formatter owns wrapping. Only multiline *text* splits and comments may wrap. |
+
 ## Late corrections (post-Round 3)
 
 - **No test infrastructure exists.** Verified: zero test files, no runner
