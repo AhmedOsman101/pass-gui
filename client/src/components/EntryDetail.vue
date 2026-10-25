@@ -104,7 +104,7 @@ async function clearCopied(): Promise<void> {
 
 async function copyValue(value: string, label: string): Promise<void> {
   if (!treeStore.currentPath) return;
-  const result = await clipboard.copy(value, treeStore.currentPath);
+  const result = await clipboard.copyWithTimeout(value, treeStore.currentPath);
   result.match({
     okFn: (action) => {
       toast.success(`${label} copied`, {

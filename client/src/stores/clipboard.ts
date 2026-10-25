@@ -31,6 +31,8 @@ const useClipboardStore = defineStore("clipboard", () => {
   let timerId: ReturnType<typeof setTimeout> | null = null;
   const isCopied = ref(false);
   const error = ref<Error | null>(null);
+  /** Last non-secret copy — "Copied" feedback without a clear timer. */
+  const persistentCopiedText = ref<string | null>(null);
 
   const isActive = computed(() => isCopied.value && remainingMs.value > 0);
 
@@ -71,13 +73,42 @@ const useClipboardStore = defineStore("clipboard", () => {
     remainingMs.value = 0;
   }
 
+  /**
+   * Copies text that must STAY on the clipboard (default behavior: no
+   * auto-clear timer, no `ClipboardAction`, no config read).
+   * `persistentCopiedText` drives the inline "Copied" feedback for
+   * non-secret copies and is intentionally never reset — the next
+   * copy overwrites it.
+   */
   async function copy(
+    text: string
+  ): Promise<Result<void, ClipboardWriteError>> {
+    error.value = null;
+
+    const result = await Clipboard.writeText(text);
+    result
+      .inspect(() => {
+        persistentCopiedText.value = text;
+      })
+      .inspectErr(err => {
+        error.value = err;
+      });
+
+    return result;
+  }
+
+  /**
+   * Copies a secret with the auto-clear timer from config. View copies
+   * of passwords route through here — the countdown UI and the failed
+   * clear retry live in this store.
+   */
+  async function copyWithTimeout(
     secret: string,
     entryPath: string
   ): Promise<Result<ClipboardAction, ClipboardWriteError>> {
     error.value = null;
 
-    const result = await Clipboard.writeText(secret, entryPath);
+    const result = await Clipboard.writeWithTimeout(secret, entryPath);
     result
       .inspect(action => {
         lastAction.value = action;
@@ -121,10 +152,12 @@ const useClipboardStore = defineStore("clipboard", () => {
     lastAction,
     remainingMs,
     isCopied,
+    persistentCopiedText,
     error,
     isActive,
     formattedRemaining,
     copy,
+    copyWithTimeout,
     clear,
   };
 });

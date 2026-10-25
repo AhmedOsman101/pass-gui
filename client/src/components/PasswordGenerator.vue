@@ -26,7 +26,7 @@ const isOpen = ref(false);
 
 async function copyToClipboard(): Promise<void> {
   if (!genOptions.generated) return;
-  const result = await clipboard.copy(
+  const result = await clipboard.copyWithTimeout(
     genOptions.generated,
     "password-generator"
   );

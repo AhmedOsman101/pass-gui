@@ -65,7 +65,7 @@ function buildInfoText(): string {
 }
 
 async function copyInfo(): Promise<void> {
-  const result = await Clipboard.writeText(buildInfoText(), "app-info");
+  const result = await Clipboard.writeWithTimeout(buildInfoText(), "app-info");
   useNotifyResult(result, {
     ok: "Info copied to clipboard",
     err: "Failed to copy info",
@@ -86,7 +86,7 @@ async function copyConfig(): Promise<void> {
   });
   if (serialized.isError()) return;
 
-  const result = await Clipboard.writeText(serialized.ok, "app-config");
+  const result = await Clipboard.writeWithTimeout(serialized.ok, "app-config");
   useNotifyResult(result, {
     ok: "Config copied to clipboard",
     err: "Failed to copy config",

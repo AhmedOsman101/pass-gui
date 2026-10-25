@@ -16,7 +16,7 @@ class ClipboardReadError extends Error {
 }
 
 /**
- * Error thrown by `Clipboard.writeText()`.
+ * Error thrown by `Clipboard.writeText()` / `Clipboard.writeWithTimeout()`.
  * Captures the target clipboard selection so callers can show
  * a precise message ("primary" vs "clipboard") and the underlying
  * cause for logging.
@@ -45,8 +45,14 @@ class ClipboardClearError extends Error {
  * clipboard — no browser sandbox restrictions.
  *
  * All methods return Result types — never throws.
- * Does NOT manage auto-clear timers. The Pinia store consumes
- * `ClipboardAction.expiresAt` and calls `clear()` when the timer fires.
+ *
+ * **NeutralinoJS limitation:** The C++ controller always reports success
+ * for `writeText` — even if the clipboard is locked by another process.
+ * The return value from `clip::set_text()` is ignored.
+ *
+ * Auto-clear timers are owned by the Pinia store, which consumes a
+ * `ClipboardAction.expiresAt` from `writeWithTimeout()` and calls
+ * `clear()` when the timer fires.
  */
 class Clipboard {
   /**
@@ -63,29 +69,46 @@ class Clipboard {
   }
 
   /**
+   * Writes text to the clipboard. The copy **stays** until something
+   * else overwrites it — the default: no config read, no timer.
+   */
+  static async writeText(
+    text: string
+  ): Promise<Result<void, ClipboardWriteError>> {
+    const result = await wrapAsync(async () => {
+      await neuClipboard.writeText(text);
+    });
+
+    if (result.isError()) {
+      await Logger.error(`clipboard.writeText failed: ${result.error.message}`);
+      return Err(
+        new ClipboardWriteError("clipboard", result.error.message, result.error)
+      );
+    }
+
+    return Ok(undefined);
+  }
+
+  /**
    * Writes a secret to the clipboard and returns timer metadata.
    *
    * The caller passes the raw secret to write. This method reads
    * `clipboard.clear_after_seconds` and `clipboard.selection` from config,
    * writes to the OS clipboard, and returns a `ClipboardAction` with
-   * the expiration timestamp.
-   *
-   * **NeutralinoJS limitation:** The C++ controller always reports success
-   * for `writeText` — even if the clipboard is locked by another process.
-   * The return value from `clip::set_text()` is ignored. Only JS-side
-   * argument validation errors (`NE_RT_NATRTER`) are caught here.
+   * the expiration timestamp. Use `writeText()` for content that must
+   * stay (Guide install commands and anything non-secret).
    *
    * @param secret - The text to write to the clipboard (usually a password).
    * @param entryPath - Store-relative path of the entry being copied.
    */
-  static async writeText(
+  static async writeWithTimeout(
     secret: string,
     entryPath: string
   ): Promise<Result<ClipboardAction, ClipboardWriteError>> {
     const configResult = await Config.load();
     if (configResult.isError()) {
       await Logger.error(
-        `clipboard.writeText failed: ${configResult.error.message}`
+        `clipboard.writeWithTimeout failed: ${configResult.error.message}`
       );
       return Err(
         new ClipboardWriteError(
@@ -112,7 +135,9 @@ class Clipboard {
     });
 
     if (result.isError()) {
-      await Logger.error(`clipboard.writeText failed: ${result.error.message}`);
+      await Logger.error(
+        `clipboard.writeWithTimeout failed: ${result.error.message}`
+      );
       return Err(
         new ClipboardWriteError(selection, result.error.message, result.error)
       );
