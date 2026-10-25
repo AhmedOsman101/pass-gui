@@ -6,7 +6,7 @@
   "description": "User-friendly desktop GUI application for the GNU Pass password manager",
   "copyright": "Copyright (c) Ahmad Othman <ahmad.ali.othman@outlook.com> 2026. All rights reserved.",
   "applicationIcon": "client/dist/app_icon.png",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "defaultMode": "browser",
   "port": 0,
   "documentRoot": "/client/dist/",
