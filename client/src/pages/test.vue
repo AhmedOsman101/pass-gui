@@ -2,6 +2,10 @@
 import { ref } from "vue";
 import { StreamBox } from "@/components/ui/stream-box";
 import { Button } from "@/components/ui/button";
+import BinaryGuide from "@/components/onboarding/BinaryGuide.vue";
+import { OperatingSystem } from "@neutralinojs/lib";
+import { Guides } from "@/services/guides";
+import { detectDistroFamily, prettyNameFrom } from "@/lib/distro";
 import { Neu, SECRET_MASK } from "@/services/neutralino";
 import toml from "@/lib/toml";
 
@@ -29,6 +33,80 @@ function runTomlProbe(): void {
 }
 
 runTomlProbe();
+
+// --- Binaries-step distro detection + guide table (Issue #25) ---
+type DistroSample = {
+  name: string;
+  os: OperatingSystem;
+  text: string | null;
+  family: ReturnType<typeof detectDistroFamily>;
+};
+
+function distroSample(
+  name: string,
+  os: DistroSample["os"],
+  text: string | null
+): DistroSample {
+  return { name, os, text, family: detectDistroFamily(os, text) };
+}
+
+const distroSamples: DistroSample[] = [
+  distroSample("Ubuntu — exact ID", OperatingSystem.Linux, 'ID=ubuntu\nVERSION_ID="22.04"\nID_LIKE=debian\nPRETTY_NAME="Ubuntu 22.04.3 LTS"\n'),
+  distroSample("Debian-alike — ID miss, ID_LIKE fallback", OperatingSystem.Linux, 'ID="weirdos"\nID_LIKE="unknown ubuntu derivative"\n'),
+  distroSample("Endeavouros — arch family (ID_LIKE)", OperatingSystem.Linux, 'ID="endeavouros"\nID_LIKE="arch"\n'),
+  distroSample("CentOS 7 — legacy yum branch", OperatingSystem.Linux, 'ID="centos"\nVERSION_ID="7.9.2009"\n'),
+  distroSample("Amazon Linux 2023 — dnf branch", OperatingSystem.Linux, 'ID="amzn"\nVERSION_ID="2023"\n'),
+  distroSample("openSUSE Tumbleweed — opensuse* glob", OperatingSystem.Linux, 'ID="opensuse-tumbleweed"\n'),
+  distroSample("Void Linux", OperatingSystem.Linux, "ID=void\n"),
+  distroSample("Alpine", OperatingSystem.Linux, "ID=alpine\n"),
+  distroSample("Gentoo", OperatingSystem.Linux, 'ID=gentoo\nPRETTY_NAME="Gentoo Linux"\n'),
+  distroSample("Unknown distro", OperatingSystem.Linux, "ID=silverblue-ish\nID_LIKE=fedora\n"),
+  distroSample("No os-release text", OperatingSystem.Linux, null),
+  distroSample("macOS", OperatingSystem.Darwin, null),
+  distroSample("Windows", OperatingSystem.Windows, null),
+];
+
+const distroTexts = distroSamples.map(
+  sample =>
+    sample.text === null
+      ? null
+      : (prettyNameFrom(sample.text) ?? "no PRETTY_NAME")
+);
+
+const guideDemos = [
+  {
+    guide: Guides.forBinary("pass", "apt", "install", OperatingSystem.Linux),
+    found: null,
+    expected: null,
+  },
+  {
+    guide: Guides.forBinary("pass", "pacman", "upgrade", OperatingSystem.Linux),
+    found: { major: 1, minor: 6, patch: 5 },
+    expected: { major: 1, minor: 7, patch: 0 },
+  },
+  {
+    guide: Guides.forBinary("gpg", "yum", "upgrade", OperatingSystem.Linux),
+    found: { major: 2, minor: 0 },
+    expected: { major: 2, minor: 1 },
+  },
+  {
+    // Unknown Linux → chips: brew leads, then every family.
+    guide: Guides.forBinary("gpg", "unknown", "install", OperatingSystem.Linux),
+    found: null,
+    expected: null,
+  },
+  {
+    guide: Guides.forBinary("pass", "brew", "install", OperatingSystem.Darwin),
+    found: null,
+    expected: null,
+  },
+  {
+    // Windows → docs link only.
+    guide: Guides.forBinary("tree", "unknown", "install", OperatingSystem.Windows),
+    found: null,
+    expected: null,
+  },
+];
 
 // --- Stream box demos (Issue #23) ---
 type DemoState = {
@@ -240,6 +318,47 @@ async function runSecretStream(): Promise<void> {
           <code class="font-mono">{{ SECRET_MASK }}</code>.
         </p>
       </div>
+    </section>
+
+    <!-- Binaries-step distro detection + guide content — Issue #25 -->
+    <section class="space-y-4 border-t pt-6">
+      <h2 class="text-lg font-medium">
+        Distro detection + guide table (Issue #25)
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        Pure parser driven by representative os-release strings (I/O stays
+        out; the real file is never hacked). Branches exercised: exact ID,
+        ID_LIKE fallback, legacy yum VERSION_ID branches, opensuse* glob,
+        unknown/empty, Darwin/Windows.
+      </p>
+
+      <div class="space-y-1">
+        <div
+          v-for="(sample, index) in distroSamples"
+          :key="sample.name"
+          class="flex items-baseline gap-2 text-xs"
+        >
+          <span class="w-72 shrink-0 font-medium">{{ sample.name }}</span>
+          <code class="font-mono text-primary">{{ Guides.familyLabel(sample.family) }}</code>
+          <span v-if="distroTexts[index]" class="text-muted-foreground">
+            · {{ distroTexts[index] }}
+          </span>
+        </div>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <BinaryGuide
+          v-for="demo in guideDemos"
+          :key="`${demo.guide.binary}-${demo.guide.variant}-${demo.guide.family}`"
+          :guide="demo.guide"
+          :found="demo.found ?? null"
+          :expected="demo.expected ?? null"
+        />
+      </div>
+      <p class="text-xs text-muted-foreground">
+        Run for me is only wired inside the onboarding step (needs the
+        SUDO_ASKPASS runner); the guides here verify copy + variant content.
+      </p>
     </section>
 
     <!-- j-toml probe -->
