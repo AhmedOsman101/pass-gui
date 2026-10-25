@@ -18,11 +18,33 @@ shell source), GnuPG man pages, j-toml, tanstack-hotkey.
   `neutralino-cpp/api/**` (C++ implementation) and `neutralino-js/**`.
   The Markdown docs under `neutralino/docs` may be outdated.
 
+## Running mask tasks
+
+Choose the right tool for the job instead of cutting context blindly
+with `head`/`tail` pipes (forbidden pattern: `mask lint 2>&1 | tail -3`).
+The dedicated `--reporter` flag (placed after the subcommand) shapes
+the output:
+
+- `--reporter concise` — shortest output; quick "is everything OK"
+  checks or minimal token usage.
+- `--reporter summary` — grouped overview of everything found.
+- no flag — full output, when details are the point.
+
+```sh
+mask lint --reporter concise
+mask format --reporter summary
+```
+
+(`typecheck` has no `--reporter`; its output is short enough on its own.)
+
 ## Formatting before committing
 
-Always run `mask format` before committing your changes. If you forgot to do so
-and notice that the post-commit script says "N file(s) were formatted", then
-use this to commit these changes:
+Always run `mask format` before committing your changes — and pick it
+in favor of `mask lint`, not in addition to it. `format` fixes lint
+problems and reports any that remain; `lint` only checks. Running both
+is redundant. If you forgot to format and notice that the post-commit
+script says "N file(s) were formatted", then use this to commit these
+changes:
 
 ```sh
 git add -A
@@ -32,6 +54,22 @@ git commit --amend --no-edit --no-verify
 ```
 
 (Remember to stage them first.)
+
+## Committing
+
+- Keep commits small and atomic: one logical change per commit. Split
+  work into multiple commits instead of one blob.
+- Subject + body is a judgment call, not a default: a commit with lots
+  of changes deserves a body describing what (and why); a small
+  single-purpose commit may be subject-only.
+- Conventional Commits subjects: `type(scope): summary` with
+  feat/fix/docs/chore/build/refactor.
+- When a commit involves a tracked issue, reference it as a trailing
+  footer at the very end of the commit body:
+
+```sh
+git commit -m "feat(scope): summary" -m "Body paragraph." -m "Refs: closes #25."
+```
 
 ## Agent skills
 
