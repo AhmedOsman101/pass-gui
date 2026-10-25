@@ -5,6 +5,7 @@ import {
   filesystem,
   type PathParts,
   type Stats,
+  type SuccessResponse,
 } from "@neutralinojs/lib";
 import ignore from "ignore";
 import { Err, Ok, type Result, wrapAsync } from "lib-result";
@@ -522,7 +523,7 @@ class Filesystem {
   static async writeFile(
     path: string,
     data: string
-  ): Promise<Result<boolean, FsWriteError | Error>> {
+  ): Promise<Result<SuccessResponse, FsWriteError | Error>> {
     const resolvedPath = await Filesystem.resolvePath(path);
     if (resolvedPath.isError()) return Err(resolvedPath.error);
 
@@ -544,7 +545,15 @@ class Filesystem {
       }
       return Err(result.error);
     }
-    return Ok(result.ok.success);
+    return Ok(result.ok);
+  }
+
+  static async chmod(path: string, mode: number) {
+    return await wrapAsync(async () => await filesystem.chmod(path, mode));
+  }
+
+  static async chown(path: string, uid: number, gid: number) {
+    return await wrapAsync(async () => await filesystem.chown(path, uid, gid));
   }
 }
 
