@@ -49,7 +49,7 @@
   },
   "cli": {
     "binaryName": "pass-gui",
-    "distributionPath": "/build",
+    "distributionPath": "/dist",
     "resourcesPath": "/client/dist/",
     "extensionsPath": "/extensions/",
     "binaryVersion": "6.9.0",
@@ -60,6 +60,53 @@
       "initCommand": "pnpm install",
       "devCommand": "true",
       "buildCommand": "pnpm build"
+    },
+    "builder": {
+      "linux": {
+        "targets": [
+          {
+            "target": "deb",
+            "arch": ["x64", "arm64"],
+            "output": "dist/installers/linux",
+            "maintainer": "Ahmad Othman <ahmad.ali.othman@outlook.com>",
+            "category": "Utility",
+            "description": "User-friendly desktop GUI application for the GNU Pass password manager",
+            "icon": "/installerassets/linux/app.png",
+            "license": "/LICENSE"
+          },
+          {
+            "target": "appimage",
+            "arch": ["x64", "arm64"],
+            "output": "dist/installers/linux",
+            "maintainer": "Ahmad Othman <ahmad.ali.othman@outlook.com>",
+            "category": "Utility",
+            "description": "User-friendly desktop GUI application for the GNU Pass password manager",
+            "icon": "/installerassets/linux/app.png",
+            "license": "/LICENSE"
+          }
+        ]
+      },
+      "windows": {
+        "targets": [
+          {
+            "target": "nsis",
+            "arch": ["x64"],
+            "output": "dist/installers/windows",
+            "icon": "/installerassets/windows/app.ico",
+            "license": "/LICENSE"
+          }
+        ]
+      },
+      "mac": {
+        "targets": [
+          {
+            "target": "dmg",
+            "arch": ["universal"],
+            "output": "dist/installers/macos",
+            "icon": "/installerassets/macos/app.icns"
+          }
+        ]
+      }
     }
   }
 }

@@ -82,10 +82,11 @@ $MASK neu 'run dev'
 
 ## build
 
-> Build the project (frontend + Neutralino)
+> Build the project (frontend + Neutralino) with embedded resources into `dist/pass-gui/`
 
 ```bash
-$MASK neu 'build --embed-resources'
+$MASK clean
+$MASK neu 'build --release --clean --embed-resources'
 ```
 
 ### frontend
@@ -110,16 +111,139 @@ $MASK build
 > Remove build artifacts
 
 ```bash
-rm -rf client/dist/ build/
+rm -rf client/dist/ dist/ .neu-builder-staging
 ```
 
 ## release
 
-> Build a release version with embedded resources
+> Build a release version with resources embedded in the binaries (SEA)
+
+**OPTIONS**
+
+- full
+  - flags: --full
+  - type: boolean
+  - desc: Also build all installers the host supports (deb + appimage + nsis on Linux, dmg on macOS)
 
 ```bash
-$MASK clean
-$MASK neu 'build --release --clean --embed-resources'
+$MASK build
+if [[ "$full" == "true" ]]; then
+  $MASK package
+fi
+```
+
+### pr [args]
+
+> Create a release PR using release-please
+
+```bash
+declare -a argv
+eval 'argv=(${args})'
+remote="$(git remote get-url origin)"
+repoUrl="${remote/git@github.com:/https://github.com/}.git"
+
+release-please release-pr \
+  --repo-url="${repoUrl}" \
+  --token="${GITHUB_TOKEN:-token-missing}" \
+  --config-file="release-please-config.json" \
+  "${argv[@]}"
+```
+
+### gh [args]
+
+> Create a GitHub release using release-please (or force with -f)
+
+**OPTIONS**
+
+- force
+  - flags: -f --force
+  - type: boolean
+  - desc: Force release — create tag + GitHub release directly (triggers release.yml workflow)
+
+```bash
+declare -a argv
+eval 'argv=(${args})'
+remote="$(git remote get-url origin)"
+repoUrl="${remote/git@github.com:/https://github.com/}.git"
+
+if [[ "${force}" == "true" ]]; then
+  VERSION="$(jq -r .version package.json)"
+  TAG_NAME="v${VERSION}"
+
+  echo "Force releasing ${TAG_NAME}..."
+
+  git push origin ":refs/tags/${TAG_NAME}" 2>/dev/null || true
+  git tag -f "${TAG_NAME}"
+  git push origin "${TAG_NAME}" --force
+
+  sleep 3
+
+  gh release create "${TAG_NAME}" \
+    --title "Release ${TAG_NAME}" \
+    --generate-notes \
+    --target main
+
+  echo "Release created! Binaries will be built and uploaded automatically."
+else
+  release-please github-release \
+    --repo-url="${repoUrl}" \
+    --token="${GITHUB_TOKEN:-token-missing}" \
+    --config-file="release-please-config.json" \
+    "${argv[@]}"
+fi
+```
+
+## package
+
+> Build all installers the current host supports
+
+```bash
+case "$(uname -s)" in
+  Linux*)
+    $MASK package deb || echo "WARN: deb build failed" >&2
+    $MASK package appimage || echo "WARN: appimage build failed" >&2
+    $MASK package nsis || echo "WARN: nsis build failed (install 'nsis' for Windows installer)" >&2
+    ;;
+  Darwin*)
+    $MASK package dmg || echo "WARN: dmg build failed" >&2
+    ;;
+  *)
+    echo "Unsupported host: $(uname -s)" >&2
+    exit 1
+    ;;
+esac
+```
+
+### deb [arch]
+
+> Build a Debian package (`.deb`)
+
+```bash
+$MASK neu "builder deb ${arch:+"--$arch"}"
+```
+
+### appimage [arch]
+
+> Build a portable AppImage (`.AppImage`)
+
+```bash
+$MASK neu "builder appimage ${arch:+"--$arch"}"
+```
+
+### nsis [arch]
+
+> Build a Windows installer (`.exe`) — requires `makensis` on the host
+
+```bash
+$MASK neu "builder nsis ${arch:+"--$arch"}"
+```
+
+### dmg [arch]
+
+> Build a macOS disk image (`.dmg`) — macOS host only
+
+```bash
+$MASK neu "builder dmg ${arch:+"--$arch"}"
 ```
 
 ## container

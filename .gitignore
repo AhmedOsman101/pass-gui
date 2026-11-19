@@ -45,3 +45,9 @@ client/src/pages/test.vue
 # Misc.
 .fallow/
 !**/.gitkeep
+
+# Neutralinojs builder cache (downloaded packaging tools)
+.neu-builder-cache/
+
+# Packaged installers
+dist/installers/
