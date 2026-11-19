@@ -135,7 +135,11 @@ class NeutralinoService {
       result.stdOut = stripAnsi(result.stdOut);
       result.stdErr = stripAnsi(result.stdErr);
 
-      if (result.exitCode !== 0) {
+      // A background launch has no waited-for exit status: the native
+      // layer leaves `exitCode` at its -1 sentinel (os.cpp assigns it
+      // only when background is false). A resolved call is the success
+      // signal — do not misread the sentinel as a command failure.
+      if (!options?.background && result.exitCode !== 0) {
         // ...result contains exitCode, stdOut, stdErr, and pid
         throw new CommandFailedError({ cmd, args, ...result });
       }
@@ -331,6 +335,19 @@ class NeutralinoService {
   async getEnv(key: string, defaultValue: Stringifiable = ""): Promise<string> {
     const value = await os.getEnv(key);
     return value === "" ? String(defaultValue) : value;
+  }
+
+  /**
+   * Opens a path with the OS default handler (`os.open` from Neutralino):
+   * xdg-open on Linux/FreeBSD, `open` on macOS, ShellExecute on Windows.
+   * Used to reveal the config's parent directory in the file manager and
+   * as the system-association fallback for the default editor. Wrapped in
+   * Result so a rejected native call cannot throw through the caller.
+   */
+  async openPath(path: string): Promise<Result<void, Error>> {
+    return await wrapAsync(async () => {
+      await os.open(path);
+    });
   }
 
   /**
