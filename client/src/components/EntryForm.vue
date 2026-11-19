@@ -1,25 +1,18 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import { ArrowLeft, Eye, EyeOff, Plus, Save, Trash2 } from "@lucide/vue";
 import type { Result } from "lib-result";
-import { ref, computed, watch } from "vue";
-import {
-  Eye,
-  EyeOff,
-  Plus,
-  Trash2,
-  ArrowLeft,
-  Save,
-} from "@lucide/vue";
-import { Button } from "@/components/ui/button";
-import { useEntryTreeStore } from "@/stores/entry-tree";
-import { useEntryFormStore } from "@/stores/entry-form";
-import { usePasswordGenerator } from "@/composables/use-password-generator";
+import { computed, ref, watch } from "vue";
 import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
+import { Button } from "@/components/ui/button";
+import { usePasswordGenerator } from "@/composables/use-password-generator";
 import {
+  type MetadataEntry,
   parseEntryContent,
   serializeEntryContent,
-  type MetadataEntry,
 } from "@/lib/entry-content";
 import type { EntriesReadError, EntriesWriteError } from "@/services/entries";
+import { useEntryFormStore } from "@/stores/entry-form";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 import type { MutationResult } from "@/types/entries";
 
 const treeStore = useEntryTreeStore();
@@ -34,7 +27,7 @@ const rawContent = ref("");
 const path = ref("");
 watch(
   () => formStore.formMode,
-  (mode) => {
+  mode => {
     if (mode === "create") {
       path.value = "";
     } else if (mode === "edit" && treeStore.currentEntry) {
@@ -61,7 +54,11 @@ const metadata = ref<MetadataEntry[]>([]);
 
 // Initialize from entry or preset
 watch(
-  () => [formStore.formMode, formStore.formPresetPassword, treeStore.currentEntry],
+  () => [
+    formStore.formMode,
+    formStore.formPresetPassword,
+    treeStore.currentEntry,
+  ],
   () => {
     if (formStore.formMode === "create") {
       // Empty until Generate is pressed (preset from the generator dialog
@@ -97,9 +94,7 @@ const formError = ref<string | null>(null);
 
 // Duplicate key validation
 const duplicateKeys = computed(() => {
-  const keys = metadata.value
-    .map(m => m.key.trim())
-    .filter(k => k.length > 0);
+  const keys = metadata.value.map(m => m.key.trim()).filter(k => k.length > 0);
   const seen = new Set<string>();
   const dupes = new Set<string>();
   for (const k of keys) {
@@ -125,12 +120,15 @@ function onRegenerate(): void {
   isSecretVisible.value = true;
 }
 
-watch(() => genOptions.generated, (val) => {
-  if (showGeneratorOptions.value && val) {
-    secret.value = val;
-    isSecretVisible.value = true;
+watch(
+  () => genOptions.generated,
+  val => {
+    if (showGeneratorOptions.value && val) {
+      secret.value = val;
+      isSecretVisible.value = true;
+    }
   }
-});
+);
 
 // Mode conversion
 function toRawMode(): void {
@@ -214,11 +212,16 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-6 space-y-6 max-w-2xl">
+  <div class="max-w-2xl space-y-6 p-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <Button variant="ghost" size="icon" class="size-8" @click="formStore.closeForm()">
+        <Button
+          class="size-8"
+          size="icon"
+          variant="ghost"
+          @click="formStore.closeForm()"
+        >
           <ArrowLeft class="size-4" />
         </Button>
         <h2 class="text-lg font-semibold">
@@ -226,10 +229,20 @@ async function handleSubmit(): Promise<void> {
         </h2>
       </div>
       <div class="flex items-center gap-1 rounded-md border p-1">
-        <Button type="button" size="sm" :variant="editorMode === 'form' ? 'secondary' : 'ghost'" @click="toFormMode">
+        <Button
+          size="sm"
+          type="button"
+          :variant="editorMode === 'form' ? 'secondary' : 'ghost'"
+          @click="toFormMode"
+        >
           Form
         </Button>
-        <Button type="button" size="sm" :variant="editorMode === 'raw' ? 'secondary' : 'ghost'" @click="toRawMode">
+        <Button
+          size="sm"
+          type="button"
+          :variant="editorMode === 'raw' ? 'secondary' : 'ghost'"
+          @click="toRawMode"
+        >
           Raw
         </Button>
       </div>
@@ -238,20 +251,24 @@ async function handleSubmit(): Promise<void> {
     <form class="space-y-6" @submit.prevent="handleSubmit">
       <!-- Path -->
       <div class="space-y-2">
-        <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <label
+          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+          for="entry-path"
+        >
           Path
         </label>
         <input
-          v-model="path"
-          type="text"
+          class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          id="entry-path"
           placeholder="Email/work"
+          type="text"
+          v-model="path"
           :disabled="isEdit"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-        <p v-if="isEdit" class="text-xs text-muted-foreground">
+        >
+        <p class="text-muted-foreground text-xs" v-if="isEdit">
           Path cannot be changed after creation. Use Rename to change it.
         </p>
-        <p v-else class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs" v-else>
           Store-relative path, e.g. <code>Email/work</code>
         </p>
       </div>
@@ -261,14 +278,17 @@ async function handleSubmit(): Promise<void> {
         <!-- Password -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <label
+              class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+              for="entry-password"
+            >
               Password
             </label>
             <Button
+              class="h-7 px-2 text-xs"
+              size="sm"
               type="button"
               variant="ghost"
-              size="sm"
-              class="h-7 px-2 text-xs"
               @click="toggleGenerator"
             >
               {{ showGeneratorOptions ? "Hide Generator" : "Generate" }}
@@ -276,23 +296,26 @@ async function handleSubmit(): Promise<void> {
           </div>
 
           <!-- Password input with toggle -->
-          <div class="flex items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-2 focus-within:ring-2 focus-within:ring-ring">
+          <div
+            class="border-input bg-muted/50 focus-within:ring-ring flex items-center gap-2 rounded-lg border px-3 py-2 focus-within:ring-2"
+          >
             <input
+              class="placeholder:text-muted-foreground flex-1 bg-transparent font-mono text-sm outline-none"
+              id="entry-password"
+              placeholder="—"
               v-model="secret"
               :type="isSecretVisible ? 'text' : 'password'"
-              placeholder="—"
-              class="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground"
-            />
+            >
             <Button
+              class="size-8 shrink-0"
+              size="icon"
               type="button"
               variant="ghost"
-              size="icon"
-              class="size-8 shrink-0"
               :disabled="!secret"
               @click="isSecretVisible = !isSecretVisible"
             >
-              <EyeOff v-if="isSecretVisible" class="size-4" />
-              <Eye v-else class="size-4" />
+              <EyeOff class="size-4" v-if="isSecretVisible" />
+              <Eye class="size-4" v-else />
             </Button>
           </div>
 
@@ -306,96 +329,136 @@ async function handleSubmit(): Promise<void> {
 
         <!-- OTP URI -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">OTP URI</label>
-          <textarea v-model="otpUri" rows="2" placeholder="otpauth://totp/..." class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
+          <label
+            class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+            for="entry-otp-uri"
+            >OTP URI</label
+          >
+          <textarea
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full resize-y rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            id="entry-otp-uri"
+            placeholder="otpauth://totp/..."
+            rows="2"
+            v-model="otpUri"
+          />
         </div>
 
         <!-- Metadata -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <div
+            class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+          >
             Metadata
-          </label>
+          </div>
 
-          <div v-if="metadata.length > 0" class="space-y-2">
+          <div class="space-y-2" v-if="metadata.length > 0">
             <div
+              class="flex items-start gap-2"
               v-for="(meta, index) in metadata"
               :key="index"
-              class="flex items-start gap-2"
             >
               <input
-                v-model="meta.key"
-                type="text"
+                class="bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-1/3 rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 placeholder="Key"
-                class="w-1/3 rounded-md border bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                :class="duplicateKeys.has(meta.key.trim()) ? 'border-destructive' : 'border-input'"
-              />
+                type="text"
+                v-model="meta.key"
+                :class="
+                  duplicateKeys.has(meta.key.trim())
+                    ? 'border-destructive'
+                    : 'border-input'
+                "
+              >
               <textarea
-                v-model="meta.value"
-                rows="1"
+                class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring max-h-32 flex-1 resize-y rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 placeholder="Value"
-                class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y max-h-32"
+                rows="1"
+                v-model="meta.value"
               />
               <Button
+                class="mt-0.5 size-9 shrink-0"
+                size="icon"
                 type="button"
                 variant="ghost"
-                size="icon"
-                class="size-9 shrink-0 mt-0.5"
                 @click="removeMetadata(index)"
               >
-                <Trash2 class="size-4 text-destructive" />
+                <Trash2 class="text-destructive size-4" />
               </Button>
             </div>
           </div>
 
-          <p v-if="hasDuplicateKeys" class="text-xs text-destructive">
-            Duplicate keys: {{ [...duplicateKeys].join(", ") }} — last value wins on save.
+          <p class="text-destructive text-xs" v-if="hasDuplicateKeys">
+            Duplicate keys: {{ [...duplicateKeys].join(", ") }} — last value
+            wins on save.
           </p>
 
           <Button
+            class="w-full"
+            size="sm"
             type="button"
             variant="outline"
-            size="sm"
-            class="w-full"
             @click="addMetadata"
           >
-            <Plus class="size-4 mr-1" />
+            <Plus class="mr-1 size-4" />
             Add Metadata
           </Button>
         </div>
 
         <!-- Notes -->
         <div class="space-y-2">
-          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Notes</label>
-          <textarea v-model="notes" rows="4" placeholder="Any lines that are not key: value pairs" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
+          <label
+            class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+            for="entry-notes"
+            >Notes</label
+          >
+          <textarea
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full resize-y rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            id="entry-notes"
+            placeholder="Any lines that are not key: value pairs"
+            rows="4"
+            v-model="notes"
+          />
         </div>
       </template>
 
       <!-- Raw mode -->
-      <div v-else class="space-y-2">
-        <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Entry content</label>
-        <textarea v-model="rawContent" rows="14" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-y" />
-        <p class="text-xs text-muted-foreground">
-          First line is required password. Later <code>key: value</code> lines are metadata; first <code>otpauth://...</code> line is OTP; other lines are notes.
+      <div class="space-y-2" v-else>
+        <label
+          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+          for="entry-raw-content"
+          >Entry content</label
+        >
+        <textarea
+          class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full resize-y rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+          id="entry-raw-content"
+          rows="14"
+          v-model="rawContent"
+        />
+        <p class="text-muted-foreground text-xs">
+          First line is required password. Later <code>key: value</code> lines
+          are metadata; first <code>otpauth://...</code> line is OTP; other
+          lines are notes.
         </p>
       </div>
 
       <!-- Error -->
-      <p v-if="formError" class="text-sm text-destructive">
+      <p class="text-destructive text-sm" v-if="formError">
         {{ formError }}
       </p>
 
       <!-- Actions -->
-      <div class="flex items-center gap-2 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          @click="formStore.closeForm()"
-        >
+      <div class="flex items-center gap-2 border-t pt-4">
+        <Button type="button" variant="outline" @click="formStore.closeForm()">
           Cancel
         </Button>
         <Button type="submit" :disabled="isSubmitting">
-          <Save class="size-4 mr-1" />
-          {{ isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Create Entry" }}
+          <Save class="mr-1 size-4" />
+          {{
+            isSubmitting
+              ? "Saving..."
+              : isEdit
+                ? "Save Changes"
+                : "Create Entry"
+          }}
         </Button>
       </div>
     </form>

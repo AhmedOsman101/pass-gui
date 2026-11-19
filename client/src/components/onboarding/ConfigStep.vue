@@ -13,6 +13,9 @@ import { Fs } from "@/services/filesystem";
 import { Neu } from "@/services/neutralino";
 import type { ConfigStatus } from "@/types/onboarding";
 
+const props = defineProps<ConfigStepProps>();
+const emit = defineEmits<{ written: []; recheck: [] }>();
+
 /**
  * GUI editors that can be launched detached with a single file-path
  * argument. Terminal editors are deliberately excluded: launching one
@@ -44,9 +47,6 @@ type ConfigStepProps = {
   errors: string[];
   warnings: string[];
 };
-
-const props = defineProps<ConfigStepProps>();
-const emit = defineEmits<{ written: []; recheck: [] }>();
 
 /** The Default config example, byte-identical to what "Use default" writes. */
 const exampleConfig = ref<string | null>(null);

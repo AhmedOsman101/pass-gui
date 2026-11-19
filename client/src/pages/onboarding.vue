@@ -1,16 +1,16 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import { Check, ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { Check, ChevronLeft, ChevronRight } from "@lucide/vue";
-import { Button } from "@/components/ui/button";
 import BinariesStep from "@/components/onboarding/BinariesStep.vue";
 import ConfigStep from "@/components/onboarding/ConfigStep.vue";
+import { Button } from "@/components/ui/button";
 import { useConfigStatus } from "@/composables/use-config-status";
-import { computeSteps } from "@/lib/step-machine";
 import Path from "@/lib/path";
+import { computeSteps } from "@/lib/step-machine";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useReadinessStore } from "@/stores/readiness";
-import type { OnboardingStepId } from "@/types/onboarding";
+import type { OnboardingStep, OnboardingStepId } from "@/types/onboarding";
 
 const route = useRoute();
 const router = useRouter();
@@ -57,7 +57,7 @@ const machine = computed(() =>
 // step; Back/Next move the selection within the fixed five steps.
 const selectedStepId = ref<OnboardingStepId>(machine.value.currentStepId);
 
-watch(machine, (value) => {
+watch(machine, value => {
   selectedStepId.value = value.currentStepId;
 });
 
@@ -101,7 +101,7 @@ watch(
     readinessError: readiness.error,
     storeError: activeStore.error,
   }),
-  async (state) => {
+  async state => {
     // Belt: never stack evaluations or retry a failed one forever —
     // the step's Re-check button is the retry affordance.
     if (
@@ -150,7 +150,7 @@ async function onConfigWritten(): Promise<void> {
     <div class="w-full max-w-xl space-y-6">
       <div class="space-y-1 text-center">
         <h1 class="text-xl font-semibold">Set up pass-gui</h1>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-muted-foreground text-sm">
           Resolve each step so the app can start.
         </p>
       </div>
@@ -159,22 +159,24 @@ async function onConfigWritten(): Promise<void> {
       <ol class="space-y-1">
         <li v-for="step in machine.steps" :key="step.id">
           <button
-            class="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-accent"
+            class="hover:bg-accent flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors"
             :class="[
               statusStyles[step.status],
-              step.id === selectedStepId ? 'ring-1 ring-primary' : '',
+              step.id === selectedStepId ? 'ring-primary ring-1' : '',
             ]"
             @click="selectedStepId = step.id"
           >
             <span
               class="flex size-6 shrink-0 items-center justify-center rounded-full border border-current text-xs"
             >
-              <Check v-if="step.status === 'done'" class="size-3.5" />
-              <template v-else>{{ step.status === "skipped" ? "–" : "" }}</template>
+              <Check class="size-3.5" v-if="step.status === 'done'" />
+              <template v-else>{{
+                step.status === "skipped" ? "–" : ""
+              }}</template>
             </span>
             <span class="min-w-0 flex-1">
               <span class="block text-sm font-medium">{{ step.label }}</span>
-              <span class="block truncate text-xs text-muted-foreground">
+              <span class="text-muted-foreground block truncate text-xs">
                 {{
                   step.status === "skipped"
                     ? "Handled during store init"
@@ -193,23 +195,23 @@ async function onConfigWritten(): Promise<void> {
       />
       <ConfigStep
         v-else-if="selectedStepId === 'config'"
-        :status="configStatus"
         :errors="configErrors"
+        :status="configStatus"
         :warnings="configWarnings"
-        @written="onConfigWritten"
         @recheck="onConfigWritten"
+        @written="onConfigWritten"
       />
-      <div v-else class="rounded-lg border p-4">
+      <div class="rounded-lg border p-4" v-else>
         <p class="text-sm font-medium">{{ selectedStep.label }}</p>
-        <p class="mt-1 text-sm text-muted-foreground">
+        <p class="text-muted-foreground mt-1 text-sm">
           {{ selectedStep.description }}
         </p>
       </div>
 
       <div class="flex items-center justify-between">
         <RouterLink
+          class="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
           to="/settings"
-          class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
         >
           Settings
         </RouterLink>
@@ -223,7 +225,9 @@ async function onConfigWritten(): Promise<void> {
             Back
           </Button>
           <Button
-            :disabled="selectedStepId === machine.steps[machine.steps.length - 1].id"
+            :disabled="
+              selectedStepId === (machine.steps.at(-1) as OnboardingStep).id
+            "
             @click="selectOffset(1)"
           >
             Next

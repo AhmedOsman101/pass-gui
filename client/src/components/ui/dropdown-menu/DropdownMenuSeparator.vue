@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { reactiveOmit } from "@vueuse/core";
 import type { DropdownMenuSeparatorProps } from "reka-ui";
 import { DropdownMenuSeparator } from "reka-ui";

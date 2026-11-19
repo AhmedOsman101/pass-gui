@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,9 +34,8 @@ function handleDelete(): void {
         <AlertDialogTitle>Delete Store</AlertDialogTitle>
         <AlertDialogDescription>
           Delete store <code class="font-mono">{{ storeName }}</code>
-          at <code class="font-mono">{{ storePath }}</code>?
-          This will remove it from the config but will NOT delete
-          the directory on disk.
+          at <code class="font-mono">{{ storePath }}</code>? This will remove it
+          from the config but will NOT delete the directory on disk.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>

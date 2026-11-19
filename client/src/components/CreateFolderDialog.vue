@@ -1,6 +1,6 @@
-<script setup lang="ts">
-import { ref, watch } from "vue";
+<script lang="ts" setup>
 import { FolderPlus } from "@lucide/vue";
+import { ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +29,7 @@ const formError = ref<string | null>(null);
 
 watch(
   () => props.open,
-  (open) => {
+  open => {
     if (open) {
       folderName.value = "";
       formError.value = null;
@@ -81,20 +81,19 @@ async function handleSubmit(): Promise<void> {
 
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <input
-          v-model="folderName"
-          type="text"
+          class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
           placeholder="Folder name"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          autofocus
-        />
+          type="text"
+          v-model="folderName"
+        >
 
-        <p v-if="formError" class="text-sm text-destructive">
+        <p class="text-destructive text-sm" v-if="formError">
           {{ formError }}
         </p>
 
         <DialogFooter>
           <Button type="submit" :disabled="isSubmitting">
-            <FolderPlus class="size-4 mr-1" />
+            <FolderPlus class="mr-1 size-4" />
             {{ isSubmitting ? "Creating..." : "Create" }}
           </Button>
         </DialogFooter>

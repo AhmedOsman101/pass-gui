@@ -1,6 +1,7 @@
-<script setup lang="ts">
-import { computed, ref, watch } from "vue";
+<script lang="ts" setup>
 import { Folder, FolderOpen, FolderPlus } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
+import DirectoryTree from "@/components/DirectoryTree.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import DirectoryTree from "@/components/DirectoryTree.vue";
 import { Logger } from "@/lib/logger";
 import { Fs } from "@/services/filesystem";
 import { useEntryTreeStore } from "@/stores/entry-tree";
@@ -63,7 +63,7 @@ function buildFullDestination(): string {
   return newPath.value;
 }
 
-watch(isOpen, (open) => {
+watch(isOpen, open => {
   if (!open) return;
   formError.value = null;
   newFolderName.value = "";
@@ -155,18 +155,21 @@ async function handleSubmit(): Promise<void> {
       <DialogHeader>
         <DialogTitle>{{ dialogTitle }}</DialogTitle>
         <DialogDescription>
-          {{ actionVerb }} <code class="font-mono">{{ currentPath }}</code> to a new location
+          {{ actionVerb }} <code class="font-mono">{{ currentPath }}</code> to a
+          new location
         </DialogDescription>
       </DialogHeader>
 
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <!-- Destination folder picker -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Destination folder</label>
-          <div class="max-h-48 overflow-y-auto rounded-md border bg-muted/30 p-2 space-y-0.5">
+          <div class="text-sm font-medium">Destination folder</div>
+          <div
+            class="bg-muted/30 max-h-48 space-y-0.5 overflow-y-auto rounded-md border p-2"
+          >
             <button
+              class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors"
               type="button"
-              class="flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm text-left transition-colors"
               :class="
                 selectedFolder === ''
                   ? 'bg-accent text-accent-foreground'
@@ -174,8 +177,11 @@ async function handleSubmit(): Promise<void> {
               "
               @click="selectedFolder = ''"
             >
-              <FolderOpen v-if="selectedFolder === ''" class="size-4 shrink-0" />
-              <Folder v-else class="size-4 shrink-0" />
+              <FolderOpen
+                class="size-4 shrink-0"
+                v-if="selectedFolder === ''"
+              />
+              <Folder class="size-4 shrink-0" v-else />
               <span class="truncate">(root)</span>
             </button>
             <DirectoryTree
@@ -189,55 +195,52 @@ async function handleSubmit(): Promise<void> {
         <!-- Create new folder -->
         <div class="flex items-center gap-2">
           <input
-            v-model="newFolderName"
-            type="text"
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex-1 rounded-md border px-3 py-1.5 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
             placeholder="New folder name"
-            class="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            type="text"
+            v-model="newFolderName"
             @keydown.enter.prevent="createNewFolder"
-          />
+          >
           <Button
+            class="shrink-0"
+            size="sm"
             type="button"
             variant="outline"
-            size="sm"
-            class="shrink-0"
             :disabled="isCreatingFolder || !newFolderName.trim()"
             @click="createNewFolder"
           >
-            <FolderPlus class="size-4 mr-1" />
+            <FolderPlus class="mr-1 size-4" />
             {{ isCreatingFolder ? "Creating..." : "New" }}
           </Button>
         </div>
-        <p v-if="folderError" class="text-xs text-destructive">
+        <p class="text-destructive text-xs" v-if="folderError">
           {{ folderError }}
         </p>
 
         <!-- New name -->
         <div class="space-y-2">
-          <label :for="inputId" class="text-sm font-medium">New name</label>
+          <label class="text-sm font-medium" :for="inputId">New name</label>
           <input
-            :id="inputId"
-            v-model="newPath"
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
             type="text"
-            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            v-model="newPath"
+            :id="inputId"
             :placeholder="currentName"
-          />
+          >
         </div>
 
         <!-- Preview -->
-        <div class="text-xs text-muted-foreground">
-          Destination: <code class="font-mono">{{ buildFullDestination() || "..." }}</code>
+        <div class="text-muted-foreground text-xs">
+          Destination:
+          <code class="font-mono">{{ buildFullDestination() || "..." }}</code>
         </div>
 
-        <p v-if="formError" class="text-sm text-destructive">
+        <p class="text-destructive text-sm" v-if="formError">
           {{ formError }}
         </p>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            @click="isOpen = false"
-          >
+          <Button type="button" variant="outline" @click="isOpen = false">
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">

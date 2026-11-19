@@ -1,17 +1,17 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import AppSidebar from "@/components/AppSidebar.vue";
 import EntryDetail from "@/components/EntryDetail.vue";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { SidebarProvider } from "@/components/ui/sidebar";
 </script>
 
 <template>
   <SidebarProvider>
-    <ResizablePanelGroup direction="horizontal" class="h-screen">
+    <ResizablePanelGroup class="h-screen" direction="horizontal">
       <ResizablePanel :default-size="22" :min-size="12">
         <div class="h-screen overflow-hidden">
           <AppSidebar />

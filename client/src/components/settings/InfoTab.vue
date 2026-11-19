@@ -1,15 +1,10 @@
-<script setup lang="ts">
-import { Copy, Check } from "@lucide/vue";
+<script lang="ts" setup>
+import { Check, Copy } from "@lucide/vue";
 import { onUnmounted, ref } from "vue";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import toml from "@/lib/toml";
 import { Clipboard } from "@/services/clipboard";
@@ -57,10 +52,10 @@ function buildInfoText(): string {
     lines.push(`gpg_secret_keys: ${props.gpgInfo.keyCount}`);
   }
   lines.push(`active_store: ${props.config.data.core.active_store}`);
-  lines.push(`app_version: 0.0.1`);
-  lines.push(`license: GPL-3.0-or-later`);
-  lines.push(`repository: https://github.com/AhmedOsman101/pass-gui`);
-  lines.push(`author: Ahmad Othman`);
+  lines.push("app_version: 0.0.1");
+  lines.push("license: GPL-3.0-or-later");
+  lines.push("repository: https://github.com/AhmedOsman101/pass-gui");
+  lines.push("author: Ahmad Othman");
   return lines.join("\n");
 }
 
@@ -108,48 +103,48 @@ async function copyConfig(): Promise<void> {
     </CardHeader>
     <CardContent class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">pass</span>
-        <span class="text-sm font-mono">
+        <span class="text-muted-foreground text-sm">pass</span>
+        <span class="font-mono text-sm">
           {{ passInfo?.version || "Unknown" }}
-          <Badge variant="secondary" class="ml-2 text-xs">
+          <Badge class="ml-2 text-xs" variant="secondary">
             {{ passInfo?.binary || "N/A" }}
           </Badge>
         </span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">gpg</span>
-        <span class="text-sm font-mono">
+        <span class="text-muted-foreground text-sm">gpg</span>
+        <span class="font-mono text-sm">
           {{ gpgInfo?.version || "Unknown" }}
-          <Badge variant="secondary" class="ml-2 text-xs">
+          <Badge class="ml-2 text-xs" variant="secondary">
             {{ gpgInfo?.binary || "N/A" }}
           </Badge>
         </span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Active Store</span>
-        <span class="text-sm font-mono">
+        <span class="text-muted-foreground text-sm">Active Store</span>
+        <span class="font-mono text-sm">
           {{ config.data.core.active_store || "N/A" }}
         </span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Store Directory</span>
-        <span class="text-sm font-mono">
+        <span class="text-muted-foreground text-sm">Store Directory</span>
+        <span class="font-mono text-sm">
           {{ passInfo?.storeDir || "N/A" }}
         </span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">GPG Home</span>
-        <span class="text-sm font-mono">
+        <span class="text-muted-foreground text-sm">GPG Home</span>
+        <span class="font-mono text-sm">
           {{ gpgInfo?.homeDir || "N/A" }}
         </span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Secret Keys</span>
+        <span class="text-muted-foreground text-sm">Secret Keys</span>
         <Badge variant="secondary">{{ gpgInfo?.keyCount ?? 0 }}</Badge>
       </div>
     </CardContent>
@@ -161,36 +156,36 @@ async function copyConfig(): Promise<void> {
     </CardHeader>
     <CardContent class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Version</span>
-        <span class="text-sm font-mono">0.0.1</span>
+        <span class="text-muted-foreground text-sm">Version</span>
+        <span class="font-mono text-sm">0.0.1</span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">License</span>
-        <span class="text-sm font-mono">GPL-3.0-or-later</span>
+        <span class="text-muted-foreground text-sm">License</span>
+        <span class="font-mono text-sm">GPL-3.0-or-later</span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Author</span>
-        <span class="text-sm font-mono">Ahmad Othman</span>
+        <span class="text-muted-foreground text-sm">Author</span>
+        <span class="font-mono text-sm">Ahmad Othman</span>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Repository</span>
+        <span class="text-muted-foreground text-sm">Repository</span>
         <a
+          class="text-primary font-mono text-sm underline-offset-4 hover:underline"
           href="https://github.com/AhmedOsman101/pass-gui"
-          target="_blank"
           rel="noopener noreferrer"
-          class="text-sm font-mono text-primary underline-offset-4 hover:underline"
+          target="_blank"
         >
           AhmedOsman101/pass-gui
         </a>
       </div>
       <Separator />
       <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Config File</span>
+        <span class="text-muted-foreground text-sm">Config File</span>
         <span
-          class="max-w-[60%] truncate font-mono text-xs text-muted-foreground"
+          class="text-muted-foreground max-w-[60%] truncate font-mono text-xs"
           :title="configPath"
         >
           {{ configPath }}
@@ -198,14 +193,14 @@ async function copyConfig(): Promise<void> {
       </div>
       <Separator />
       <div class="flex gap-2">
-        <Button variant="outline" class="flex-1" @click="copyInfo">
-          <Check v-if="copiedInfo" class="size-4 mr-2" />
-          <Copy v-else class="size-4 mr-2" />
+        <Button class="flex-1" variant="outline" @click="copyInfo">
+          <Check class="mr-2 size-4" v-if="copiedInfo" />
+          <Copy class="mr-2 size-4" v-else />
           {{ copiedInfo ? "Copied!" : "Copy Info" }}
         </Button>
-        <Button variant="outline" class="flex-1" @click="copyConfig">
-          <Check v-if="copiedConfig" class="size-4 mr-2" />
-          <Copy v-else class="size-4 mr-2" />
+        <Button class="flex-1" variant="outline" @click="copyConfig">
+          <Check class="mr-2 size-4" v-if="copiedConfig" />
+          <Copy class="mr-2 size-4" v-else />
           {{ copiedConfig ? "Copied!" : "Copy Config" }}
         </Button>
       </div>

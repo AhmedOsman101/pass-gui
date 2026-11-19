@@ -1,3 +1,1 @@
-import StreamBox from "./StreamBox.vue";
-
-export { StreamBox };
+export { default as StreamBox } from "./StreamBox.vue";

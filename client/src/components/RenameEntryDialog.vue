@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEntryTreeStore } from "@/stores/entry-tree";
 import { Logger } from "@/lib/logger";
 import { Fs } from "@/services/filesystem";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const props = defineProps<{
   currentPath: string;
@@ -38,7 +38,7 @@ const dialogTitle = computed(() =>
 
 watch(
   () => props.open,
-  (open) => {
+  open => {
     if (!open) return;
     formError.value = null;
 
@@ -106,17 +106,17 @@ async function handleSubmit(): Promise<void> {
 
       <form class="space-y-4" @submit.prevent="handleSubmit">
         <div class="space-y-2">
-          <label for="new-name" class="text-sm font-medium">New name</label>
+          <label class="text-sm font-medium" for="new-name">New name</label>
           <input
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
             id="new-name"
-            v-model="newName"
             type="text"
-            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            v-model="newName"
             :placeholder="currentName"
-          />
+          >
         </div>
 
-        <p v-if="formError" class="text-sm text-destructive">
+        <p class="text-destructive text-sm" v-if="formError">
           {{ formError }}
         </p>
 

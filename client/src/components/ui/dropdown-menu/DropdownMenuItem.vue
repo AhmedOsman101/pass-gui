@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { reactiveOmit } from "@vueuse/core";
 import type { DropdownMenuItemProps } from "reka-ui";
 import { DropdownMenuItem, useForwardProps } from "reka-ui";

@@ -1,6 +1,7 @@
-<script setup lang="ts">
-import { ref } from "vue";
+<script lang="ts" setup>
 import { Copy } from "@lucide/vue";
+import { ref } from "vue";
+import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,17 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useClipboardStore } from "@/stores/clipboard";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { usePasswordGenerator } from "@/composables/use-password-generator";
-import GeneratorOptionsPanel from "@/components/GeneratorOptionsPanel.vue";
+import { useClipboardStore } from "@/stores/clipboard";
+
+const emit = defineEmits<(e: "save", password: string) => void>();
 
 const clipboard = useClipboardStore();
 const genOptions = usePasswordGenerator();
-
-const emit = defineEmits<{
-  (e: "save", password: string): void;
-}>();
 
 const isOpen = ref(false);
 
@@ -54,21 +52,24 @@ function handleSave(): void {
         </DialogDescription>
       </DialogHeader>
 
-      <GeneratorOptionsPanel v-model:gen-state="genOptions" @regenerate="genOptions.regenerate" />
+      <GeneratorOptionsPanel
+        v-model:gen-state="genOptions"
+        @regenerate="genOptions.regenerate"
+      />
 
       <div class="flex gap-2">
         <Button
-          variant="outline"
           class="flex-1"
+          variant="outline"
           :disabled="!genOptions.generated"
           @click="copyToClipboard"
         >
-          <Copy class="size-4 mr-2" />
+          <Copy class="mr-2 size-4" />
           Copy
         </Button>
         <Button
-          variant="default"
           class="flex-1"
+          variant="default"
           :disabled="!genOptions.generated"
           @click="handleSave"
         >

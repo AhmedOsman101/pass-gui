@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ChevronRight, Folder, FolderOpen } from "@lucide/vue";
 import { ref } from "vue";
 import type { EntryTree } from "@/types/entries";
@@ -9,7 +9,7 @@ const props = withDefaults(
     selectedPath: string;
     depth?: number;
   }>(),
-  { depth: 0 },
+  { depth: 0 }
 );
 
 const emit = defineEmits<{
@@ -32,8 +32,8 @@ function toggle(path: string): void {
   <template v-for="node in nodes" :key="node.path">
     <template v-if="node.type === 'DIRECTORY'">
       <button
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors"
         type="button"
-        class="flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm text-left transition-colors"
         :class="
           selectedPath === node.path
             ? 'bg-accent text-accent-foreground'
@@ -47,15 +47,15 @@ function toggle(path: string): void {
           :class="{ 'rotate-90': expanded.has(node.path) }"
           @click.stop="toggle(node.path)"
         />
-        <FolderOpen v-if="selectedPath === node.path" class="size-4 shrink-0" />
-        <Folder v-else class="size-4 shrink-0" />
+        <FolderOpen class="size-4 shrink-0" v-if="selectedPath === node.path" />
+        <Folder class="size-4 shrink-0" v-else />
         <span class="truncate">{{ node.name }}</span>
       </button>
       <DirectoryTree
         v-if="expanded.has(node.path) && node.children"
+        :depth="depth + 1"
         :nodes="node.children"
         :selected-path="selectedPath"
-        :depth="depth + 1"
         @select="(p: string) => emit('select', p)"
       />
     </template>

@@ -1,6 +1,6 @@
-<script setup lang="ts">
-import { reactiveOmit } from "@vueuse/core";
+<script lang="ts" setup>
 import { Check } from "@lucide/vue";
+import { reactiveOmit } from "@vueuse/core";
 import type {
   DropdownMenuCheckboxItemEmits,
   DropdownMenuCheckboxItemProps,

@@ -1,4 +1,17 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import {
+  ArrowUpDown,
+  Check,
+  FolderPlus,
+  Plus,
+  Search,
+  Settings,
+  Sparkles,
+} from "@lucide/vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
+import { refDebounced } from "@vueuse/core";
+import { computed, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import Tree from "@/components/Tree.vue";
@@ -33,19 +46,6 @@ import { useActiveStoreStore } from "@/stores/active-store";
 import { useEntryFormStore } from "@/stores/entry-form";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 import type { EntryNode, EntryTree } from "@/types/entries";
-import {
-  ArrowUpDown,
-  Check,
-  FolderPlus,
-  Plus,
-  Search,
-  Settings,
-  Sparkles,
-} from "@lucide/vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
-import { refDebounced } from "@vueuse/core";
-import { computed, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
 
 const props = defineProps<SidebarProps>();
 
@@ -70,10 +70,10 @@ function onPasswordSave(password: string): void {
 
 watch(
   () => activeStore.hasStore,
-  (ready) => {
+  ready => {
     if (ready) treeStore.loadTree();
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // Global hotkeys
@@ -85,7 +85,7 @@ useHotkey(
       treeStore.copyEntry(treeStore.selectedPath, node?.type);
     }
   },
-  { enabled: hasSelection },
+  { enabled: hasSelection }
 );
 
 useHotkey(
@@ -96,7 +96,7 @@ useHotkey(
       treeStore.cutEntry(treeStore.selectedPath, node?.type);
     }
   },
-  { enabled: hasSelection },
+  { enabled: hasSelection }
 );
 
 useHotkey(
@@ -125,7 +125,7 @@ useHotkey(
       })();
     }
   },
-  { enabled: computed(() => !!treeStore.buffer) },
+  { enabled: computed(() => !!treeStore.buffer) }
 );
 
 async function pasteInto(destDir: string): Promise<void> {
@@ -145,25 +145,26 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
   }
   return undefined;
 }
-
 </script>
 
 <template>
-  <Sidebar v-bind="props" collapsible="none" class="w-full">
+  <Sidebar v-bind="props" class="w-full" collapsible="none">
     <SidebarHeader class="border-b px-3 py-2">
       <div class="flex items-center justify-between">
-        <RouterLink to="/test"><span class="text-sm font-semibold">pass-gui</span></RouterLink>
+        <RouterLink to="/test"
+          ><span class="text-sm font-semibold">pass-gui</span></RouterLink
+        >
         <div class="flex items-center gap-1">
           <DropdownMenu v-if="treeStore.hasEntries">
             <DropdownMenuTrigger as-child>
               <Button
-                variant="ghost"
+                class="text-muted-foreground h-7 px-2 text-xs"
                 size="sm"
-                class="h-7 px-2 text-xs text-muted-foreground"
+                variant="ghost"
               >
-                <ArrowUpDown class="size-3 mr-1" />
+                <ArrowUpDown class="mr-1 size-3" />
                 {{
-                  sortOptions.find((o) => o.value === treeStore.sortMode)?.label
+                  sortOptions.find(o => o.value === treeStore.sortMode)?.label
                 }}
               </Button>
             </DropdownMenuTrigger>
@@ -174,7 +175,7 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
                 @click="treeStore.setSortMode(opt.value)"
               >
                 <Check
-                  class="size-4 mr-2"
+                  class="mr-2 size-4"
                   :class="
                     treeStore.sortMode === opt.value
                       ? 'opacity-100'
@@ -186,8 +187,8 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
             </DropdownMenuContent>
           </DropdownMenu>
           <RouterLink
+            class="text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex size-7 items-center justify-center rounded-md"
             to="/settings"
-            class="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <Settings class="size-4" />
           </RouterLink>
@@ -198,20 +199,20 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
       <ContextMenuTrigger as-child>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel class="flex items-center justify-start mb-2">
+            <SidebarGroupLabel class="mb-2 flex items-center justify-start">
               <div class="flex items-center gap-1">
                 <Button
-                  variant="outline"
-                  size="sm"
                   class="h-7 px-2 text-xs"
+                  size="sm"
+                  variant="outline"
                   @click="formStore.openCreateForm()"
                 >
-                  <Plus class="size-3 mr-1" />
+                  <Plus class="mr-1 size-3" />
                   New
                 </Button>
                 <PasswordGenerator @save="onPasswordSave">
-                  <Button variant="outline" size="sm" class="h-7 px-2 text-xs">
-                    <Sparkles class="size-3 mr-1" />
+                  <Button class="h-7 px-2 text-xs" size="sm" variant="outline">
+                    <Sparkles class="mr-1 size-3" />
                     Generate
                   </Button>
                 </PasswordGenerator>
@@ -221,14 +222,14 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
               <div class="px-2 pb-2">
                 <div class="relative">
                   <Search
-                    class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+                    class="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2"
                   />
                   <input
-                    v-model="searchQuery"
-                    type="text"
+                    class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-8 py-1.5 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     placeholder="Search..."
-                    class="w-full rounded-md border border-input bg-background px-8 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  />
+                    type="text"
+                    v-model="searchQuery"
+                  >
                 </div>
               </div>
               <Tree
@@ -236,20 +237,20 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
                 :search-query="debouncedSearch"
               />
               <SidebarMenuSkeleton
-                v-else-if="treeStore.isLoadingTree"
                 class="mx-2"
+                v-else-if="treeStore.isLoadingTree"
               />
               <div
+                class="text-muted-foreground space-y-3 px-4 py-8 text-center text-sm"
                 v-else-if="!treeStore.isLoadingTree"
-                class="px-4 py-8 text-center text-sm text-muted-foreground space-y-3"
               >
                 <p>No entries yet.</p>
                 <Button
-                  variant="outline"
                   size="sm"
+                  variant="outline"
                   @click="formStore.openCreateForm()"
                 >
-                  <Plus class="size-4 mr-1" />
+                  <Plus class="mr-1 size-4" />
                   Create your first entry
                 </Button>
               </div>
@@ -259,11 +260,11 @@ function findNode(nodes: EntryTree, path: string): EntryNode | undefined {
       </ContextMenuTrigger>
       <ContextMenuContent class="min-w-48 p-2">
         <ContextMenuItem @click="formStore.openCreateForm()">
-          <Plus class="size-4 mr-2" />
+          <Plus class="mr-2 size-4" />
           New Entry
         </ContextMenuItem>
         <ContextMenuItem @click="isCreateFolderOpen = true">
-          <FolderPlus class="size-4 mr-2" />
+          <FolderPlus class="mr-2 size-4" />
           New Folder
         </ContextMenuItem>
       </ContextMenuContent>

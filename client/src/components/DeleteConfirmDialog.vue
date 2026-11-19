@@ -1,6 +1,5 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from "vue";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -10,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { useEntryTreeStore } from "@/stores/entry-tree";
 
@@ -27,10 +27,9 @@ const isDeleting = ref(false);
 
 async function handleDelete(): Promise<void> {
   isDeleting.value = true;
-  const result = useNotifyResult(
-    await treeStore.removeEntry(props.entryPath),
-    { ok: false }
-  );
+  const result = useNotifyResult(await treeStore.removeEntry(props.entryPath), {
+    ok: false,
+  });
   isDeleting.value = false;
   if (result.isOk()) {
     emit("update:open", false);
@@ -40,15 +39,15 @@ async function handleDelete(): Promise<void> {
 
 <template>
   <AlertDialog :open="open" @update:open="emit('update:open', $event)">
-    <AlertDialogTrigger v-if="!open" as-child>
+    <AlertDialogTrigger as-child v-if="!open">
       <slot />
     </AlertDialogTrigger>
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>Delete Entry</AlertDialogTitle>
         <AlertDialogDescription>
-          Delete <code class="font-mono">{{ entryPath }}</code>?
-          This cannot be undone.
+          Delete <code class="font-mono">{{ entryPath }}</code>? This cannot be
+          undone.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -57,8 +56,8 @@ async function handleDelete(): Promise<void> {
              dialog via its own click handler before the awaited Result
              resolves, so a failed delete would look like success. -->
         <Button
-          :disabled="isDeleting"
           variant="destructive"
+          :disabled="isDeleting"
           @click="handleDelete"
         >
           {{ isDeleting ? "Deleting..." : "Delete" }}

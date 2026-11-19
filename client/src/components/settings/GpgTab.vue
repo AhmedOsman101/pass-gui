@@ -1,11 +1,16 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { X } from "@lucide/vue";
 import { onMounted, ref } from "vue";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -14,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Gpg } from "@/services/gpg";
 import type { SecretKey } from "@/types";
 
@@ -45,7 +51,10 @@ onMounted(async () => {
 
 function addTag(): void {
   const raw = tagInput.value;
-  const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const parts = raw
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
   if (parts.length === 0) return;
 
   const newOpts = [...opts.value];
@@ -86,7 +95,11 @@ function handleTagKeydown(e: KeyboardEvent): void {
   if (e.key === "Enter" || e.key === ",") {
     e.preventDefault();
     addTag();
-  } else if (e.key === "Backspace" && tagInput.value === "" && opts.value.length > 0) {
+  } else if (
+    e.key === "Backspace" &&
+    tagInput.value === "" &&
+    opts.value.length > 0
+  ) {
     removeTag(opts.value.length - 1);
   }
 }
@@ -136,46 +149,50 @@ function keyLabel(k: SecretKey): string {
       <div class="flex flex-col gap-2">
         <Label>Extra GPG Options</Label>
         <div
-          class="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 font-mono text-sm"
-          @click="tagInputRef?.focus()"
+          class="bg-background flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-sm"
         >
           <span
+            class="bg-secondary inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs"
             v-for="(tag, index) in opts"
             :key="index"
-            class="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs"
-            @click.stop="startEditTag(index)"
           >
             <input
+              class="w-20 bg-transparent outline-none"
+              type="text"
               v-if="editingTagIndex === index"
               v-model="editingTagValue"
-              type="text"
-              class="w-20 bg-transparent outline-none"
-              @keydown.enter="commitEditTag"
-              @keydown.escape="cancelEditTag"
               @blur="commitEditTag"
               @click.stop
-              autofocus
-            />
-            <template v-else>{{ tag }}</template>
+              @keydown.enter="commitEditTag"
+              @keydown.escape="cancelEditTag"
+            >
             <button
+              class="outline-none"
               type="button"
-              class="ml-0.5 rounded-full p-0.5 hover:bg-muted"
+              v-else
+              @click.stop="startEditTag(index)"
+            >
+              {{ tag }}
+            </button>
+            <button
+              class="hover:bg-muted ml-0.5 rounded-full p-0.5"
+              type="button"
               @click.stop="removeTag(index)"
             >
               <X class="size-3" />
             </button>
           </span>
           <input
+            class="placeholder:text-muted-foreground min-w-[120px] flex-1 bg-transparent outline-none"
+            placeholder="Type and press comma..."
+            type="text"
             ref="tagInputRef"
             v-model="tagInput"
-            type="text"
-            placeholder="Type and press comma..."
-            class="min-w-[120px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-            @keydown="handleTagKeydown"
             @blur="addTag"
-          />
+            @keydown="handleTagKeydown"
+          >
         </div>
-        <p class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs">
           Press comma or Enter to add. Backspace to remove last.
         </p>
       </div>
@@ -201,23 +218,29 @@ function keyLabel(k: SecretKey): string {
                 {{ keyLabel(k) }}
               </SelectItem>
               <template v-if="secretKeys.length === 0 && !secretKeysError">
-                <SelectItem value="__none__" disabled>No secret keys found</SelectItem>
+                <SelectItem disabled value="__none__"
+                  >No secret keys found</SelectItem
+                >
               </template>
               <SelectItem value="__custom__">Custom...</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
-        <div v-else class="flex gap-2">
+        <div class="flex gap-2" v-else>
           <Input
-            v-model="signingKey"
-            placeholder="Enter key ID or email"
             class="flex-1 font-mono"
+            placeholder="Enter key ID or email"
+            v-model="signingKey"
           />
-          <Button variant="outline" size="sm" @click="signingKeyMode = 'select'">
+          <Button
+            size="sm"
+            variant="outline"
+            @click="signingKeyMode = 'select'"
+          >
             List
           </Button>
         </div>
-        <p class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs">
           Optional signing key for pass operations.
         </p>
       </div>
@@ -246,17 +269,21 @@ function keyLabel(k: SecretKey): string {
             </SelectGroup>
           </SelectContent>
         </Select>
-        <div v-else class="flex gap-2">
+        <div class="flex gap-2" v-else>
           <Input
-            v-model="recipientKey"
-            placeholder="Enter key ID or email"
             class="flex-1 font-mono"
+            placeholder="Enter key ID or email"
+            v-model="recipientKey"
           />
-          <Button variant="outline" size="sm" @click="recipientKeyMode = 'select'">
+          <Button
+            size="sm"
+            variant="outline"
+            @click="recipientKeyMode = 'select'"
+          >
             List
           </Button>
         </div>
-        <p class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs">
           Optional recipient override key.
         </p>
       </div>

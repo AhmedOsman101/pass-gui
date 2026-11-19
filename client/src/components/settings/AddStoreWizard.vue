@@ -1,4 +1,7 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import { ChevronRight, FolderOpen, Loader2 } from "@lucide/vue";
+import type { Result } from "lib-result";
+import { computed, ref, watch } from "vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,17 +28,11 @@ import { useNotifyResult } from "@/composables/use-notify-result";
 import { Logger } from "@/lib/logger";
 import { Dialog as NeuDialog } from "@/services/dialog";
 import { Gpg } from "@/services/gpg";
-import {
-  type AddStoreError,
-  type CreateStoreError,
-} from "@/services/store";
+import type { AddStoreError, CreateStoreError } from "@/services/store";
 import { StoreValidation } from "@/services/store-validation";
 import { useActiveStoreStore } from "@/stores/active-store";
 import type { SecretKey } from "@/types";
 import type { StoreConfig } from "@/types/config";
-import { ChevronRight, FolderOpen, Loader2 } from "@lucide/vue";
-import type { Result } from "lib-result";
-import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
   stores: Record<string, StoreConfig>;
@@ -77,21 +74,21 @@ const nameError = computed(() => {
 const pathError = computed(() => {
   const path = storePath.value.trim();
   if (!path) return "";
-  const existing = Object.values(props.stores).find((s) => s.path === path);
+  const existing = Object.values(props.stores).find(s => s.path === path);
   if (existing) return "A store with this path already exists";
   return "";
 });
 
 const canAdvanceName = computed(
-  () => storeName.value.trim() !== "" && !nameError.value,
+  () => storeName.value.trim() !== "" && !nameError.value
 );
 const canAdvancePath = computed(
-  () => storePath.value.trim() !== "" && !pathError.value,
+  () => storePath.value.trim() !== "" && !pathError.value
 );
 const canCreate = computed(
   () =>
     // Existing stores are added as-is — no key selection to gate on.
-    (isExistingStore.value || selectedKeyId.value !== "") && !isCreating.value,
+    (isExistingStore.value || selectedKeyId.value !== "") && !isCreating.value
 );
 
 /**
@@ -104,22 +101,24 @@ const {
   error: creationError,
   run: runCreateAction,
 } = useAsyncAction(
-  async (
-    input: { name: string; path: string; gpgKeyId: string }
-  ): Promise<Result<StoreConfig, CreateStoreError | AddStoreError>> =>
+  async (input: {
+    name: string;
+    path: string;
+    gpgKeyId: string;
+  }): Promise<Result<StoreConfig, CreateStoreError | AddStoreError>> =>
     isExistingStore.value
       ? activeStoreStore.addStore(input.name, { path: input.path })
-      : activeStoreStore.createStore(input.name, input),
+      : activeStoreStore.createStore(input.name, input)
 );
 
 // Load GPG keys when dialog opens
 watch(
   () => props.open,
-  async (isOpen) => {
+  async isOpen => {
     if (isOpen) {
       await loadKeys();
     }
-  },
+  }
 );
 
 async function loadKeys(): Promise<void> {
@@ -209,7 +208,9 @@ async function createStore(): Promise<void> {
 
   useNotifyResult(result, {
     ok: () =>
-      isExistingStore.value ? `Store "${name}" added` : `Store "${name}" created`,
+      isExistingStore.value
+        ? `Store "${name}" added`
+        : `Store "${name}" created`,
   });
 
   if (result.isOk()) {
@@ -242,7 +243,7 @@ function resetWizard(): void {
       </DialogHeader>
 
       <!-- Step indicators -->
-      <div class="flex items-center gap-2 text-xs text-muted-foreground">
+      <div class="text-muted-foreground flex items-center gap-2 text-xs">
         <Badge :variant="step === 'name' ? 'default' : 'outline'"
           >1. Name</Badge
         >
@@ -255,94 +256,95 @@ function resetWizard(): void {
           :variant="
             step === 'gpg' || step === 'creating' ? 'default' : 'outline'
           "
-          >{{ isExistingStore ? "3. Confirm" : "3. GPG Key" }}</Badge
+          >{{
+            isExistingStore ? "3. Confirm" : "3. GPG Key"
+          }}</Badge
         >
       </div>
 
       <Separator />
 
       <!-- Step: Name -->
-      <div v-if="step === 'name'" class="flex flex-col gap-3">
+      <div class="flex flex-col gap-3" v-if="step === 'name'">
         <Label for="store-name">Store Name</Label>
         <Input
           id="store-name"
-          v-model="storeName"
           placeholder="my-store"
-          autofocus
+          v-model="storeName"
           @keydown.enter="advanceStep"
         />
-        <p v-if="nameError" class="text-xs text-destructive">{{ nameError }}</p>
-        <p v-else class="text-xs text-muted-foreground">
+        <p class="text-destructive text-xs" v-if="nameError">{{ nameError }}</p>
+        <p class="text-muted-foreground text-xs" v-else>
           A unique identifier for this store (letters, numbers, hyphens,
           underscores).
         </p>
       </div>
 
       <!-- Step: Path -->
-      <div v-else-if="step === 'path'" class="flex flex-col gap-3">
+      <div class="flex flex-col gap-3" v-else-if="step === 'path'">
         <Label for="store-path">Store Directory</Label>
         <div class="flex gap-2">
           <Input
-            id="store-path"
-            v-model="storePath"
-            placeholder="/home/user/.password-store"
             class="flex-1 font-mono"
-            autofocus
+            id="store-path"
+            placeholder="/home/user/.password-store"
+            v-model="storePath"
             @keydown.enter="advanceStep"
           />
           <Button
-            variant="outline"
-            size="icon"
             class="size-9 shrink-0"
+            size="icon"
+            variant="outline"
             @click="pickFolder"
           >
             <FolderOpen class="size-4" />
           </Button>
         </div>
-        <p v-if="pathError" class="text-xs text-destructive">{{ pathError }}</p>
-        <p v-else-if="detectionError" class="text-xs text-destructive">
+        <p class="text-destructive text-xs" v-if="pathError">{{ pathError }}</p>
+        <p class="text-destructive text-xs" v-else-if="detectionError">
           {{ detectionError }}
         </p>
-        <p v-else-if="isExistingStore" class="text-xs text-amber-600">
+        <p class="text-xs text-amber-600" v-else-if="isExistingStore">
           Existing store detected — will be added as-is without
           re-initialization.
         </p>
-        <p v-else class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs" v-else>
           The directory will be created if it doesn't exist.
         </p>
       </div>
 
       <!-- Step: GPG Key (create) / Confirm (existing store) -->
-      <div v-else-if="step === 'gpg'" class="flex flex-col gap-3">
-        <p v-if="creationError" class="text-xs text-destructive">
+      <div class="flex flex-col gap-3" v-else-if="step === 'gpg'">
+        <p class="text-destructive text-xs" v-if="creationError">
           {{ creationError?.message }}
         </p>
         <template v-if="isExistingStore">
           <Label>Confirm</Label>
-          <p class="text-sm text-muted-foreground">
+          <p class="text-muted-foreground text-sm">
             Existing store detected at
-            <code class="font-mono">{{ storePath }}</code> — it will be added
-            as-is without re-initialization. No key selection needed.
+            <code class="font-mono">{{ storePath }}</code>
+            — it will be added as-is without re-initialization. No key selection
+            needed.
           </p>
         </template>
         <template v-else>
           <Label>Encryption Key</Label>
-          <div v-if="isLoadingKeys" class="flex items-center gap-2 py-4">
+          <div class="flex items-center gap-2 py-4" v-if="isLoadingKeys">
             <Loader2 class="size-4 animate-spin" />
-            <span class="text-sm text-muted-foreground">Loading GPG keys...</span>
+            <span class="text-muted-foreground text-sm"
+              >Loading GPG keys...</span
+            >
           </div>
-          <div
-            v-else-if="keysLoadError"
-            class="py-4 text-sm text-destructive"
-          >
+          <div class="text-destructive py-4 text-sm" v-else-if="keysLoadError">
             Failed to load GPG keys: {{ keysLoadError }}
           </div>
           <div
+            class="text-muted-foreground py-4 text-sm"
             v-else-if="secretKeys.length === 0"
-            class="py-4 text-sm text-muted-foreground"
           >
             No GPG secret keys found. Create one with
-            <code class="font-mono">gpg --gen-key</code> first.
+            <code class="font-mono">gpg --gen-key</code>
+            first.
           </div>
           <Select v-else v-model="selectedKeyId">
             <SelectTrigger class="w-full">
@@ -360,7 +362,7 @@ function resetWizard(): void {
               </SelectGroup>
             </SelectContent>
           </Select>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-muted-foreground text-xs">
             This key will encrypt all passwords in the new store.
           </p>
         </template>
@@ -368,22 +370,22 @@ function resetWizard(): void {
 
       <!-- Step: Creating -->
       <div
-        v-else-if="step === 'creating'"
         class="flex flex-col items-center gap-3 py-6"
+        v-else-if="step === 'creating'"
       >
-        <Loader2 class="size-8 animate-spin text-muted-foreground" />
-        <span class="text-sm text-muted-foreground">{{
+        <Loader2 class="text-muted-foreground size-8 animate-spin" />
+        <span class="text-muted-foreground text-sm">{{
           isExistingStore ? "Adding store..." : "Creating store..."
         }}</span>
-        <p v-if="creationError" class="text-xs text-destructive">
+        <p class="text-destructive text-xs" v-if="creationError">
           {{ creationError?.message }}
         </p>
       </div>
 
       <DialogFooter>
         <Button
-          v-if="step !== 'creating'"
           variant="outline"
+          v-if="step !== 'creating'"
           @click="step === 'name' ? emit('update:open', false) : goBack()"
         >
           {{ step === "name" ? "Cancel" : "Back" }}

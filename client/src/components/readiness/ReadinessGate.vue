@@ -1,11 +1,11 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useActiveStoreStore } from "@/stores/active-store";
-import { useReadinessStore } from "@/stores/readiness";
 import { Gpg } from "@/services/gpg";
 import { Neu } from "@/services/neutralino";
 import { Pass } from "@/services/pass";
+import { useActiveStoreStore } from "@/stores/active-store";
+import { useReadinessStore } from "@/stores/readiness";
 import LoadingScreen from "./LoadingScreen.vue";
 
 const route = useRoute();
@@ -64,11 +64,11 @@ onMounted(initGate);
  */
 watch(
   () => activeStore.storePath,
-  async (newPath) => {
+  async newPath => {
     if (newPath) {
       await readiness.evaluate(newPath);
     }
-  },
+  }
 );
 
 /**
@@ -85,13 +85,13 @@ watch(
     neuFailed: neuError.value !== null,
     onOnboarding: route.path === "/onboarding",
   }),
-  (snap) => {
+  snap => {
     if (!snap.settled || snap.evaluating || snap.neuFailed) return;
     if (snap.blocked && !snap.onOnboarding) {
       void router.replace("/onboarding");
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 /**
@@ -102,24 +102,26 @@ watch(
 <template>
   <!-- Critical: Neu failed — app paralyzed, distinct from normal blocking issues -->
   <div
+    class="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center"
     v-if="neuError"
-    class="flex flex-col items-center justify-center min-h-screen gap-4 px-4 text-center"
   >
     <h1 class="text-xl font-semibold">Critical failure</h1>
-    <p class="text-sm text-muted-foreground max-w-md">
+    <p class="text-muted-foreground max-w-md text-sm">
       Unable to resolve home directory — the app cannot start.
     </p>
-    <p class="text-xs text-destructive max-w-md wrap-break-word">
+    <p class="text-destructive max-w-md text-xs wrap-break-word">
       {{ neuError.message }}
     </p>
     <button
-      class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+      class="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
       @click="retryNeu"
     >
       Retry
     </button>
   </div>
-  <LoadingScreen v-else-if="activeStore.isValidating || readiness.isEvaluating" />
+  <LoadingScreen
+    v-else-if="activeStore.isValidating || readiness.isEvaluating"
+  />
   <template v-else-if="isExempt">
     <!-- Exempt routes (onboarding) render regardless of readiness -->
     <slot />

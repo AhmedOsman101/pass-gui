@@ -1,12 +1,15 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import { ArrowLeft } from "@lucide/vue";
+import { onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 import ClipboardTab from "@/components/settings/ClipboardTab.vue";
 import ExtensionsTab from "@/components/settings/ExtensionsTab.vue";
 import GenerationTab from "@/components/settings/GenerationTab.vue";
 import GpgTab from "@/components/settings/GpgTab.vue";
 import InfoTab from "@/components/settings/InfoTab.vue";
 import StoresTab from "@/components/settings/StoresTab.vue";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { Config } from "@/services/config";
 import { Gpg } from "@/services/gpg";
@@ -15,9 +18,6 @@ import { Pass } from "@/services/pass";
 import { Store } from "@/services/store";
 import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
-import { ArrowLeft } from "@lucide/vue";
-import { onMounted, ref } from "vue";
-import { RouterLink } from "vue-router";
 
 const config = ref<ParsedToml<AppConfig> | null>(null);
 const configPath = ref("");
@@ -179,7 +179,10 @@ function handleSaveGeneration(): void {
 
 function handleSaveClipboard(): void {
   // Same seam clamp: non-negative int (zod requires nonnegative).
-  const clearAfterSeconds = Math.max(0, Math.trunc(clipboardForm.value.clearAfterSeconds));
+  const clearAfterSeconds = Math.max(
+    0,
+    Math.trunc(clipboardForm.value.clearAfterSeconds)
+  );
   void saveSection("clipboard", {
     clear_after_seconds: clearAfterSeconds,
     selection: clipboardForm.value.selection,
@@ -205,34 +208,34 @@ function handleSaveExtensions(): void {
     <div class="mx-auto max-w-3xl px-6 py-8">
       <div class="mb-6 flex items-center gap-3">
         <RouterLink
+          class="text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex size-8 items-center justify-center rounded-md"
           to="/"
-          class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <ArrowLeft class="size-4" />
         </RouterLink>
         <h1 class="text-2xl font-bold">Settings</h1>
       </div>
 
-      <div v-if="isLoading" class="flex items-center justify-center py-16">
-        <span class="text-sm text-muted-foreground">Loading settings...</span>
+      <div class="flex items-center justify-center py-16" v-if="isLoading">
+        <span class="text-muted-foreground text-sm">Loading settings...</span>
       </div>
 
       <div
-        v-else-if="loadError"
         class="flex flex-col items-center justify-center gap-3 py-16"
+        v-else-if="loadError"
       >
-        <p class="text-sm font-medium text-destructive">
+        <p class="text-destructive text-sm font-medium">
           Failed to load settings
         </p>
-        <p class="max-w-md text-center font-mono text-xs text-muted-foreground">
+        <p class="text-muted-foreground max-w-md text-center font-mono text-xs">
           {{ loadError.message }}
         </p>
-        <Button variant="outline" size="sm" @click="() => void loadConfig()">
+        <Button size="sm" variant="outline" @click="() => void loadConfig()">
           Retry
         </Button>
       </div>
 
-      <Tabs v-else default-value="stores" class="w-full">
+      <Tabs class="w-full" default-value="stores" v-else>
         <TabsList class="w-full justify-start">
           <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
@@ -245,13 +248,16 @@ function handleSaveExtensions(): void {
         <div class="mt-6">
           <TabsContent value="stores">
             <StoresTab
-              :config="config!"
               v-model:stores="storesForm"
               v-model:active-store="generalForm.activeStore"
+              :config="
+                // biome-ignore lint/style/noNonNullAssertion: needed
+                config!
+              "
               :is-saving="isSaving"
-              @save-store="saveStore"
               @delete-store="deleteStore"
               @save-active-store="handleSaveGeneral"
+              @save-store="saveStore"
               @update-stores="storesForm = $event"
             />
           </TabsContent>
@@ -299,7 +305,10 @@ function handleSaveExtensions(): void {
 
           <TabsContent value="info">
             <InfoTab
-              :config="config!"
+              :config="
+                // biome-ignore lint/style/noNonNullAssertion: needed
+                config!
+              "
               :config-path="configPath"
               :gpg-info="gpgInfo"
               :pass-info="passInfo"

@@ -37,12 +37,15 @@
     "enabled": true,
     "actions": {
       "preset": "recommended",
+      "recommended": true,
       "source": {
         "preset": "recommended",
+        "recommended": true,
         "organizeImports": "on",
         "useSortedAttributes": "on",
         "useSortedProperties": "off",
-        "useSortedKeys": "off"
+        "useSortedKeys": "off",
+        "noDuplicateClasses": "on"
       }
     }
   },
@@ -376,5 +379,14 @@
       }
     }
   ],
-  "tailwind": { "attributes": ["class", "className", "classList"] }
+  "tailwind": {
+    "attributes": [
+      "class",
+      "ui",
+      "className",
+      "ngClass",
+      "class:list",
+      ":class"
+    ]
+  }
 }

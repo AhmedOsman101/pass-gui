@@ -1,14 +1,16 @@
-<script setup lang="ts">
-import type { ContextMenuTriggerProps } from "reka-ui"
-import type { HTMLAttributes } from "vue"
-import { reactiveOmit } from "@vueuse/core"
-import { ContextMenuTrigger, useForwardProps } from "reka-ui"
-import { cn } from "@/lib/utils"
+<script lang="ts" setup>
+import { reactiveOmit } from "@vueuse/core";
+import type { ContextMenuTriggerProps } from "reka-ui";
+import { ContextMenuTrigger, useForwardProps } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { cn } from "@/lib/utils";
 
-const props = defineProps<ContextMenuTriggerProps & { class?: HTMLAttributes["class"] }>()
+const props = defineProps<
+  ContextMenuTriggerProps & { class?: HTMLAttributes["class"] }
+>();
 
-const delegatedProps = reactiveOmit(props, "class")
-const forwardedProps = useForwardProps(delegatedProps)
+const delegatedProps = reactiveOmit(props, "class");
+const forwardedProps = useForwardProps(delegatedProps);
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { computed, nextTick, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,61 +54,74 @@ watch(
   async () => {
     if (!open.value) return;
     await nextTick();
-    if (outputRef.value) outputRef.value.scrollTop = outputRef.value.scrollHeight;
-  },
+    if (outputRef.value)
+      outputRef.value.scrollTop = outputRef.value.scrollHeight;
+  }
 );
 </script>
 
 <template>
-  <Collapsible v-model:open="open" class="rounded-lg border bg-card overflow-hidden">
+  <Collapsible
+    class="bg-card overflow-hidden rounded-lg border"
+    v-model:open="open"
+  >
     <CollapsibleTrigger
-      class="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+      class="hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-2 text-left transition-colors"
     >
       <span class="text-muted-foreground shrink-0">
         <svg
-          v-if="open"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
           fill="none"
+          height="14"
           stroke="currentColor"
           stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          v-if="open"
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
         <svg
-          v-else
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
           fill="none"
+          height="14"
           stroke="currentColor"
           stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+          v-else
         >
           <path d="m9 18 6-6-6-6" />
         </svg>
       </span>
       <code class="flex-1 truncate font-mono text-xs">$ {{ command }}</code>
       <span
-        v-if="statusLabel"
         class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+        v-if="statusLabel"
         :class="{
-          'bg-muted text-muted-foreground': status === 'running' || status === 'idle',
-          'bg-green-500/15 text-green-700 dark:text-green-400': status === 'success',
+          'bg-muted text-muted-foreground':
+            status === 'running' || status === 'idle',
+          'bg-green-500/15 text-green-700 dark:text-green-400':
+            status === 'success',
           'bg-destructive/15 text-destructive': status === 'error',
         }"
       >
         {{ statusLabel }}
       </span>
       <Button
-        variant="ghost"
-        size="icon-sm"
-        class="shrink-0 size-6"
         aria-label="Copy output"
+        class="size-6 shrink-0"
+        size="icon-sm"
+        variant="ghost"
         @click.stop="copy"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" />
+        <svg
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="14"
+        >
+          <rect height="13" rx="2" width="13" x="9" y="9" />
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3" />
         </svg>
       </Button>
@@ -116,13 +129,20 @@ watch(
 
     <CollapsibleContent>
       <div
+        class="bg-muted/30 max-h-64 overflow-auto border-t px-3 py-2 font-mono text-xs break-all whitespace-pre-wrap"
         ref="outputRef"
-        class="max-h-64 overflow-auto bg-muted/30 px-3 py-2 font-mono text-xs whitespace-pre-wrap break-all border-t"
       >
-        <span v-if="stdout" class="text-foreground">{{ stdout }}</span>
-        <span v-if="stderr" class="text-destructive">{{ stderr }}</span>
-        <span v-if="!stdout && !stderr && !running" class="text-muted-foreground italic">No output</span>
-        <span v-if="running" class="inline-block size-2 animate-pulse bg-foreground/60 ml-1 align-middle" />
+        <span class="text-foreground" v-if="stdout">{{ stdout }}</span>
+        <span class="text-destructive" v-if="stderr">{{ stderr }}</span>
+        <span
+          class="text-muted-foreground italic"
+          v-if="!stdout && !stderr && !running"
+          >No output</span
+        >
+        <span
+          class="bg-foreground/60 ml-1 inline-block size-2 animate-pulse align-middle"
+          v-if="running"
+        />
       </div>
     </CollapsibleContent>
   </Collapsible>

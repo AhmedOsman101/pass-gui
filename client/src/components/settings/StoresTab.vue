@@ -1,20 +1,19 @@
-<script setup lang="ts">
-import { Trash2, Pencil, FolderOpen, Plus } from "@lucide/vue";
+<script lang="ts" setup>
+import { FolderOpen, Pencil, Plus, Trash2 } from "@lucide/vue";
 import { computed, ref } from "vue";
 import StoreDeleteDialog from "@/components/StoreDeleteDialog.vue";
 import AddStoreWizard from "@/components/settings/AddStoreWizard.vue";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,9 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Dialog } from "@/services/dialog";
 import type { AppConfig, StoreConfig } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
+
+const activeStoreModel = defineModel<string>("activeStore", { required: true });
 
 const props = defineProps<{
   config: ParsedToml<AppConfig>;
@@ -41,8 +43,6 @@ const emit = defineEmits<{
   updateActiveStore: [store: string];
   updateStores: [stores: Record<string, StoreConfig>];
 }>();
-
-const activeStoreModel = defineModel<string>("activeStore", { required: true });
 
 const deleteDialogOpen = ref(false);
 const deleteTarget = ref<{ name: string; path: string } | null>(null);
@@ -147,12 +147,17 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
       <div class="flex flex-col gap-2">
         <Label for="active-store">Active Store</Label>
         <Select v-model="activeStoreModel">
-          <SelectTrigger id="active-store" class="w-full">
+          <SelectTrigger class="w-full" id="active-store">
             <SelectValue placeholder="Select a store">
               <template #default>
-                <span v-if="activeStoreModel && stores[activeStoreModel]" class="flex w-full items-center">
+                <span
+                  class="flex w-full items-center"
+                  v-if="activeStoreModel && stores[activeStoreModel]"
+                >
                   <span>{{ activeStoreModel }}</span>
-                  <span class="ml-auto pl-4 text-xs text-muted-foreground">{{ stores[activeStoreModel]?.path }}</span>
+                  <span class="text-muted-foreground ml-auto pl-4 text-xs">{{
+                    stores[activeStoreModel]?.path
+                  }}</span>
                 </span>
                 <span v-else>Select a store</span>
               </template>
@@ -167,13 +172,15 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
               >
                 <span class="flex w-full items-center">
                   <span>{{ name }}</span>
-                  <span class="ml-auto pl-4 text-xs text-muted-foreground">{{ store.path }}</span>
+                  <span class="text-muted-foreground ml-auto pl-4 text-xs">{{
+                    store.path
+                  }}</span>
                 </span>
               </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
-        <p class="text-xs text-muted-foreground">
+        <p class="text-muted-foreground text-xs">
           Which password store is currently active.
         </p>
       </div>
@@ -181,64 +188,64 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
       <Separator />
 
       <div
+        class="flex flex-col gap-2 rounded-lg border p-4"
         v-for="store in storeEntries"
         :key="store.name"
-        class="flex flex-col gap-2 rounded-lg border p-4"
       >
         <div
-          v-if="editingStore !== store.name"
           class="flex items-center justify-between"
+          v-if="editingStore !== store.name"
         >
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
               <span class="text-sm font-medium">{{ store.name }}</span>
               <Badge
-                v-if="store.name === activeStore"
-                variant="secondary"
                 class="text-xs"
+                variant="secondary"
+                v-if="store.name === activeStore"
               >
                 active
               </Badge>
             </div>
-            <span class="font-mono text-xs text-muted-foreground">
+            <span class="text-muted-foreground font-mono text-xs">
               {{ store.path }}
             </span>
             <span
+              class="text-muted-foreground font-mono text-xs"
               v-if="store.gnupg_home"
-              class="font-mono text-xs text-muted-foreground"
             >
               GNUPGHOME: {{ store.gnupg_home }}
             </span>
           </div>
           <div class="flex items-center gap-1">
             <Button
-              variant="ghost"
-              size="icon"
               class="size-8"
+              size="icon"
+              variant="ghost"
               @click="startEditStore(store.name)"
             >
               <Pencil class="size-4" />
             </Button>
             <Button
-              v-if="store.name !== activeStore"
-              variant="ghost"
+              class="text-destructive size-8"
               size="icon"
-              class="size-8 text-destructive"
+              variant="ghost"
+              v-if="store.name !== activeStore"
               @click="promptDeleteStore(store.name)"
             >
               <Trash2 class="size-4" />
             </Button>
           </div>
         </div>
-        <div v-else class="flex flex-col gap-4">
+        <div class="flex flex-col gap-4" v-else>
           <div class="flex flex-col gap-2">
             <Label>Path</Label>
             <div class="flex gap-2">
-              <Input v-model="editStoreForm.path" class="flex-1 font-mono" />
+              <Input class="flex-1 font-mono" v-model="editStoreForm.path" />
               <Button
-                variant="outline"
-                size="icon"
                 class="size-9 shrink-0"
+                size="icon"
+                variant="outline"
                 @click="pickFolder('edit-path')"
               >
                 <FolderOpen class="size-4" />
@@ -252,25 +259,25 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
             </Label>
             <div class="flex gap-2">
               <Input
-                v-model="editStoreForm.gnupgHome"
                 class="flex-1 font-mono"
                 placeholder="Default GPG home"
+                v-model="editStoreForm.gnupgHome"
               />
               <Button
-                variant="outline"
-                size="icon"
                 class="size-9 shrink-0"
+                size="icon"
+                variant="outline"
                 @click="pickFolder('edit-gnupg')"
               >
                 <FolderOpen class="size-4" />
               </Button>
             </div>
           </div>
-          <p v-if="editError" class="text-xs text-destructive">
+          <p class="text-destructive text-xs" v-if="editError">
             {{ editError }}
           </p>
           <div class="flex justify-end gap-2">
-            <Button variant="outline" size="sm" @click="editingStore = null">
+            <Button size="sm" variant="outline" @click="editingStore = null">
               Cancel
             </Button>
             <Button size="sm" :disabled="isSaving" @click="saveEditStore">
@@ -283,7 +290,7 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
       <Separator />
       <div class="flex justify-end gap-2">
         <Button @click="wizardOpen = true">
-          <Plus class="size-4 mr-1" />
+          <Plus class="mr-1 size-4" />
           Add Store
         </Button>
         <Button :disabled="isSaving" @click="emit('saveActiveStore')">
@@ -293,15 +300,15 @@ async function pickFolder(target: "edit-path" | "edit-gnupg"): Promise<void> {
 
       <StoreDeleteDialog
         v-if="deleteTarget"
+        v-model:open="deleteDialogOpen"
         :store-name="deleteTarget.name"
         :store-path="deleteTarget.path"
-        v-model:open="deleteDialogOpen"
         @deleted="confirmDeleteStore"
       />
       <AddStoreWizard
-        :stores="stores"
-        :active-store="activeStore"
         v-model:open="wizardOpen"
+        :active-store="activeStore"
+        :stores="stores"
         @created="handleStoreCreated"
       />
     </CardContent>

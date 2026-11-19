@@ -1,7 +1,24 @@
-<script setup lang="ts">
-import { ArrowRightLeft, Copy, Eye, EyeOff, Files, Pencil, Plus, Sparkles, SquarePen, Trash2, X } from "@lucide/vue";
-import { computed, onUnmounted, ref, watch } from "vue";
+<script lang="ts" setup>
+import {
+  ArrowRightLeft,
+  Copy,
+  Eye,
+  EyeOff,
+  Files,
+  Pencil,
+  Plus,
+  Sparkles,
+  SquarePen,
+  Trash2,
+  X,
+} from "@lucide/vue";
 import { toast } from "sonner";
+import { computed, onUnmounted, ref, watch } from "vue";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
+import EntryForm from "@/components/EntryForm.vue";
+import MoveOrDuplicateDialog from "@/components/MoveOrDuplicateDialog.vue";
+import PasswordGenerator from "@/components/PasswordGenerator.vue";
+import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -9,15 +26,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
-import EntryForm from "@/components/EntryForm.vue";
-import MoveOrDuplicateDialog from "@/components/MoveOrDuplicateDialog.vue";
-import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
-import PasswordGenerator from "@/components/PasswordGenerator.vue";
 import { useNotifyResult } from "@/composables/use-notify-result";
 import { useClipboardStore } from "@/stores/clipboard";
-import { useEntryTreeStore } from "@/stores/entry-tree";
 import { useEntryFormStore } from "@/stores/entry-form";
+import { useEntryTreeStore } from "@/stores/entry-tree";
 
 const treeStore = useEntryTreeStore();
 const formStore = useEntryFormStore();
@@ -48,20 +60,20 @@ watch(
         }
       }, 500);
     }
-  },
+  }
 );
 
 watch(
   () => treeStore.currentEntry,
-  (entry) => {
-    if (entry && entry.path === treeStore.currentPath) {
+  currentEntry => {
+    if (currentEntry && currentEntry.path === treeStore.currentPath) {
       showSkeleton.value = false;
       if (skeletonTimer) {
         clearTimeout(skeletonTimer);
         skeletonTimer = null;
       }
     }
-  },
+  }
 );
 
 onUnmounted(() => {
@@ -106,7 +118,7 @@ async function copyValue(value: string, label: string): Promise<void> {
   if (!treeStore.currentPath) return;
   const result = await clipboard.copyWithTimeout(value, treeStore.currentPath);
   result.match({
-    okFn: (action) => {
+    okFn: action => {
       toast.success(`${label} copied`, {
         description: `Clears in ${action.timerSeconds}s · ${treeStore.currentPath}`,
         action: {
@@ -116,7 +128,7 @@ async function copyValue(value: string, label: string): Promise<void> {
         duration: action.timerSeconds * 1000,
       });
     },
-    errFn: (e) => toast.error(`Copy failed: ${e.message}`),
+    errFn: e => toast.error(`Copy failed: ${e.message}`),
   });
 }
 
@@ -131,29 +143,31 @@ function copySecret(): void {
   <EntryForm v-if="formStore.isFormOpen" />
 
   <!-- Loading -->
-  <div v-else-if="showSkeleton" class="p-6 space-y-4">
-    <div class="h-6 w-48 bg-muted animate-pulse rounded" />
-    <div class="h-10 w-full bg-muted animate-pulse rounded" />
-    <div class="h-20 w-full bg-muted animate-pulse rounded" />
+  <div class="space-y-4 p-6" v-else-if="showSkeleton">
+    <div class="bg-muted h-6 w-48 animate-pulse rounded" />
+    <div class="bg-muted h-10 w-full animate-pulse rounded" />
+    <div class="bg-muted h-20 w-full animate-pulse rounded" />
   </div>
 
   <!-- Empty state -->
   <div
+    class="text-muted-foreground flex h-full flex-col items-center justify-center space-y-6"
     v-else-if="!entry"
-    class="flex flex-col items-center justify-center h-full text-muted-foreground space-y-6"
   >
-    <div class="text-center space-y-2">
+    <div class="space-y-2 text-center">
       <p class="text-sm">No entry selected</p>
-      <p class="text-xs">Choose an entry from the sidebar or create a new one.</p>
+      <p class="text-xs">
+        Choose an entry from the sidebar or create a new one.
+      </p>
     </div>
     <div class="flex items-center gap-2">
-      <Button variant="outline" size="sm" @click="formStore.openCreateForm()">
-        <Plus class="size-4 mr-1" />
+      <Button size="sm" variant="outline" @click="formStore.openCreateForm()">
+        <Plus class="mr-1 size-4" />
         New Entry
       </Button>
       <PasswordGenerator @save="(pw: string) => formStore.openCreateForm(pw)">
-        <Button variant="outline" size="sm">
-          <Sparkles class="size-4 mr-1" />
+        <Button size="sm" variant="outline">
+          <Sparkles class="mr-1 size-4" />
           Generate
         </Button>
       </PasswordGenerator>
@@ -162,178 +176,202 @@ function copySecret(): void {
 
   <!-- Entry detail -->
   <TooltipProvider v-else>
-    <div class="p-6 space-y-6">
-    <!-- Header -->
-    <div class="flex items-start justify-between">
-      <h2 class="text-lg font-semibold font-mono">{{ entry.path }}</h2>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-8 shrink-0"
-            aria-label="Close entry"
-            @click="treeStore.clearSelection()"
-          >
-            <X class="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Close entry</TooltipContent>
-      </Tooltip>
-    </div>
-
-    <!-- Secret field -->
-    <div class="space-y-2">
-      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Password
-      </label>
-      <div class="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 mt-5">
-        <code class="flex-1 font-mono text-sm break-all">
-          <template v-if="isSecretVisible">{{ entry.secret }}</template>
-          <template v-else>••••••••••••••••</template>
-        </code>
+    <div class="space-y-6 p-6">
+      <!-- Header -->
+      <div class="flex items-start justify-between">
+        <h2 class="font-mono text-lg font-semibold">{{ entry.path }}</h2>
         <Tooltip>
           <TooltipTrigger as-child>
             <Button
-              variant="ghost"
-              size="icon"
+              aria-label="Close entry"
               class="size-8 shrink-0"
-              :aria-label="isSecretVisible ? 'Hide password' : 'Show password'"
-              @click="toggleSecret"
+              size="icon"
+              variant="ghost"
+              @click="treeStore.clearSelection()"
             >
-              <EyeOff v-if="isSecretVisible" class="size-4" />
-              <Eye v-else class="size-4" />
+              <X class="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{{ isSecretVisible ? "Hide password" : "Show password" }}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-8 shrink-0"
-              aria-label="Copy password"
-              @click="copySecret"
-            >
-              <Copy class="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Copy password</TooltipContent>
+          <TooltipContent>Close entry</TooltipContent>
         </Tooltip>
       </div>
-      <p class="sr-only" role="status">Password {{ isSecretVisible ? "shown" : "hidden" }}</p>
-    </div>
 
-    <!-- Metadata -->
-    <div v-if="metadataEntries.length > 0" class="space-y-2">
-      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Metadata
-      </label>
-      <div class="rounded-lg border divide-y my-5">
+      <!-- Secret field -->
+      <div class="space-y-2">
         <div
-          v-for="[key, value] in metadataEntries"
-          :key="key"
-          class="flex items-center justify-between px-3 py-2"
+          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
         >
-          <div class="min-w-0">
-            <span class="text-xs text-muted-foreground">{{ getLabel(key) }}</span>
-            <p class="text-sm font-mono truncate">{{ value }}</p>
-          </div>
+          Password
+        </div>
+        <div
+          class="bg-muted/50 mt-5 flex items-center gap-2 rounded-lg border px-3 py-2"
+        >
+          <code class="flex-1 font-mono text-sm break-all">
+            <template v-if="isSecretVisible">{{ entry.secret }}</template>
+            <template v-else>••••••••••••••••</template>
+          </code>
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
-                variant="ghost"
-                size="icon"
                 class="size-8 shrink-0"
-                :aria-label="`Copy ${getLabel(key)}`"
-                @click="copyValue(value, getLabel(key))"
+                size="icon"
+                variant="ghost"
+                :aria-label="
+                  isSecretVisible ? 'Hide password' : 'Show password'
+                "
+                @click="toggleSecret"
               >
-                <Copy class="size-3" />
+                <EyeOff class="size-4" v-if="isSecretVisible" />
+                <Eye class="size-4" v-else />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Copy {{ getLabel(key) }}</TooltipContent>
+            <TooltipContent>{{
+              isSecretVisible ? "Hide password" : "Show password"
+            }}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                aria-label="Copy password"
+                class="size-8 shrink-0"
+                size="icon"
+                variant="ghost"
+                @click="copySecret"
+              >
+                <Copy class="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy password</TooltipContent>
           </Tooltip>
         </div>
-      </div>
-    </div>
-
-    <!-- Other lines -->
-    <div v-if="entry.other.length > 0" class="space-y-2">
-      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Notes
-      </label>
-      <div class="rounded-lg border bg-muted/50 px-3 py-2">
-        <p
-          v-for="(line, i) in entry.other"
-          :key="i"
-          class="text-sm font-mono"
-        >
-          {{ line }}
+        <p class="sr-only" role="status">
+          Password {{ isSecretVisible ? "shown" : "hidden" }}
         </p>
       </div>
-    </div>
 
-    <div
-      v-if="metadataEntries.length === 0 && entry.other.length === 0"
-      class="text-sm text-muted-foreground"
-    >
-      No additional metadata
-    </div>
-
-    <!-- Actions bar -->
-    <div class="flex items-center gap-2 px-2 py-5 border-t">
-      <MoveOrDuplicateDialog v-if="treeStore.currentPath" mode="duplicate" :current-path="treeStore.currentPath">
-        <Button variant="outline" size="sm">
-          <Files class="size-4 mr-1" />
-          Duplicate
-        </Button>
-      </MoveOrDuplicateDialog>
-      <Button
-        v-if="treeStore.currentPath && entry"
-        variant="outline"
-        size="sm"
-        @click="formStore.openEditForm(editPath)"
-      >
-        <SquarePen class="size-4 mr-1" />
-        Edit
-      </Button>
-      <Button
-        v-if="treeStore.currentPath"
-        variant="outline"
-        size="sm"
-        @click="isRenameOpen = true"
-      >
-        <Pencil class="size-4 mr-1" />
-        Rename
-      </Button>
-      <RenameEntryDialog
-        v-if="treeStore.currentPath"
-        :current-path="treeStore.currentPath"
-        v-model:open="isRenameOpen"
-      />
-      <MoveOrDuplicateDialog v-if="treeStore.currentPath" mode="move" :current-path="treeStore.currentPath">
-        <Button variant="outline" size="sm">
-          <ArrowRightLeft class="size-4 mr-1" />
-          Move
-        </Button>
-      </MoveOrDuplicateDialog>
-      <DeleteConfirmDialog
-        v-if="treeStore.currentPath"
-        :entry-path="treeStore.currentPath"
-        v-model:open="isDeleteOpen"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          class="text-destructive hover:text-destructive"
-          @click="isDeleteOpen = true"
+      <!-- Metadata -->
+      <div class="space-y-2" v-if="metadataEntries.length > 0">
+        <div
+          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
         >
-          <Trash2 class="size-4 mr-1" />
-          Delete
+          Metadata
+        </div>
+        <div class="my-5 divide-y rounded-lg border">
+          <div
+            class="flex items-center justify-between px-3 py-2"
+            v-for="[ key, value ] in metadataEntries"
+            :key="key"
+          >
+            <div class="min-w-0">
+              <span class="text-muted-foreground text-xs">{{
+                getLabel(key)
+              }}</span>
+              <p class="truncate font-mono text-sm">{{ value }}</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  class="size-8 shrink-0"
+                  size="icon"
+                  variant="ghost"
+                  :aria-label="`Copy ${getLabel(key)}`"
+                  @click="copyValue(value, getLabel(key))"
+                >
+                  <Copy class="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy {{ getLabel(key) }}</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other lines -->
+      <div class="space-y-2" v-if="entry.other.length > 0">
+        <div
+          class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+        >
+          Notes
+        </div>
+        <div class="bg-muted/50 rounded-lg border px-3 py-2">
+          <p
+            class="font-mono text-sm"
+            v-for="(line, i) in entry.other"
+            :key="i"
+          >
+            {{ line }}
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="text-muted-foreground text-sm"
+        v-if="metadataEntries.length === 0 && entry.other.length === 0"
+      >
+        No additional metadata
+      </div>
+
+      <!-- Actions bar -->
+      <div class="flex items-center gap-2 border-t px-2 py-5">
+        <MoveOrDuplicateDialog
+          mode="duplicate"
+          v-if="treeStore.currentPath"
+          :current-path="treeStore.currentPath"
+        >
+          <Button size="sm" variant="outline">
+            <Files class="mr-1 size-4" />
+            Duplicate
+          </Button>
+        </MoveOrDuplicateDialog>
+        <Button
+          size="sm"
+          variant="outline"
+          v-if="treeStore.currentPath && entry"
+          @click="formStore.openEditForm(editPath)"
+        >
+          <SquarePen class="mr-1 size-4" />
+          Edit
         </Button>
-      </DeleteConfirmDialog>
-    </div>
+        <Button
+          size="sm"
+          variant="outline"
+          v-if="treeStore.currentPath"
+          @click="isRenameOpen = true"
+        >
+          <Pencil class="mr-1 size-4" />
+          Rename
+        </Button>
+        <RenameEntryDialog
+          v-if="treeStore.currentPath"
+          v-model:open="isRenameOpen"
+          :current-path="treeStore.currentPath"
+        />
+        <MoveOrDuplicateDialog
+          mode="move"
+          v-if="treeStore.currentPath"
+          :current-path="treeStore.currentPath"
+        >
+          <Button size="sm" variant="outline">
+            <ArrowRightLeft class="mr-1 size-4" />
+            Move
+          </Button>
+        </MoveOrDuplicateDialog>
+        <DeleteConfirmDialog
+          v-if="treeStore.currentPath"
+          v-model:open="isDeleteOpen"
+          :entry-path="treeStore.currentPath"
+        >
+          <Button
+            class="text-destructive hover:text-destructive"
+            size="sm"
+            variant="outline"
+            @click="isDeleteOpen = true"
+          >
+            <Trash2 class="mr-1 size-4" />
+            Delete
+          </Button>
+        </DeleteConfirmDialog>
+      </div>
     </div>
   </TooltipProvider>
 </template>

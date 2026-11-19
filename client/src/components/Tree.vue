@@ -1,4 +1,16 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import {
+  ChevronRight,
+  Copy,
+  File,
+  Folder,
+  FolderPlus,
+  Pencil,
+  Scissors,
+  Trash2,
+} from "@lucide/vue";
+import { useHotkey } from "@tanstack/vue-hotkeys";
+import { computed, ref, TransitionGroup } from "vue";
 import CreateFolderDialog from "@/components/CreateFolderDialog.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import RenameEntryDialog from "@/components/RenameEntryDialog.vue";
@@ -16,24 +28,12 @@ import { useTreeState } from "@/composables/use-tree-state";
 import { Logger } from "@/lib/logger";
 import { Fs } from "@/services/filesystem";
 import { useEntryTreeStore } from "@/stores/entry-tree";
-import {
-  ChevronRight,
-  Copy,
-  File,
-  Folder,
-  FolderPlus,
-  Pencil,
-  Scissors,
-  Trash2,
-} from "@lucide/vue";
-import { useHotkey } from "@tanstack/vue-hotkeys";
-import { computed, ref, TransitionGroup } from "vue";
-
-const treeStore = useEntryTreeStore();
 
 const props = defineProps<{
   searchQuery?: string;
 }>();
+
+const treeStore = useEntryTreeStore();
 
 const searchQueryRef = computed(() => props.searchQuery ?? "");
 
@@ -123,13 +123,11 @@ useHotkey(
   "F2",
   () => {
     if (selectedPath.value) {
-      const node = visibleNodes.value.find(
-        (n) => n.path === selectedPath.value,
-      );
+      const node = visibleNodes.value.find(n => n.path === selectedPath.value);
       openRename(selectedPath.value, node?.isDirectory ? "DIRECTORY" : "FILE");
     }
   },
-  { enabled: hasSelected },
+  { enabled: hasSelected }
 );
 
 useHotkey(
@@ -137,7 +135,7 @@ useHotkey(
   () => {
     if (selectedPath.value) openDelete(selectedPath.value);
   },
-  { enabled: hasSelected },
+  { enabled: hasSelected }
 );
 
 // Keyboard navigation
@@ -160,17 +158,16 @@ useHotkey("Enter", () => {
 
 <template>
   <TransitionGroup
-    tag="ul"
-    data-slot="sidebar-menu"
-    data-sidebar="menu"
     class="flex w-full min-w-0 flex-col gap-1"
+    data-sidebar="menu"
+    data-slot="sidebar-menu"
     name="tree-node"
+    tag="ul"
   >
     <SidebarMenuItem v-for="node in visibleNodes" :key="node.path">
       <ContextMenu>
         <ContextMenuTrigger as-child>
           <SidebarMenuButton
-            :is-active="isSelectedNode(node.path)"
             class="overflow-hidden"
             :class="{
               'bg-accent/30':
@@ -179,35 +176,36 @@ useHotkey("Enter", () => {
               'copy-pulse': hasCopyBuffer(node.path),
               'search-highlight': isSearchMatch(node.path),
             }"
+            :is-active="isSelectedNode(node.path)"
             :style="{ paddingLeft: `${12 + node.depth * 16}px` }"
             :title="node.name"
             @click="toggleSelect(node.path)"
           >
             <ChevronRight
-              v-if="node.isDirectory"
               class="shrink-0 transition-transform duration-200"
+              v-if="node.isDirectory"
               :class="{ 'rotate-90': node.isExpanded }"
               @click.stop="toggleSelect(node.path)"
             />
-            <Folder v-if="node.isDirectory" class="shrink-0 size-4" />
-            <File v-else class="shrink-0 size-4" />
+            <Folder class="size-4 shrink-0" v-if="node.isDirectory" />
+            <File class="size-4 shrink-0" v-else />
             <span class="truncate">{{ node.name }}</span>
           </SidebarMenuButton>
         </ContextMenuTrigger>
 
         <!-- Directory context menu -->
-        <ContextMenuContent v-if="node.isDirectory" class="min-w-64 p-2">
+        <ContextMenuContent class="min-w-64 p-2" v-if="node.isDirectory">
           <ContextMenuItem v-if="treeStore.buffer" @click="paste(node.path)">
-            <Copy class="size-4 mr-2" />
+            <Copy class="mr-2 size-4" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuItem @click="openCreateFolder(node.path)">
-            <FolderPlus class="size-4 mr-2" />
+            <FolderPlus class="mr-2 size-4" />
             New Folder
           </ContextMenuItem>
           <ContextMenuItem @click="openRename(node.path, 'DIRECTORY')">
-            <Pencil class="size-4 mr-2" />
+            <Pencil class="mr-2 size-4" />
             Rename
             <ContextMenuShortcut>F2</ContextMenuShortcut>
           </ContextMenuItem>
@@ -216,34 +214,34 @@ useHotkey("Enter", () => {
             class="text-destructive"
             @click="openDelete(node.path)"
           >
-            <Trash2 class="size-4 mr-2" />
+            <Trash2 class="mr-2 size-4" />
             Delete
             <ContextMenuShortcut>Del</ContextMenuShortcut>
           </ContextMenuItem>
         </ContextMenuContent>
 
         <!-- File context menu -->
-        <ContextMenuContent v-else class="min-w-64 p-2">
+        <ContextMenuContent class="min-w-64 p-2" v-else>
           <ContextMenuItem
             v-if="treeStore.buffer"
             @click="pasteIntoParent(node.path)"
           >
-            <Copy class="size-4 mr-2" />
+            <Copy class="mr-2 size-4" />
             Paste
             <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuItem @click="treeStore.copyEntry(node.path, 'FILE')">
-            <Copy class="size-4 mr-2" />
+            <Copy class="mr-2 size-4" />
             Copy
             <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuItem @click="treeStore.cutEntry(node.path, 'FILE')">
-            <Scissors class="size-4 mr-2" />
+            <Scissors class="mr-2 size-4" />
             Cut
             <ContextMenuShortcut>Ctrl+X</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuItem @click="openRename(node.path, 'FILE')">
-            <Pencil class="size-4 mr-2" />
+            <Pencil class="mr-2 size-4" />
             Rename
             <ContextMenuShortcut>F2</ContextMenuShortcut>
           </ContextMenuItem>
@@ -252,7 +250,7 @@ useHotkey("Enter", () => {
             class="text-destructive"
             @click="openDelete(node.path)"
           >
-            <Trash2 class="size-4 mr-2" />
+            <Trash2 class="mr-2 size-4" />
             Delete
             <ContextMenuShortcut>Del</ContextMenuShortcut>
           </ContextMenuItem>
@@ -263,22 +261,23 @@ useHotkey("Enter", () => {
 
   <RenameEntryDialog
     v-if="isRenameOpen && renamePath"
+    v-model:open="isRenameOpen"
     :current-path="renamePath"
     :node-type="renameNodeType"
-    v-model:open="isRenameOpen"
   />
   <DeleteConfirmDialog
     v-if="isDeleteOpen && deletePath"
-    :entry-path="deletePath"
     v-model:open="isDeleteOpen"
+    :entry-path="deletePath"
   />
   <CreateFolderDialog
     v-if="isCreateFolderOpen && createFolderParent"
-    :parent-path="createFolderParent"
     v-model:open="isCreateFolderOpen"
+    :parent-path="createFolderParent"
   />
 </template>
 
+<!-- biome-ignore lint/suspicious/useScopedStyles: Intentional -->
 <style>
 .copy-pulse {
   animation: copy-pulse 1.5s ease-in-out infinite;

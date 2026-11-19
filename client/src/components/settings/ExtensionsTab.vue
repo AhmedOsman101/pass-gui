@@ -1,9 +1,15 @@
-<script setup lang="ts">
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+<script lang="ts" setup>
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 
 const enabled = defineModel<boolean>("enabled", { required: true });
 
@@ -22,7 +28,7 @@ const emit = defineEmits<{ save: [] }>();
       <div class="flex items-center justify-between">
         <div class="flex flex-col gap-1">
           <Label for="extensions-enabled">Enable Extensions</Label>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-muted-foreground text-xs">
             Enable pass extension support.
           </p>
         </div>
