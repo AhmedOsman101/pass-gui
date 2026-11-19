@@ -1,9 +1,8 @@
-name: CI/CD
+name: CI
 
 on:
   push:
     branches: ["**"]
-    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -31,18 +30,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Level 1: Quick check (all pushes)
       - name: Typecheck
         run: mask typecheck
 
       - name: Lint
         run: mask lint --reporter github
-
-      # Level 2: Release (tag push only)
-      - name: Build
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: mask build
-
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: mask release

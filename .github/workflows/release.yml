@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  release:
+    types: [published, unpublished]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build binaries for (default: latest release)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      should_build: ${{ steps.resolve.outputs.should_build }}
+    steps:
+      - name: Resolve tag
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+            if [ -z "$TAG" ]; then
+              TAG="$(gh api repos/${{ github.repository }}/releases/latest --jq .tag_name)"
+              echo "no tag input given; using latest release: $TAG"
+            fi
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "unsupported event: ${{ github.event_name }}"
+          exit 1
+
+  build-linux:
+    name: Build Linux Binaries + Installers
+    needs: resolve
+    if: needs.resolve.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Setup mask
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mask
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync version to neutralino.config.json
+        run: |
+          V=$(node -p "require('./package.json').version")
+          node -e "const f='neutralino.config.json';const c=require('./'+f);c.version=process.argv[1];require('fs').writeFileSync(f,JSON.stringify(c,null,2)+'\n')" "$V"
+
+      - name: Install NSIS
+        run: sudo apt-get update && sudo apt-get install -y nsis
+
+      - name: Build binaries and installers
+        run: mask release --full
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: linux
+          path: dist/installers/linux/
+          retention-days: 7
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows
+          path: dist/installers/windows/
+          retention-days: 7
+
+  build-macos:
+    name: Build macOS Binaries + DMG
+    needs: resolve
+    if: needs.resolve.outputs.should_build == 'true'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Setup mask
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mask
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync version to neutralino.config.json
+        run: |
+          V=$(node -p "require('./package.json').version")
+          node -e "const f='neutralino.config.json';const c=require('./'+f);c.version=process.argv[1];require('fs').writeFileSync(f,JSON.stringify(c,null,2)+'\n')" "$V"
+
+      - name: Build binaries and DMG
+        run: mask release --full
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v6
+        with:
+          name: macos
+          path: dist/installers/macos/
+          retention-days: 7
+
+  release:
+    name: Attach artifacts to release
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: linux
+          path: artifacts/linux
+
+      - name: Download Windows installer
+        uses: actions/download-artifact@v7
+        with:
+          name: windows
+          path: artifacts/windows
+
+      - name: Download macOS DMG
+        uses: actions/download-artifact@v7
+        with:
+          name: macos
+          path: artifacts/macos
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.resolve.outputs.tag }}"
+          gh release upload "$TAG" artifacts/**/* --clobber
