@@ -65,6 +65,8 @@ class Config {
    * @returns Result containing the AppConfig or an error
    */
   static async load(): Promise<Result<ParsedToml<AppConfig>>> {
+    // Directory-only: no config file is created here. Onboarding must get
+    // the chance to ask before any Default config is written.
     const ensureResult = await Config.ensure();
     if (ensureResult.isError()) {
       await Logger.error(
@@ -87,12 +89,35 @@ class Config {
       await Watcher.watch("config", dirResult.ok.parentPath, "config.toml");
     }
 
-    // Return cached result if file hasn't changed
-    if (!Watcher.hasChanged("config") && Config._cachedResult) {
+    // A deletion (or external edit) invalidates the cache. Without this a
+    // stale cache could be served after the file disappears.
+    if (Watcher.hasChanged("config")) {
+      Config._cachedResult = null;
+    }
+
+    if (Config._cachedResult) {
       return Ok(Config._cachedResult);
     }
 
-    // File changed (or first load) — read from disk
+    // No file on disk: serve in-memory defaults. Deliberately not cached —
+    // the config step must keep seeing "missing" until onboarding writes.
+    const existsResult = await Config.exists();
+    if (existsResult.isError()) return Err(existsResult.error);
+    if (!existsResult.ok) {
+      const defaultText = await Config.getDefaultConfigText();
+      if (defaultText.isError()) return Err(defaultText.error);
+      const parsed = toml.parse<AppConfig>(defaultText.ok);
+      if (parsed.isError()) {
+        return Err(
+          new ConfigParseError(
+            parsed.error,
+            `Failed to parse Default config: ${parsed.error.message}`
+          )
+        );
+      }
+      return Ok(parsed.ok);
+    }
+
     const result = await Config.loadFromDisk(configPath.ok);
     if (result.isError()) return Err(result.error);
 
@@ -227,8 +252,9 @@ class Config {
   }
 
   /**
-   * Ensures configuration exists, creating default if needed.
-   * For initial creation, uses DEFAULT_CONFIG.
+   * Ensures the config directory exists. Directory-only by design: no
+   * config file is created here, so onboarding can ask first. Still fails
+   * closed — an `exists()` error is never read as "missing".
    */
   static async ensure(): Promise<Result<void>> {
     const existsResult = await Config.exists();
@@ -237,23 +263,28 @@ class Config {
     // that would write defaults over a possibly-real config file.
     if (existsResult.isError()) return Err(existsResult.error);
 
-    // Create default config if it doesn't exist
-    if (!existsResult.ok) {
-      const configPath = await Config.getPath();
-      if (configPath.isError()) return Err(configPath.error);
+    const configPath = await Config.getPath();
+    if (configPath.isError()) return Err(configPath.error);
 
-      // Ensure directory exists
-      const parts = await Fs.getPathParts(configPath.ok);
-      if (parts.isError()) return Err(parts.error);
-      const dirPath = parts.ok.parentPath;
+    const parts = await Fs.getPathParts(configPath.ok);
+    if (parts.isError()) return Err(parts.error);
+    const dirPath = parts.ok.parentPath;
 
-      const dirExists = await Fs.isDirectory(dirPath);
-      if (!dirExists.ok || dirExists.isError()) {
-        const mkdirResult = await Fs.mkdir(dirPath);
-        if (mkdirResult.isError()) return Err(mkdirResult.error);
-      }
+    const dirExists = await Fs.isDirectory(dirPath);
+    if (!dirExists.ok || dirExists.isError()) {
+      const mkdirResult = await Fs.mkdir(dirPath);
+      if (mkdirResult.isError()) return Err(mkdirResult.error);
+    }
 
-      // For initial creation, validate default config before writing
+    return Ok(undefined);
+  }
+
+  /**
+   * Renders the commented Default config as TOML. Single source of truth
+   * for both the "Use default" write and the example shown in onboarding.
+   */
+  static getDefaultConfigText(): Promise<Result<string>> {
+    function build(): Result<string> {
       const validationResult = validateAppConfig(DEFAULT_CONFIG);
       if (validationResult.isError()) {
         return Err(
@@ -264,23 +295,134 @@ class Config {
         );
       }
 
-      // For initial creation, write a commented default config table
-      const defaultConfigTable = toml.buildDefaultConfigTable(DEFAULT_CONFIG);
-      const tomlContent = toml.stringify<AppConfig>(defaultConfigTable);
+      const table = toml.buildDefaultConfigTable(DEFAULT_CONFIG);
+      const tomlContent = toml.stringify<AppConfig>(table);
       if (tomlContent.isError()) return Err(tomlContent.error);
 
-      const writeResult = await Fs.writeFile(configPath.ok, tomlContent.ok);
-      if (writeResult.isError()) {
-        return Err(
-          new ConfigWriteError(
-            configPath.ok,
-            `Failed to write default config: ${writeResult.error.message}`
-          )
-        );
-      }
+      return Ok(tomlContent.ok);
     }
 
-    return Ok(undefined);
+    return Promise.resolve(build());
+  }
+
+  /**
+   * Writes the Default config when no file exists. Fails closed if a file
+   * appeared meanwhile — never silently overwrite a real config.
+   */
+  static async createDefault(): Promise<Result<ParsedToml<AppConfig>>> {
+    const existsResult = await Config.exists();
+    if (existsResult.isError()) return Err(existsResult.error);
+    if (existsResult.ok) {
+      return ErrFromText<ParsedToml<AppConfig>>(
+        "Configuration file already exists — nothing was written."
+      );
+    }
+
+    const ensureResult = await Config.ensure();
+    if (ensureResult.isError()) return Err(ensureResult.error);
+
+    const configPath = await Config.getPath();
+    if (configPath.isError()) return Err(configPath.error);
+
+    const defaultText = await Config.getDefaultConfigText();
+    if (defaultText.isError()) return Err(defaultText.error);
+
+    // Neutralino FS has no atomic O_EXCL create: re-check just before the
+    // write. This narrows the TOCTOU window but cannot eliminate it.
+    const stillMissing = await Config.exists();
+    if (stillMissing.isError()) return Err(stillMissing.error);
+    if (stillMissing.ok) {
+      return ErrFromText<ParsedToml<AppConfig>>(
+        "Configuration file already exists — nothing was written."
+      );
+    }
+
+    const writeResult = await Fs.writeFile(configPath.ok, defaultText.ok);
+    if (writeResult.isError()) {
+      return Err(
+        new ConfigWriteError(
+          configPath.ok,
+          `Failed to write Default config: ${writeResult.error.message}`
+        )
+      );
+    }
+
+    Watcher.invalidate("config");
+    Config._cachedResult = null;
+
+    const parsed = toml.parse<AppConfig>(defaultText.ok);
+    if (parsed.isError()) return Err(parsed.error);
+    return Ok(parsed.ok);
+  }
+
+  /**
+   * Validates pasted/imported TOML before writing it verbatim. Comments,
+   * key order and whitespace survive because the raw text — not a
+   * re-serialized table — is what lands on disk.
+   */
+  static async importText(
+    rawText: string
+  ): Promise<Result<ParsedToml<AppConfig>>> {
+    const existsResult = await Config.exists();
+    if (existsResult.isError()) return Err(existsResult.error);
+    if (existsResult.ok) {
+      return ErrFromText<ParsedToml<AppConfig>>(
+        "Configuration file already exists — nothing was written."
+      );
+    }
+
+    // Validate before any write — an invalid import must leave no trace.
+    const parsed = toml.parse<AppConfig>(rawText);
+    if (parsed.isError()) {
+      return Err(
+        new ConfigParseError(
+          parsed.error,
+          `Failed to parse config: ${parsed.error.message}`
+        )
+      );
+    }
+
+    // Schema only — Config content validation is a later step.
+    const validationResult = validateAppConfig(parsed.ok.data);
+    if (validationResult.isError()) {
+      return Err(
+        new ConfigValidationError(
+          formatZodError(validationResult.error),
+          validationResult.error
+        )
+      );
+    }
+
+    const ensureResult = await Config.ensure();
+    if (ensureResult.isError()) return Err(ensureResult.error);
+
+    const configPath = await Config.getPath();
+    if (configPath.isError()) return Err(configPath.error);
+
+    // Neutralino FS has no atomic O_EXCL create: re-check just before the
+    // write. This narrows the TOCTOU window but cannot eliminate it.
+    const stillMissing = await Config.exists();
+    if (stillMissing.isError()) return Err(stillMissing.error);
+    if (stillMissing.ok) {
+      return ErrFromText<ParsedToml<AppConfig>>(
+        "Configuration file already exists — nothing was written."
+      );
+    }
+
+    const writeResult = await Fs.writeFile(configPath.ok, rawText);
+    if (writeResult.isError()) {
+      return Err(
+        new ConfigWriteError(
+          configPath.ok,
+          `Failed to write config: ${writeResult.error.message}`
+        )
+      );
+    }
+
+    Watcher.invalidate("config");
+    Config._cachedResult = null;
+
+    return Ok(parsed.ok);
   }
 
   /**
