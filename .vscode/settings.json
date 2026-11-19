@@ -6,29 +6,5 @@
   "search.exclude": {
     "**/neutralino-cpp": true,
     "**/neutralino-js": true
-  },
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "never",
-    "source.organizeImports.biome": "explicit",
-    "source.sortImports": "never",
-    "source.biome": "explicit",
-    "source.fixAll.biome": "explicit"
-  },
-  "[vue]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
-      "source.organizeImports.biome": "never",
-      "source.sortImports": "never",
-      "source.biome": "never",
-      "source.fixAll.biome": "never"
-    }
-  },
-  "auto-close-tag.disableOnLanguage": ["typescript"],
-  "explorer.fileNesting.enabled": true,
-  "explorer.fileNesting.patterns": {
-    "tsconfig.json": "tsconfig.*.json, env.d.ts",
-    "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
-    "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .prettier*, prettier*, .editorconfig"
   }
 }
