@@ -255,15 +255,14 @@
         "noFloatingPromises": "warn",
         "useExhaustiveSwitchCases": "on",
         "useTailwindSortedClasses": {
-          "fix": "safe",
-          "level": "warn"
+          "level": "info",
+          "fix": "safe"
         }
       },
       "security": {
         "noBlankTarget": {
           "fix": "safe",
-          "level": "warn",
-          "options": {}
+          "level": "warn"
         }
       }
     }
@@ -367,13 +366,11 @@
       "includes": ["**/*.vue"],
       "linter": {
         "rules": {
-          "style": {
-            "useConst": "off",
-            "useImportType": "off"
-          },
+          "style": {},
           "correctness": {
             "noUnusedVariables": "off",
-            "noUnusedImports": "off"
+            "noUnusedImports": "off",
+            "noUndeclaredVariables": "off"
           }
         }
       }
