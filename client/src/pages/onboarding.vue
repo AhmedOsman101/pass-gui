@@ -4,11 +4,13 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import { Check, ChevronLeft, ChevronRight } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import BinariesStep from "@/components/onboarding/BinariesStep.vue";
+import ConfigStep from "@/components/onboarding/ConfigStep.vue";
+import { useConfigStatus } from "@/composables/use-config-status";
 import { computeSteps } from "@/lib/step-machine";
 import Path from "@/lib/path";
 import { useActiveStoreStore } from "@/stores/active-store";
 import { useReadinessStore } from "@/stores/readiness";
-import type { ConfigStatus, OnboardingStepId } from "@/types/onboarding";
+import type { OnboardingStepId } from "@/types/onboarding";
 
 const route = useRoute();
 const router = useRouter();
@@ -33,14 +35,13 @@ watch(
   { immediate: true }
 );
 
-// Skeleton ConfigStatus: config problems surface today through the
-// store load error; ticket #27 replaces this with real content
-// validation (expand–contract — the step machine already consumes it).
-const configStatus = computed<ConfigStatus>(() => ({
-  exists: activeStore.error === null,
-  schemaValid: activeStore.error === null,
-  contentValid: null,
-}));
+// Real ConfigStatus: #26 reads existence + schema from disk, #27 fills
+// contentValid. The composable is shared with the Config step's consumers.
+const { status: configStatus, refresh: refreshConfigStatus } = useConfigStatus();
+
+onMounted(() => {
+  void refreshConfigStatus();
+});
 
 const machine = computed(() =>
   computeSteps(readiness.snapshot, configStatus.value)
@@ -124,6 +125,18 @@ watch(
 const evaluationStorePath = computed(
   () => activeStore.storePath ?? fallbackStorePath.value
 );
+
+/**
+ * A config remediation action just succeeded. Reload the active store from
+ * the new config, refresh status (which recomputes the step machine and
+ * advances), then Re-check readiness for the resolved store path.
+ */
+async function onConfigWritten(): Promise<void> {
+  await activeStore.load();
+  await refreshConfigStatus();
+  const target = evaluationStorePath.value;
+  if (target !== null) await readiness.evaluate(target);
+}
 </script>
 
 <template>
@@ -171,6 +184,11 @@ const evaluationStorePath = computed(
       <BinariesStep
         v-if="selectedStepId === 'binaries'"
         :store-path="evaluationStorePath"
+      />
+      <ConfigStep
+        v-else-if="selectedStepId === 'config'"
+        :status="configStatus"
+        @written="onConfigWritten"
       />
       <div v-else class="rounded-lg border p-4">
         <p class="text-sm font-medium">{{ selectedStep.label }}</p>
