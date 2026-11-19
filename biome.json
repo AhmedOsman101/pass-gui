@@ -1,6 +1,6 @@
 {
   "root": true,
-  "$schema": "https://biomejs.dev/schemas/2.5.11/schema.json/",
+  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json/",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -243,15 +243,12 @@
         "noShadow": "on"
       },
       "nursery": {
-        "useSortedClasses": {
-          "fix": "safe",
-          "level": "warn",
-          "options": {
-            "attributes": ["classList", "class", "className"]
-          }
-        },
         "noFloatingPromises": "warn",
-        "useExhaustiveSwitchCases": "on"
+        "useExhaustiveSwitchCases": "on",
+        "useTailwindSortedClasses": {
+          "fix": "safe",
+          "level": "warn"
+        }
       },
       "security": {
         "noBlankTarget": {
@@ -372,5 +369,6 @@
         }
       }
     }
-  ]
+  ],
+  "tailwind": { "attributes": ["class", "className", "classList"] }
 }
