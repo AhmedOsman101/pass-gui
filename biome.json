@@ -11,21 +11,26 @@
     "includes": [
       "**",
       "**/*.js",
+      "**/*.jsx",
       "**/*.ts",
+      "**/*.tsx",
       "**/*.json",
       "**/*.jsonc",
       "**/*.css",
       "**/*.html",
       "**/*.html",
-      "!**/*.vue",
+      "**/*.vue",
       "!**/node_modules",
       "!**/public",
       "!**/dist",
       "!**/build",
       "!**/.git",
+      "!**/*.md",
+      "!**/*.mdx",
+      "!**/*.yaml",
+      "!**/*.yml",
       "!**/route-map.d.ts",
-      "!**/wordlist.ts",
-      "!**/.nuxt"
+      "!**/wordlist.ts"
     ]
   },
   "assist": {
