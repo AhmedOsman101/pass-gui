@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { TriangleAlert } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 import { Logger } from "@/lib/logger";
@@ -10,16 +10,48 @@ import type { ConfigStatus } from "@/types/onboarding";
 
 type ConfigStepProps = {
   status: ConfigStatus;
+  errors: string[];
+  warnings: string[];
 };
 
 const props = defineProps<ConfigStepProps>();
-const emit = defineEmits<{ written: [] }>();
+const emit = defineEmits<{ written: []; recheck: [] }>();
 
 /** The Default config example, byte-identical to what "Use default" writes. */
 const exampleConfig = ref<string | null>(null);
 const pastedText = ref("");
 const busy = ref(false);
 const errorLines = ref<string[]>([]);
+
+/** A config that exists but cannot be used: schema or content problem. */
+const isInvalid = computed(
+  () =>
+    props.status.exists &&
+    (!props.status.schemaValid || props.status.contentValid === false)
+);
+
+/** The issue list + example grid shows for missing, invalid, or warned configs. */
+const showDiagnostics = computed(
+  () =>
+    !props.status.exists ||
+    isInvalid.value ||
+    props.warnings.length > 0
+);
+
+/** Import failures live here; validator findings arrive as props. */
+const listedErrors = computed(() =>
+  props.status.exists ? props.errors : errorLines.value
+);
+const listedWarnings = computed(() =>
+  props.status.exists ? props.warnings : []
+);
+
+const issueHeading = computed(() => {
+  if (!props.status.exists) return "Import failed:";
+  return listedErrors.value.length > 0
+    ? "Configuration issues:"
+    : "Configuration warnings:";
+});
 
 onMounted(async () => {
   const result = await Config.getDefaultConfigText();
@@ -141,41 +173,60 @@ async function useDefault(): Promise<void> {
           Import pasted TOML
         </Button>
       </div>
-
-      <!-- Errors sit beside the example so they can be compared directly. -->
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div
-          v-if="errorLines.length > 0"
-          class="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive"
-        >
-          <p class="mb-1 flex items-center gap-2 font-medium">
-            <TriangleAlert class="size-3.5 shrink-0" />
-            Import failed:
-          </p>
-          <ul class="list-disc space-y-0.5 pl-4">
-            <li v-for="(line, index) in errorLines" :key="index">
-              {{ line }}
-            </li>
-          </ul>
-        </div>
-        <div class="min-w-0">
-          <p class="mb-1 text-xs font-medium">Example Default config</p>
-          <pre
-            class="max-h-64 overflow-auto rounded-lg border bg-muted/40 p-3 font-mono text-[11px] leading-snug"
-          >{{ exampleConfig ?? "Loading example…" }}</pre>
-        </div>
-      </div>
     </template>
+
+    <template v-else-if="isInvalid">
+      <div>
+        <p class="text-sm font-medium">
+          Configuration found — issues need attention
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          Fix the issues below, then use Re-check.
+        </p>
+      </div>
+
+      <Button variant="outline" size="sm" @click="emit('recheck')">
+        Re-check
+      </Button>
+    </template>
+
+    <!-- Errors sit beside the example so they can be compared directly. -->
+    <div v-if="showDiagnostics" class="grid gap-4 sm:grid-cols-2">
+      <div
+        v-if="listedErrors.length > 0 || listedWarnings.length > 0"
+        class="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive"
+      >
+        <p class="mb-1 flex items-center gap-2 font-medium">
+          <TriangleAlert class="size-3.5 shrink-0" />
+          {{ issueHeading }}
+        </p>
+        <ul v-if="listedErrors.length > 0" class="list-disc space-y-0.5 pl-4">
+          <li v-for="(line, index) in listedErrors" :key="`error-${index}`">
+            {{ line }}
+          </li>
+        </ul>
+        <ul
+          v-if="listedWarnings.length > 0"
+          class="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground"
+        >
+          <li v-for="(line, index) in listedWarnings" :key="`warning-${index}`">
+            {{ line }}
+          </li>
+        </ul>
+      </div>
+      <div class="min-w-0">
+        <p class="mb-1 text-xs font-medium">Example Default config</p>
+        <pre
+          class="max-h-64 overflow-auto rounded-lg border bg-muted/40 p-3 font-mono text-[11px] leading-snug"
+        >{{ exampleConfig ?? "Loading example…" }}</pre>
+      </div>
+    </div>
 
     <div
       v-else
       class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
     >
-      {{
-        props.status.schemaValid
-          ? "Configuration found."
-          : "Configuration found — issues will be editable in a later step."
-      }}
+      Configuration found — no issues detected.
     </div>
   </section>
 </template>

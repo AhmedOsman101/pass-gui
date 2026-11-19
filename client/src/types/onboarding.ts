@@ -1,9 +1,10 @@
 /**
  * Shape of the config checks consumed by the onboarding step machine.
  *
- * `contentValid` is `null` until ticket #27 implements config content
- * validation (expand–contract): the step machine treats `null` as
- * "unknown, not blocking".
+ * `contentValid` is `null` when the config is missing or could not be
+ * read, parsed, or schema-validated; otherwise it is the result of the
+ * content checks, where `false` means a blocking active-store GNUPGHOME
+ * problem. The step machine treats `null` as "unknown, not blocking".
  */
 type ConfigStatus = {
   exists: boolean;

@@ -35,9 +35,15 @@ watch(
   { immediate: true }
 );
 
-// Real ConfigStatus: #26 reads existence + schema from disk, #27 fills
-// contentValid. The composable is shared with the Config step's consumers.
-const { status: configStatus, refresh: refreshConfigStatus } = useConfigStatus();
+// Real ConfigStatus: #26 reads existence + schema from disk, #27 adds
+// content validation and the wizard's single issue/warning list. The
+// composable is shared with the Config step's consumers.
+const {
+  status: configStatus,
+  errors: configErrors,
+  warnings: configWarnings,
+  refresh: refreshConfigStatus,
+} = useConfigStatus();
 
 onMounted(() => {
   void refreshConfigStatus();
@@ -188,7 +194,10 @@ async function onConfigWritten(): Promise<void> {
       <ConfigStep
         v-else-if="selectedStepId === 'config'"
         :status="configStatus"
+        :errors="configErrors"
+        :warnings="configWarnings"
         @written="onConfigWritten"
+        @recheck="onConfigWritten"
       />
       <div v-else class="rounded-lg border p-4">
         <p class="text-sm font-medium">{{ selectedStep.label }}</p>
