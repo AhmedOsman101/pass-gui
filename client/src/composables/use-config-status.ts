@@ -1,10 +1,8 @@
 import { type Ref, ref } from "vue";
 import { Logger } from "@/lib/logger";
-import toml from "@/lib/toml";
 import { Config } from "@/services/config";
 import { ConfigValidator } from "@/services/config-validator";
 import { Fs } from "@/services/filesystem";
-import type { AppConfig } from "@/types/config";
 import type { ConfigStatus } from "@/types/onboarding";
 
 type UseConfigStatusReturn = {
@@ -74,15 +72,9 @@ function useConfigStatus(): UseConfigStatusReturn {
       return;
     }
 
-    const parsed = toml.parse<AppConfig>(readResult.ok);
-    if (parsed.isError()) {
-      await Logger.error(`useConfigStatus.refresh(): ${parsed.error.message}`);
-      errors.value = [`Could not parse the config: ${parsed.error.message}`];
-      status.value = { exists: true, schemaValid: false, contentValid: null };
-      return;
-    }
-
-    const outcome = await ConfigValidator.validate(parsed.ok.data);
+    // Parse + schema + content in one outcome — the editor uses the same
+    // seam, so the wizard's diagnostics cannot disagree with the draft.
+    const outcome = await ConfigValidator.validateText(readResult.ok);
     status.value = {
       exists: true,
       schemaValid: outcome.schemaValid,

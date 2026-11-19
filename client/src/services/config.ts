@@ -16,6 +16,7 @@ import type {
 } from "@/types/config";
 import type { ParsedToml } from "@/types/toml";
 import { formatZodError, validateAppConfig } from "./config-validation";
+import { ConfigValidator } from "./config-validator";
 import { Fs } from "./filesystem";
 import { Watcher } from "./watcher";
 
@@ -423,6 +424,57 @@ class Config {
     Config._cachedResult = null;
 
     return Ok(parsed.ok);
+  }
+
+  /**
+   * Replaces an existing config with raw TOML verbatim. Comments, key
+   * order and whitespace survive because the draft text — not a
+   * re-serialized table — is what lands on disk. The full validation
+   * seam (parse → schema → content) runs first, so invalid text never
+   * reaches the file. Unlike `importText`, an existing file is required.
+   */
+  static async replaceText(rawText: string): Promise<Result<void>> {
+    // Fail closed if the file vanished — never recreate it via this path.
+    const existsResult = await Config.exists();
+    if (existsResult.isError()) return Err(existsResult.error);
+    if (!existsResult.ok) {
+      return ErrFromText(
+        "Configuration file no longer exists — nothing was written."
+      );
+    }
+
+    const outcome = await ConfigValidator.validateText(rawText);
+    if (outcome.errors.length > 0) {
+      return Err(new ConfigValidationError(outcome.errors.join("\n")));
+    }
+
+    const configPath = await Config.getPath();
+    if (configPath.isError()) return Err(configPath.error);
+
+    // Neutralino FS has no atomic replace: re-check just before the write
+    // so a disappearance in the TOCTOU window still fails closed.
+    const stillExists = await Config.exists();
+    if (stillExists.isError()) return Err(stillExists.error);
+    if (!stillExists.ok) {
+      return ErrFromText(
+        "Configuration file no longer exists — nothing was written."
+      );
+    }
+
+    const writeResult = await Fs.writeFile(configPath.ok, rawText);
+    if (writeResult.isError()) {
+      return Err(
+        new ConfigWriteError(
+          configPath.ok,
+          `Failed to write config: ${writeResult.error.message}`
+        )
+      );
+    }
+
+    Watcher.invalidate("config");
+    Config._cachedResult = null;
+
+    return Ok(undefined);
   }
 
   /**

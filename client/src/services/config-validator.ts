@@ -1,4 +1,5 @@
 import Path from "@/lib/path";
+import toml from "@/lib/toml";
 import type { AppConfig } from "@/types/config";
 import { formatZodError, validateAppConfig } from "./config-validation";
 import { Fs } from "./filesystem";
@@ -111,6 +112,27 @@ class ConfigValidator {
       errors,
       warnings,
     };
+  }
+
+  /**
+   * Text-level entry point: parse TOML, then run the full schema + content
+   * validation on the result. Parse failures come back as blocking errors
+   * in the same outcome shape, so callers holding raw text (the editor)
+   * and callers holding an already-read file (the wizard) share one seam
+   * and cannot disagree about what counts as valid.
+   */
+  static async validateText(rawText: string): Promise<ConfigValidationOutcome> {
+    const parsed = toml.parse<AppConfig>(rawText);
+    if (parsed.isError()) {
+      return {
+        schemaValid: false,
+        contentValid: null,
+        errors: [`Could not parse the config: ${parsed.error.message}`],
+        warnings: [],
+      };
+    }
+
+    return await ConfigValidator.validate(parsed.ok.data);
   }
 }
 
