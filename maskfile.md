@@ -44,6 +44,16 @@ pnpm exec biome check --fix . ${reporter:+--reporter "$reporter"} ${unsafe:+'--u
 cd client && pnpm typecheck
 ```
 
+## neu (args)
+
+> Execute a `neu` command.
+
+```bash
+declare -a argv
+eval "argv=(${args})"
+pnpm exec -- neu "${argv[@]}"
+```
+
 ## dev
 
 > Run development servers (frontend + Neutralino)
@@ -67,7 +77,7 @@ cd client && pnpm dev
 > Run Neutralino in dev mode
 
 ```bash
-pnpm exec -- neu run dev
+$MASK neu 'run dev'
 ```
 
 ## build
@@ -75,7 +85,7 @@ pnpm exec -- neu run dev
 > Build the project (frontend + Neutralino)
 
 ```bash
-pnpm exec -- neu build
+$MASK neu 'build --embed-resources'
 ```
 
 ### frontend
@@ -109,7 +119,7 @@ rm -rf client/dist/ build/
 
 ```bash
 $MASK clean
-pnpm exec -- neu build --release --clean --embed-resources
+$MASK neu 'build --release --clean --embed-resources'
 ```
 
 ## container
