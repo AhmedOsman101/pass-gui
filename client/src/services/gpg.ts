@@ -15,7 +15,25 @@ import type {
   Version,
 } from "@/types";
 import type { VersionCheck } from "@/types/readiness";
-import { Neu } from "./neutralino";
+import { Neu, SECRET_MASK } from "./neutralino";
+
+/**
+ * A GPG key-management command prepared for both execution and display.
+ * `args` and `stdin` are what actually run; `display` is the secret-free
+ * string the Stream box shows. The passphrase/key material lives only in
+ * `stdin` — never in `args`, a log, or a temp file.
+ */
+type GpgKeyCommand = {
+  args: Stringifiable[];
+  stdin?: string;
+  display: string;
+};
+
+/** Live output sinks for a streamed GPG run. */
+type GpgStreamCallbacks = {
+  onStdOut?: (chunk: string) => void;
+  onStdErr?: (chunk: string) => void;
+};
 
 /**
  * Error thrown by `GpgService.listSecretKeys()` and
@@ -336,6 +354,85 @@ class GpgService {
   }
 
   /**
+   * Builds a `--quick-generate-key` run from form values. The passphrase
+   * is carried on stdin only (`--passphrase-fd 0`); an empty passphrase
+   * sends an empty line so GPG can create an unprotected key without
+   * opening a pinentry prompt. An expiry adds `default default <expiry>`
+   * so GPG keeps the default primary/subkey algorithms (gpg.man:392).
+   */
+  createKeyCommand(
+    name: string,
+    email: string,
+    expiry: string,
+    passphrase: string
+  ): GpgKeyCommand {
+    const args: Stringifiable[] = [
+      "--batch",
+      "--yes",
+      "--pinentry-mode",
+      "loopback",
+      "--passphrase-fd",
+      "0",
+      "--quick-generate-key",
+      `${name} <${email}>`,
+    ];
+    if (expiry !== "") args.push("default", "default", expiry);
+
+    const display = Neu.buildDisplayCommand(this.getCommand(), args, {
+      hideStdin: true,
+    });
+    return {
+      args,
+      stdin: `${passphrase}\n`,
+      display: passphrase === "" ? display : `${display} ${SECRET_MASK}`,
+    };
+  }
+
+  /**
+   * Builds a file-based import run. The path is quoted by the command
+   * builder; the key bytes are read by GPG from disk, not by this service.
+   */
+  importFileCommand(path: string): GpgKeyCommand {
+    const args: Stringifiable[] = ["--batch", "--import", path];
+    return { args, display: Neu.buildDisplayCommand(this.getCommand(), args) };
+  }
+
+  /**
+   * Builds a paste-based import run. Armored key text goes on stdin and
+   * is therefore absent from the display command; the trailing newline
+   * terminates the final armor line for GPG.
+   */
+  importTextCommand(armored: string): GpgKeyCommand {
+    const args: Stringifiable[] = ["--batch", "--import"];
+    return {
+      args,
+      stdin: armored.endsWith("\n") ? armored : `${armored}\n`,
+      display: Neu.buildDisplayCommand(this.getCommand(), args, {
+        hideStdin: true,
+      }),
+    };
+  }
+
+  /**
+   * Runs a prepared key-management command with the resolved GPG binary.
+   * No GNUPGHOME is injected: readiness evaluates the default keyring,
+   * so that is where a key must be created to clear GPG_NO_KEYS. Stores
+   * with a custom gnupg_home are handled separately (#31).
+   */
+  async runKeyCommand(
+    command: GpgKeyCommand,
+    callbacks: GpgStreamCallbacks = {}
+  ): Promise<Result<ExecCommandResult, Error>> {
+    return await Neu.spawn({
+      cmd: this.getCommand(),
+      args: command.args,
+      stdin: command.stdin,
+      onStdOut: callbacks.onStdOut,
+      onStdErr: callbacks.onStdErr,
+    });
+  }
+
+  /**
    * Executes a GPG command with the configured GNUPGHOME environment.
    * Use this for custom GPG operations not covered by other methods.
    */
@@ -360,4 +457,11 @@ const Gpg = new GpgService();
 // Prefer `Gpg.ensureInitialized()` for gate-driven lazy init.
 const gpgInitialized: Promise<Result<boolean>> = Gpg.ensureInitialized();
 
-export { Gpg, GpgKeyListError, GpgService, gpgInitialized };
+export {
+  Gpg,
+  type GpgKeyCommand,
+  GpgKeyListError,
+  GpgService,
+  type GpgStreamCallbacks,
+  gpgInitialized,
+};

@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import BinariesStep from "@/components/onboarding/BinariesStep.vue";
 import ConfigStep from "@/components/onboarding/ConfigStep.vue";
+import KeysStep from "@/components/onboarding/KeysStep.vue";
 import { Button } from "@/components/ui/button";
 import { useConfigStatus } from "@/composables/use-config-status";
 import Path from "@/lib/path";
@@ -200,6 +201,10 @@ async function onConfigWritten(): Promise<void> {
         :warnings="configWarnings"
         @recheck="onConfigWritten"
         @written="onConfigWritten"
+      />
+      <KeysStep
+        v-else-if="selectedStepId === 'keys'"
+        :store-path="evaluationStorePath"
       />
       <div class="rounded-lg border p-4" v-else>
         <p class="text-sm font-medium">{{ selectedStep.label }}</p>
