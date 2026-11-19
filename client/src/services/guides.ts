@@ -22,8 +22,8 @@ import type { ReadinessIssue } from "@/types/readiness";
  * components render; the chip selection lives in `BinaryGuide.vue`.
  *
  * Commands are the execution-ready shapes: `sudo -A` (password via
- * `SUDO_ASKPASS`, which the app resolves itself when it runs a
- * command — fallback chain: zenity → kdialog → * yad),
+ * `SUDO_ASKPASS`, resolved internally by the askpass module when the
+ * app runs a command; the Guide itself shows/copies plain sudo),
  * yum without sudo on legacy rpm systems, `--noconfirm` on
  * pacman so a non-interactive run cannot hang on a prompt.
  */

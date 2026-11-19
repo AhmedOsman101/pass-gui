@@ -29,6 +29,8 @@ type ExecCommandArgs = {
   cmd: string;
   args?: Stringifiable[];
   options?: ExecCommandOptions;
+  /** Suppress the standard error log for expected non-zero exits (existence probes). */
+  quiet?: boolean;
 };
 
 type SafeExecCommandArgs = {
@@ -116,6 +118,7 @@ class NeutralinoService {
     cmd,
     args,
     options,
+    quiet = false,
   }: ExecCommandArgs): Promise<
     Result<ExecCommandResult, CommandFailedError | Error>
   > {
@@ -149,12 +152,18 @@ class NeutralinoService {
 
     if (execResult.isError()) {
       const error = execResult.error;
-      await Logger.error(
-        `exec("${cmd}") failed:`,
-        error instanceof CommandFailedError
-          ? `exit code ${error.exitCode}, stderr: ${error.stdErr}`
-          : error
-      );
+      // `quiet` silences only the expected "binary not installed" miss
+      // (which/where.exe exit 1), never a native or unexpected failure.
+      const expectedMiss =
+        quiet && error instanceof CommandFailedError && error.exitCode === 1;
+      if (!expectedMiss) {
+        await Logger.error(
+          `exec("${cmd}") failed:`,
+          error instanceof CommandFailedError
+            ? `exit code ${error.exitCode}, stderr: ${error.stdErr}`
+            : error
+        );
+      }
     }
 
     return execResult;
@@ -355,16 +364,20 @@ class NeutralinoService {
    * Uses `which` on Unix and `where.exe` on Windows.
    */
   async commandExists(program: string): Promise<Result<boolean>> {
+    // A miss is the expected "not installed" answer, not an error —
+    // callers probe binaries on mount and in readiness checks.
     if (this.OS === "Windows") {
       const whereResult = await this.exec({
         cmd: "where.exe",
         args: [program],
+        quiet: true,
       });
       if (whereResult.isOk()) return Ok(true);
     } else {
       const whichResult = await this.exec({
         cmd: "which",
         args: [program],
+        quiet: true,
       });
       if (whichResult.isOk()) return Ok(true);
     }

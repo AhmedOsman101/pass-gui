@@ -1,8 +1,9 @@
-<script setup lang="ts">
-import { computed, ref } from "vue";
+<script lang="ts" setup>
 import { Check, Copy, ExternalLink, PlayCircle } from "@lucide/vue";
+import { computed, ref } from "vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { plainSudoCommand } from "@/services/askpass";
 import { Guides } from "@/services/guides";
 import { useClipboardStore } from "@/stores/clipboard";
 import type { Version } from "@/types";
@@ -13,7 +14,7 @@ type BinaryGuideProps = {
   /** "Found X — needs ≥ Y" line for version-too-old issues. */
   found?: Version | null;
   expected?: Version | null;
-  /** Run-for-me available (Linux/macOS, not while another runs). */
+  /** Run-for-me available (askpass helper present, none running). */
   canRun?: boolean;
   /** Disables the Run button while its process is active. */
   runDisabled?: boolean;
@@ -33,9 +34,9 @@ const emit = defineEmits<{
 const clipboard = useClipboardStore();
 
 /**
- * Chip selection state, internal by design: selection, copy target and
- * the emitted run command always travel together. Index 0 is the
- * detected default; the choice resets on remount, never mid-step.
+ * Chip selection state, internal by design: selection, display/copy
+ * target and the emitted run command always travel together. Index 0
+ * is the detected default; the choice resets on remount, never mid-step.
  */
 const selected = ref(0);
 
@@ -46,11 +47,18 @@ const activeCandidate = computed(() => {
   return inRange ? props.guide.candidates[index] : fallback;
 });
 
+/** Raw command for the runner — keeps sudo -A for the internal payload. */
 const command = computed(() => activeCandidate.value?.command ?? null);
+/** Human-facing command for display and clipboard — plain sudo. */
+const displayCommand = computed(() =>
+  command.value === null ? null : plainSudoCommand(command.value)
+);
 const note = computed(() => activeCandidate.value?.note ?? null);
 
 const copied = computed(
-  () => command.value !== null && clipboard.persistentCopiedText === command.value
+  () =>
+    displayCommand.value !== null &&
+    clipboard.persistentCopiedText === displayCommand.value
 );
 
 const versionLine = computed(() => {
@@ -67,8 +75,8 @@ const badgeVariant = computed(() =>
 );
 
 async function copyCommand(): Promise<void> {
-  if (command.value === null) return;
-  await clipboard.copy(command.value);
+  if (displayCommand.value === null) return;
+  await clipboard.copy(displayCommand.value);
 }
 
 function pickCandidate(index: number): void {
@@ -83,47 +91,52 @@ function pickCandidate(index: number): void {
       <Badge :variant="badgeVariant">{{ variantBadge }}</Badge>
     </div>
 
-    <p v-if="versionLine" class="text-xs text-muted-foreground">
+    <p class="text-muted-foreground text-xs" v-if="versionLine">
       {{ versionLine }}
     </p>
 
     <p
+      class="text-muted-foreground text-sm"
       v-if="guide.candidates.length === 0"
-      class="text-sm text-muted-foreground"
     >
       {{ guide.fallbackNote }}
     </p>
-    <div v-else class="space-y-2">
-      <div class="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+    <div class="space-y-2" v-else>
+      <div
+        class="bg-muted/30 flex items-center gap-2 rounded-md border px-3 py-2"
+      >
         <code
           class="min-w-0 flex-1 overflow-x-auto font-mono text-xs whitespace-nowrap"
-        >{{ command }}</code>
+          >{{
+            displayCommand
+          }}</code
+        >
         <Button
-          variant="ghost"
-          size="icon-sm"
           class="shrink-0"
+          size="icon-sm"
+          variant="ghost"
           :aria-label="`Copy ${guide.label} ${guide.variant} command`"
           @click="copyCommand"
         >
           <Check
-            v-if="copied"
             class="size-3.5 text-green-600 dark:text-green-400"
+            v-if="copied"
           />
-          <Copy v-else class="size-3.5" />
+          <Copy class="size-3.5" v-else />
         </Button>
       </div>
-      <p v-if="copied" class="text-xs text-muted-foreground">
+      <p class="text-muted-foreground text-xs" v-if="copied">
         Copied — it stays on your clipboard.
       </p>
 
       <div
-        v-if="guide.candidates.length > 1"
         class="flex flex-wrap items-center gap-1"
+        v-if="guide.candidates.length > 1"
       >
         <button
+          class="rounded-md border px-2 py-0.5 font-mono text-xs transition-colors"
           v-for="(candidate, index) in guide.candidates"
           :key="candidate.command"
-          class="rounded-md border px-2 py-0.5 font-mono text-xs transition-colors"
           :class="
             index === selected
               ? 'border-primary bg-primary/10 text-foreground'
@@ -136,9 +149,9 @@ function pickCandidate(index: number): void {
       </div>
 
       <Button
-        v-if="canRun"
         size="sm"
         variant="secondary"
+        v-if="canRun"
         :disabled="runDisabled"
         @click="emit('run', command ?? '')"
       >
@@ -147,13 +160,13 @@ function pickCandidate(index: number): void {
       </Button>
     </div>
 
-    <p v-if="note" class="text-xs text-muted-foreground">{{ note }}</p>
+    <p class="text-muted-foreground text-xs" v-if="note">{{ note }}</p>
 
     <a
-      :href="guide.docsUrl"
-      target="_blank"
+      class="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-xs underline underline-offset-4"
       rel="noreferrer"
-      class="inline-flex items-center gap-1 text-xs text-primary underline underline-offset-4 hover:text-primary/80"
+      target="_blank"
+      :href="guide.docsUrl"
     >
       Official documentation
       <ExternalLink class="size-3" />

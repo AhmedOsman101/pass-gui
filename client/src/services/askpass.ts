@@ -56,19 +56,44 @@ const GUI_HELPERS: readonly string[] = [
 ];
 
 /**
- * Graphical askpass helper **arguments**, in the conventional
- * preference order zenity → kdialog → yad (helper paths resolve to an
- * absolute binary below, so the wrapper args start at the flags).
- * TTY-based helpers (whiptail, dialog, stty) are deliberately not
- * offered: the app window has no controlling TTY.
+ * One candidate in a platform's askpass chain: the binary to resolve
+ * and the shell argument fragment its wrapper needs. Helper paths
+ * resolve to absolute binaries below, so args start at the flags;
+ * TTY-based helpers (whiptail, dialog, stty) are never offered — the
+ * app window has no controlling TTY.
  */
-const HELPER_ARGS: Record<string, string> = {
-  zenity: "--password --title='pass-gui sudo password'",
-  kdialog: "--password 'pass-gui sudo password'",
-  yad: "--center --entry --hide-text --title='pass-gui sudo password'",
+type HelperSpec = {
+  name: string;
+  args: string;
 };
 
-const HELPER_ORDER: readonly string[] = ["zenity", "kdialog", "yad"];
+/** Linux/FreeBSD: GUI helpers first, then the windowed ssh-askpass tools. */
+const LINUX_HELPERS: readonly HelperSpec[] = [
+  { name: "zenity", args: "--password --title='pass-gui sudo password'" },
+  { name: "kdialog", args: "--password 'pass-gui sudo password'" },
+  {
+    name: "yad",
+    args: "--center --entry --hide-text --title='pass-gui sudo password'",
+  },
+  { name: "ssh-askpass", args: "" },
+  { name: "x11-ssh-askpass", args: "" },
+];
+
+/**
+ * macOS: osascript is OS-provided and opens a native hidden-answer
+ * dialog; ssh-askpass is the fallback. Both print the password on
+ * stdout and exit 0, which is the SUDO_ASKPASS contract.
+ */
+const OSASCRIPT_DIALOG =
+  'display dialog "pass-gui sudo password" default answer "" with hidden answer';
+const OSASCRIPT_RETURN = "text returned of result";
+const MACOS_HELPERS: readonly HelperSpec[] = [
+  {
+    name: "osascript",
+    args: `-e ${quoteForPosix(OSASCRIPT_DIALOG)} -e ${quoteForPosix(OSASCRIPT_RETURN)}`,
+  },
+  { name: "ssh-askpass", args: "" },
+];
 
 const WRAPPER_HEADER = `#!/bin/sh
 # SUDO_ASKPASS helper written by pass-gui. Prints the sudo password on
@@ -84,16 +109,46 @@ const WRAPPER_HEADER = `#!/bin/sh
  *    dialog, stty, or a wrapper holding one of them) or the path is
  *    stale, and decided by a runtime dialog for anything
  *    unrecognized (the answer is remembered for this app session).
- * 2. The pass-gui wrapper (zenity → kdialog → yad, resolved to an
- *    absolute binary path). Writes the wrapper script to the user
- *    data dir and marks it executable.
+ * 2. The platform chain (Linux: zenity → kdialog → yad → ssh-askpass
+ *    → x11-ssh-askpass; macOS: osascript → ssh-askpass), resolved to
+ *    an absolute binary path. Writes a wrapper script to the user
+ *    cache dir and marks it executable.
  *
  * The helper zoo and the TTY-only validation mirror the
  * `get-askpass` script in https://github.com/AhmedOsman101/shellScripts.
  */
 class Askpass {
   /**
-   * Returns an usable askpass program path, or an `AskpassError`
+   * Side-effect-free availability probe for the onboarding step: can
+   * this system offer any in-app sudo password prompt? Reads the
+   * environment and resolves binaries, but writes no wrapper and opens
+   * no dialog. A `false` answer means the caller hides the Run workflow
+   * and leaves the plain-sudo command copyable — no dead-end click.
+   */
+  static async isAvailable(): Promise<boolean> {
+    // Windows is docs-only: no chain, no in-app runner.
+    if (Neu.OS === "Windows") return false;
+
+    // A pre-set helper counts when pass-gui can vouch for it, or when
+    // the user accepted an unrecognized one this session. TTY-only or
+    // stale values fall through to the platform chain.
+    const existing = await Neu.getEnv("SUDO_ASKPASS");
+    if (existing.length > 0) {
+      const verdict = await Askpass.classifyExisting(existing);
+      if (verdict === "gui") return true;
+      if (verdict === "unknown" && SESSION_CHOICES.get(existing) !== "app") {
+        return true;
+      }
+    }
+
+    // No graphical session means no helper window can open.
+    if (!(await Askpass.hasGraphicalSession())) return false;
+
+    return (await Askpass.findHelper()) !== null;
+  }
+
+  /**
+   * Returns a usable askpass program path, or an `AskpassError`
    * explaining what the user can do instead (install a helper, or run
    * the command manually in a terminal).
    */
@@ -101,11 +156,7 @@ class Askpass {
     const fromEnv = await Askpass.resolveFromEnv();
     if (fromEnv !== null) return fromEnv;
 
-    // The helper opens a GUI password prompt — no display, no prompt,
-    // no honest way to run `sudo -A` here. Checks X11 and Wayland.
-    const display =
-      (await Neu.getEnv("DISPLAY")) ?? (await Neu.getEnv("WAYLAND_DISPLAY"));
-    if (display === "") {
+    if (!(await Askpass.hasGraphicalSession())) {
       return Err(
         new AskpassError(
           "No graphical session detected, so no sudo password prompt can be offered. Copy the command and run it in a terminal."
@@ -113,33 +164,52 @@ class Askpass {
       );
     }
 
-    // Absolute path of the first installed helper. Mounted binaries
-    // may live anywhere; sudo's sanitized child PATH must not matter.
-    let helper: { path: string; args: string } | null = null;
-    for (const name of HELPER_ORDER) {
-      const args = HELPER_ARGS[name];
-      if (args === undefined) continue;
-
-      const resolved = await Neu.resolveBinaryPath(name);
-      if (resolved.isError() || resolved.ok === undefined) continue;
-
-      helper = { path: resolved.ok, args };
-      break;
-    }
-
+    const helper = await Askpass.findHelper();
     if (helper === null) {
       return Err(
         new AskpassError(
-          "No askpass helper found. Install zenity, kdialog or yad, or copy the command and run it in a terminal."
+          "No askpass helper found. Install a GUI password helper (zenity, kdialog, yad or ssh-askpass), or copy the command and run it in a terminal."
         )
       );
     }
 
-    const script = `${WRAPPER_HEADER}\nexec '${helper.path}' ${helper.args}\n`;
+    const args = helper.args === "" ? "" : ` ${helper.args}`;
+    const script = `${WRAPPER_HEADER}\nexec '${helper.path}'${args}\n`;
     const wrapperPath = await Askpass.writeWrapper(script);
     if (wrapperPath.isError()) return Err(wrapperPath.error);
 
     return Ok({ path: wrapperPath.ok, source: "wrapper" });
+  }
+
+  /** True when a helper window can actually be shown on this OS. */
+  private static async hasGraphicalSession(): Promise<boolean> {
+    // macOS (Quartz) and Windows have no DISPLAY/WAYLAND_DISPLAY; the
+    // native dialog / helper opens without them.
+    if (Neu.OS === "Darwin" || Neu.OS === "Windows") return true;
+    // `getEnv` returns "" (never null) for an unset variable, so the
+    // old `DISPLAY ?? WAYLAND_DISPLAY` never reached the Wayland branch.
+    if ((await Neu.getEnv("DISPLAY")) !== "") return true;
+    return (await Neu.getEnv("WAYLAND_DISPLAY")) !== "";
+  }
+
+  /** First installed helper on this OS, resolved to an absolute path. */
+  private static async findHelper(): Promise<{
+    path: string;
+    args: string;
+  } | null> {
+    for (const spec of Askpass.chain()) {
+      const resolved = await Neu.resolveBinaryPath(spec.name);
+      if (resolved.isError() || resolved.ok === undefined) continue;
+      return { path: resolved.ok, args: spec.args };
+    }
+    return null;
+  }
+
+  /** Platform askpass chain; Windows is docs-only (empty). */
+  private static chain(): readonly HelperSpec[] {
+    if (Neu.OS === "Windows") return [];
+    if (Neu.OS === "Darwin") return MACOS_HELPERS;
+    return LINUX_HELPERS;
   }
 
   /**
@@ -252,13 +322,23 @@ class Askpass {
       return Err(
         new AskpassError(
           chmod.ok.message ??
-            `Failed to change permissions on ${wrapperPath.ok}.`
+            "Failed to change permissions on the password helper."
         )
       );
     }
 
     return Ok(wrapperPath.ok);
   }
+}
+
+/**
+ * Human-facing form of a guide command: drops sudo's `-A` flag, which
+ * only matters when the runner supplies SUDO_ASKPASS. Displayed and
+ * copied commands use plain sudo; the original stays internal to the
+ * runner. Handles compound commands (`sudo -A a && sudo -A b`).
+ */
+function plainSudoCommand(command: string): string {
+  return command.replace(/\bsudo\s+-A\b/g, "sudo");
 }
 
 /**
@@ -271,4 +351,10 @@ function runPayload(command: string, resolution: AskpassResolution): string {
   return `export SUDO_ASKPASS=${quoteForPosix(resolution.path)}; ${command}`;
 }
 
-export { Askpass, AskpassError, type AskpassResolution, runPayload };
+export {
+  Askpass,
+  AskpassError,
+  type AskpassResolution,
+  plainSudoCommand,
+  runPayload,
+};

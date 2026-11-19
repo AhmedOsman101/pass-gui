@@ -1,19 +1,19 @@
-<script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+<script lang="ts" setup>
 import { Loader2, RefreshCw, TriangleAlert } from "@lucide/vue";
+import type { Icon, MessageBoxChoice } from "@neutralinojs/lib";
 import { toast } from "sonner";
-import BinaryGuide from "./BinaryGuide.vue";
+import { computed, onMounted, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { StreamBox } from "@/components/ui/stream-box";
 import { detectDistroFamily, prettyNameFrom } from "@/lib/distro";
 import { Logger } from "@/lib/logger";
-import { Askpass, runPayload } from "@/services/askpass";
+import { Askpass, plainSudoCommand, runPayload } from "@/services/askpass";
 import { Dialog } from "@/services/dialog";
 import { Fs } from "@/services/filesystem";
 import { Guides } from "@/services/guides";
 import { Neu } from "@/services/neutralino";
 import { useReadinessStore } from "@/stores/readiness";
-import type { Icon, MessageBoxChoice } from "@neutralinojs/lib";
+import BinaryGuide from "./BinaryGuide.vue";
 
 type BinariesStepProps = {
   /**
@@ -39,17 +39,24 @@ const readiness = useReadinessStore();
 /** /etc/os-release text, read once; null on non-Linux or read failure. */
 const osRelease = ref<string | null>(null);
 
-onMounted(async () => {
-  if (Neu.OS !== "Linux") return;
+/** Whether an in-app sudo password prompt can be offered on this system. */
+const askpassAvailable = ref(false);
 
-  const result = await Fs.readFile("/etc/os-release");
-  if (result.isError()) {
-    await Logger.warn(
-      `BinariesStep: /etc/os-release unavailable: ${result.error.message}`
-    );
-    return;
+onMounted(async () => {
+  if (Neu.OS === "Linux") {
+    const result = await Fs.readFile("/etc/os-release");
+    if (result.isError()) {
+      await Logger.warn(
+        `BinariesStep: /etc/os-release unavailable: ${result.error.message}`
+      );
+    } else {
+      osRelease.value = result.ok;
+    }
   }
-  osRelease.value = result.ok;
+
+  // Read-only probe: no wrapper write, no dialog. Hides the Run workflow
+  // when this environment has no system askpass helper.
+  askpassAvailable.value = await Askpass.isAvailable();
 });
 
 const family = computed(() => detectDistroFamily(Neu.OS, osRelease.value));
@@ -76,22 +83,30 @@ const entries = computed(() =>
 );
 
 const isWindows = Neu.OS === "Windows";
-/** Docs-only fallback systems cannot auto-run anything. */
-const canRun = !isWindows;
-const needsRunNote = computed(
-  () => !isWindows && entries.value.some(row => row.guide.candidates.length > 0)
+/** Docs-only systems and systems without an askpass helper cannot auto-run. */
+const canRun = computed(() => !isWindows && askpassAvailable.value);
+const hasCommands = computed(() =>
+  entries.value.some(row => row.guide.candidates.length > 0)
+);
+/** With no helper, the copyable plain-sudo command is the only path. */
+const needsHelperNote = computed(
+  () => !isWindows && hasCommands.value && !askpassAvailable.value
+);
+const missingHelperHint = computed(() =>
+  Neu.OS === "Darwin"
+    ? "a password helper (osascript or ssh-askpass)"
+    : "a password helper (zenity, kdialog, yad or ssh-askpass)"
 );
 
 // --- Run for me -------------------------------------------------------
 
 const run = ref<RunState | null>(null);
+/** Persistent, inline reason the last run could not start or finish. */
+const runError = ref<string | null>(null);
 
 const anyRunActive = computed(() => run.value?.running === true);
 
-function appendRun(
-  field: "stdout" | "stderr",
-  chunk: string
-): void {
+function appendRun(field: "stdout" | "stderr", chunk: string): void {
   if (run.value === null) return;
   run.value[field] += chunk;
 }
@@ -102,13 +117,14 @@ function appendRun(
  * no TTY for a plain sudo prompt. A zero-exit install is followed by
  * an auto re-check so the step clears itself. The command is whatever
  * the guide currently has selected — its chip is the source of truth.
+ * Failures are kept inline and logged, never only toasted.
  */
 async function runGuide(command: string): Promise<void> {
-  if (!canRun || anyRunActive.value || command === "") return;
+  if (!canRun.value || anyRunActive.value || command === "") return;
 
   const confirm = await Dialog.showMessageBox(
     "Run command in a terminal box?",
-    `$ ${command}\n\nThis runs as ${command.includes("sudo -A") ? "root (via sudo)" : "your user"} and may ask for your password.`,
+    `$ ${plainSudoCommand(command)}\n\nThis runs as ${command.includes("sudo -A") ? "root (via sudo)" : "your user"} and may ask for your password.`,
     "OK_CANCEL" as MessageBoxChoice,
     "WARNING" as Icon
   );
@@ -116,14 +132,25 @@ async function runGuide(command: string): Promise<void> {
     return;
   }
 
+  // A fresh attempt replaces any previous output/error state.
+  run.value = null;
+  runError.value = null;
+
   const askpass = await Askpass.ensure();
   if (askpass.isError()) {
-    toast.error(`Cannot run this command: ${askpass.error.message}`);
+    // The raw reason can name internal paths; keep it in the log only.
+    const reason = askpass.error.message;
+    const message = "Could not prepare the password helper — see the log.";
+    runError.value = message;
+    await Logger.error(`BinariesStep: cannot run command: ${reason}`);
+    toast.error(message);
     return;
   }
 
   run.value = {
-    command,
+    // The stream box shows the human-facing command; `-A` and the
+    // SUDO_ASKPASS export stay internal to the runner payload.
+    command: plainSudoCommand(command),
     stdout: "",
     stderr: "",
     running: true,
@@ -137,28 +164,32 @@ async function runGuide(command: string): Promise<void> {
     onStdErr: chunk => appendRun("stderr", chunk),
   });
 
-  if (run.value !== null) {
-    run.value.running = false;
-    if (result.isError()) {
+  if (run.value !== null) run.value.running = false;
+
+  if (result.isError()) {
+    // Keep the raw error for the log only: CommandFailedError.message
+    // embeds the internal `sh -c` payload (sudo -A + wrapper path).
+    const reason = result.error.message;
+    runError.value = `${plainSudoCommand(command)} failed — see its output above.`;
+    if (run.value !== null) {
       run.value.exitCode = 1;
-      run.value.stderr += `\n${result.error.message}`;
-    } else {
-      run.value.exitCode = result.ok.exitCode;
+      run.value.stderr += `\n${runError.value}`;
     }
+    await Logger.error(`BinariesStep: command failed: ${reason}`);
+    toast.error("The command failed — check its output above.");
+    return;
   }
 
-  if (result.isOk() && result.ok.exitCode === 0) {
-    toast.success("Install finished.");
-    if (props.storePath !== null) await readiness.evaluate(props.storePath);
-  } else {
-    toast.error("The command failed — check its output above.");
-  }
+  if (run.value !== null) run.value.exitCode = result.ok.exitCode;
+  toast.success("Install finished.");
+  if (props.storePath !== null) await readiness.evaluate(props.storePath);
 }
 
 // --- Re-check ---------------------------------------------------------
 
 const canRecheck = computed(
-  () => props.storePath !== null && !readiness.isEvaluating && !anyRunActive.value
+  () =>
+    props.storePath !== null && !readiness.isEvaluating && !anyRunActive.value
 );
 
 async function recheck(): Promise<void> {
@@ -172,37 +203,34 @@ async function recheck(): Promise<void> {
     <div class="flex items-center justify-between gap-2">
       <div>
         <p class="text-sm font-medium">Required binaries</p>
-        <p class="text-xs text-muted-foreground">{{ detectedLine }}</p>
+        <p class="text-muted-foreground text-xs">{{ detectedLine }}</p>
       </div>
       <Button
-        variant="outline"
         size="sm"
+        variant="outline"
         :disabled="!canRecheck"
         @click="recheck"
       >
-        <Loader2
-          v-if="readiness.isEvaluating"
-          class="size-3.5 animate-spin"
-        />
-        <RefreshCw v-else class="size-3.5" />
+        <Loader2 class="size-3.5 animate-spin" v-if="readiness.isEvaluating" />
+        <RefreshCw class="size-3.5" v-else />
         {{ readiness.isEvaluating ? "Checking..." : "Re-check" }}
       </Button>
     </div>
 
     <p
+      class="border-destructive/40 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border p-3 text-xs"
       v-if="readiness.error"
-      class="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive"
     >
       <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
       <span>
-        Readiness check failed: {{ readiness.error.message }} — fix the
-        system and run Re-check again.
+        Readiness check failed: {{ readiness.error.message }} — fix the system
+        and run Re-check again.
       </span>
     </p>
 
     <p
+      class="text-muted-foreground rounded-lg border border-dashed p-4 text-sm"
       v-if="entries.length === 0"
-      class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
     >
       {{
         readiness.snapshot === null
@@ -211,34 +239,45 @@ async function recheck(): Promise<void> {
       }}
     </p>
 
-    <template v-for="row in entries" :key="`${row.entry.binary}-${row.entry.variant}`">
+    <template
+      v-for="row in entries"
+      :key="`${row.entry.binary}-${row.entry.variant}`"
+    >
       <BinaryGuide
-        :guide="row.guide"
-        :found="row.entry.found"
-        :expected="row.entry.expected"
         :can-run="canRun"
+        :expected="row.entry.expected"
+        :found="row.entry.found"
+        :guide="row.guide"
         :run-disabled="anyRunActive"
         @run="runGuide"
       />
     </template>
 
+    <p
+      class="border-destructive/40 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border p-3 text-xs"
+      role="alert"
+      v-if="runError"
+    >
+      <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
+      <span>{{ runError }}</span>
+    </p>
+
     <StreamBox
       v-if="run"
       :command="run.command"
-      :stdout="run.stdout"
-      :stderr="run.stderr"
-      :running="run.running"
-      :exit-code="run.exitCode"
       :default-open="run.running"
+      :exit-code="run.exitCode"
+      :running="run.running"
+      :stderr="run.stderr"
+      :stdout="run.stdout"
     />
 
-    <p v-if="isWindows" class="text-xs text-muted-foreground">
+    <p class="text-muted-foreground text-xs" v-if="isWindows">
       tree is not required on Windows.
     </p>
-    <p v-else-if="needsRunNote" class="text-xs text-muted-foreground">
-      Commands use sudo -A: the password prompt travels through a
-      SUDO_ASKPASS helper because this window has no terminal. If you
-      paste a command by hand, drop -A and run plain sudo instead.
+    <p class="text-muted-foreground text-xs" v-else-if="needsHelperNote">
+      Install {{ missingHelperHint }} to run commands here. Until then, copy the
+      command and run it in a terminal.
     </p>
   </section>
 </template>
