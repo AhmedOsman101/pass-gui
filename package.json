@@ -1,7 +1,7 @@
 {
   "name": "pass-gui",
   "author": "Ahmad Othman",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GUI wrapper for GNU Pass (passowrd-store)",
   "license": "GPL-3.0-or-later",
   "private": true,
@@ -54,5 +54,7 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vue-tsc": "^3.3.14"
   },
-  "workspaces": ["client"]
+  "workspaces": [
+    "client"
+  ]
 }
