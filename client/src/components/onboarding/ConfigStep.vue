@@ -413,7 +413,7 @@ async function useDefault(): Promise<void> {
     </template>
 
     <!-- Errors sit beside the example so they can be compared directly. -->
-    <div class="grid gap-4 sm:grid-cols-2" v-if="showDiagnostics">
+    <div class="grid gap-4 md:grid-cols-3" v-if="showDiagnostics">
       <div
         class="border-destructive/40 bg-destructive/5 text-destructive rounded-lg border p-3 text-xs"
         v-if="listedErrors.length > 0 || listedWarnings.length > 0"
@@ -436,10 +436,17 @@ async function useDefault(): Promise<void> {
           </li>
         </ul>
       </div>
-      <div class="min-w-0">
+      <div
+        class="min-w-0"
+        :class="
+          listedErrors.length > 0 || listedWarnings.length > 0
+            ? 'md:col-span-2'
+            : 'md:col-span-3'
+        "
+      >
         <p class="mb-1 text-xs font-medium">Example Default config</p>
         <pre
-          class="bg-muted/40 max-h-64 overflow-auto rounded-lg border p-3 font-mono text-[11px] leading-snug"
+          class="bg-muted/40 max-h-96 overflow-auto rounded-lg border p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap"
         >{{ exampleConfig ?? "Loading example…" }}</pre>
       </div>
     </div>

@@ -39,6 +39,13 @@ type SafeExecCommandArgs = {
   options?: ExecCommandOptions;
 };
 
+/** One `spawnedProcess` event detail from the Neutralino native layer. */
+type SpawnEvent = {
+  id: number;
+  action: string;
+  data: unknown;
+};
+
 type SpawnArgs = {
   cmd: string;
   args?: Stringifiable[];
@@ -233,37 +240,19 @@ class NeutralinoService {
     const shellType = this.getShellOsType();
     const fullCmd = buildShellCommand(cmd, args ?? [], shellType);
 
-    const spawnResult = await wrapAsync(
-      async () =>
-        await os.spawnProcess(fullCmd, {
-          cwd: options?.cwd,
-          envs: options?.envs,
-        })
-    );
-    if (spawnResult.isError()) {
-      await Logger.error(
-        `spawn("${cmd}") failed to spawn: ${spawnResult.error.message}`
-      );
-      return Err(spawnResult.error);
-    }
-    const proc = spawnResult.ok;
-
     let stdOut = "";
     let stdErr = "";
     let exitCode: number | null = null;
+    let procId: number | null = null;
+    const buffered: SpawnEvent[] = [];
 
     let resolveExit: (code: number) => void;
     const exitPromise = new Promise<number>(resolve => {
       resolveExit = resolve;
     });
 
-    const handler = (ev: Event): void => {
-      const detail = (ev as CustomEvent).detail as {
-        id: number;
-        action: string;
-        data: unknown;
-      };
-      if (detail.id !== proc.id) return;
+    const consume = (detail: SpawnEvent): void => {
+      if (detail.id !== procId) return;
       if (detail.action === "stdOut") {
         const chunk = String(detail.data);
         stdOut += chunk;
@@ -278,6 +267,18 @@ class NeutralinoService {
       }
     };
 
+    // Attach BEFORE spawning: a fast-exiting child can dispatch its exit
+    // event before a post-spawn listener registers, and that event is
+    // lost forever — the runner then hangs with no output and no log.
+    const handler = (ev: Event): void => {
+      const detail = (ev as CustomEvent).detail as SpawnEvent;
+      if (procId === null) {
+        buffered.push(detail);
+        return;
+      }
+      consume(detail);
+    };
+
     const onResult = await wrapAsync(
       async () =>
         await events.on("spawnedProcess", handler as (ev: CustomEvent) => void)
@@ -288,6 +289,25 @@ class NeutralinoService {
       );
       return Err(onResult.error);
     }
+
+    const spawnResult = await wrapAsync(
+      async () =>
+        await os.spawnProcess(fullCmd, {
+          cwd: options?.cwd,
+          envs: options?.envs,
+        })
+    );
+    if (spawnResult.isError()) {
+      await events.off("spawnedProcess", handler as (ev: CustomEvent) => void);
+      await Logger.error(
+        `spawn("${cmd}") failed to spawn: ${spawnResult.error.message}`
+      );
+      return Err(spawnResult.error);
+    }
+    const proc = spawnResult.ok;
+    procId = proc.id;
+    for (const detail of buffered) consume(detail);
+    buffered.length = 0;
 
     // Send stdin if provided, then always close it so the child does not hang
     if (stdin !== undefined) {

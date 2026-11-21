@@ -148,7 +148,7 @@ async function onConfigWritten(): Promise<void> {
 
 <template>
   <div class="flex h-full items-center justify-center overflow-auto px-4 py-8">
-    <div class="w-full max-w-xl space-y-6">
+    <div class="w-full max-w-5xl space-y-6">
       <div class="space-y-1 text-center">
         <h1 class="text-xl font-semibold">Set up pass-gui</h1>
         <p class="text-muted-foreground text-sm">

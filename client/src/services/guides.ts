@@ -68,34 +68,34 @@ const SOURCES: Record<BinaryKey, BinaryGuideSource> = {
     docsUrl: DOC_URLS.pass,
     families: {
       apt: {
-        install: "sudo -A apt install pass",
+        install: "sudo -A apt install -y pass",
         upgrade:
-          "sudo -A apt update && sudo -A apt install --only-upgrade pass",
-        alternatives: ["sudo -A nala install pass"],
+          "sudo -A apt update && sudo -A apt install -y --only-upgrade pass",
+        alternatives: ["sudo -A nala install -y pass"],
       },
       dnf: {
-        install: "sudo -A dnf install pass",
-        upgrade: "sudo -A dnf upgrade pass",
+        install: "sudo -A dnf install -y pass",
+        upgrade: "sudo -A dnf upgrade -y pass",
         note: "On CentOS 7 or Amazon Linux 2, use yum instead.",
       },
       yum: {
-        install: "yum install pass",
-        upgrade: "yum update pass",
+        install: "yum install -y pass",
+        upgrade: "yum update -y pass",
         note: "CentOS 7 and Amazon Linux 2 run yum without sudo.",
       },
       zypper: {
-        install: "sudo -A zypper install password-store",
-        upgrade: "sudo -A zypper update password-store",
+        install: "sudo -A zypper install -y password-store",
+        upgrade: "sudo -A zypper update -y password-store",
       },
       pacman: {
         install: "sudo -A pacman -S --noconfirm pass",
         upgrade: "sudo -A pacman -Syu --noconfirm pass",
-        alternatives: ["paru -S pass", "yay -S pass"],
+        alternatives: ["paru -S --noconfirm pass", "yay -S --noconfirm pass"],
         note: "You can also install pass through an AUR helper.",
       },
       xbps: {
-        install: "sudo -A xbps-install -S pass",
-        upgrade: "sudo -A xbps-install -Su pass",
+        install: "sudo -A xbps-install -y -S pass",
+        upgrade: "sudo -A xbps-install -y -Su pass",
       },
       apk: {
         install: "sudo -A apk add pass",
@@ -116,33 +116,33 @@ const SOURCES: Record<BinaryKey, BinaryGuideSource> = {
     docsUrl: DOC_URLS.gpg,
     families: {
       apt: {
-        install: "sudo -A apt install gnupg",
+        install: "sudo -A apt install -y gnupg",
         upgrade:
-          "sudo -A apt update && sudo -A apt install --only-upgrade gnupg",
+          "sudo -A apt update && sudo -A apt install -y --only-upgrade gnupg",
       },
       dnf: {
-        install: "sudo -A dnf install gnupg2",
-        upgrade: "sudo -A dnf upgrade gnupg2",
+        install: "sudo -A dnf install -y gnupg2",
+        upgrade: "sudo -A dnf upgrade -y gnupg2",
         note: "On CentOS 7 or Amazon Linux 2, use yum instead.",
       },
       yum: {
-        install: "yum install gnupg2",
-        upgrade: "yum update gnupg2",
+        install: "yum install -y gnupg2",
+        upgrade: "yum update -y gnupg2",
         note: "CentOS 7 and Amazon Linux 2 run yum without sudo.",
       },
       zypper: {
-        install: "sudo -A zypper install gpg2",
-        upgrade: "sudo -A zypper update gpg2",
+        install: "sudo -A zypper install -y gpg2",
+        upgrade: "sudo -A zypper update -y gpg2",
       },
       pacman: {
         install: "sudo -A pacman -S --noconfirm gnupg",
         upgrade: "sudo -A pacman -Syu --noconfirm gnupg",
-        alternatives: ["paru -S gnupg", "yay -S gnupg"],
+        alternatives: ["paru -S --noconfirm gnupg", "yay -S --noconfirm gnupg"],
         note: "You can also install gnupg through an AUR helper.",
       },
       xbps: {
-        install: "sudo -A xbps-install -S gnupg",
-        upgrade: "sudo -A xbps-install -Su gnupg",
+        install: "sudo -A xbps-install -y -S gnupg",
+        upgrade: "sudo -A xbps-install -y -Su gnupg",
       },
       apk: {
         install: "sudo -A apk add gnupg",
@@ -163,33 +163,33 @@ const SOURCES: Record<BinaryKey, BinaryGuideSource> = {
     docsUrl: DOC_URLS.tree,
     families: {
       apt: {
-        install: "sudo -A apt install tree",
+        install: "sudo -A apt install -y tree",
         upgrade:
-          "sudo -A apt update && sudo -A apt install --only-upgrade tree",
+          "sudo -A apt update && sudo -A apt install -y --only-upgrade tree",
       },
       dnf: {
-        install: "sudo -A dnf install tree",
-        upgrade: "sudo -A dnf upgrade tree",
+        install: "sudo -A dnf install -y tree",
+        upgrade: "sudo -A dnf upgrade -y tree",
         note: "On CentOS 7 or Amazon Linux 2, use yum instead.",
       },
       yum: {
-        install: "yum install tree",
-        upgrade: "yum update tree",
+        install: "yum install -y tree",
+        upgrade: "yum update -y tree",
         note: "CentOS 7 and Amazon Linux 2 run yum without sudo.",
       },
       zypper: {
-        install: "sudo -A zypper install tree",
-        upgrade: "sudo -A zypper update tree",
+        install: "sudo -A zypper install -y tree",
+        upgrade: "sudo -A zypper update -y tree",
       },
       pacman: {
         install: "sudo -A pacman -S --noconfirm tree",
         upgrade: "sudo -A pacman -Syu --noconfirm tree",
-        alternatives: ["paru -S tree", "yay -S tree"],
+        alternatives: ["paru -S --noconfirm tree", "yay -S --noconfirm tree"],
         note: "You can also install tree through an AUR helper.",
       },
       xbps: {
-        install: "sudo -A xbps-install -S tree",
-        upgrade: "sudo -A xbps-install -Su tree",
+        install: "sudo -A xbps-install -y -S tree",
+        upgrade: "sudo -A xbps-install -y -Su tree",
       },
       apk: {
         install: "sudo -A apk add tree",

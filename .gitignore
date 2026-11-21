@@ -37,10 +37,11 @@ lerna-debug.log*
 # Private markdown files
 docs/external-resources/*
 review.md
-test.sh
 
 # Testing playground
 client/src/pages/test.vue
+test.sh
+data/projects
 
 # Misc.
 .fallow/

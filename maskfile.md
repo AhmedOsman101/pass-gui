@@ -84,9 +84,21 @@ $MASK neu 'run dev'
 
 > Build the project (frontend + Neutralino) with embedded resources into `dist/pass-gui/`
 
+**OPTIONS**
+
+- dev
+  - flags: --dev
+  - type: boolean
+  - desc: Move the built binaries to the ~/Public directory to test with a VM
+
 ```bash
 $MASK clean
 $MASK neu 'build --release --clean --embed-resources'
+
+if [[ "${dev:-}" == "true" ]]; then
+  mkdir -pv ~/Public/pass-gui
+  cp dist/pass-gui/pass-gui-{linux_x64,win_x64.exe} ~/Public/pass-gui
+fi
 ```
 
 ### frontend
